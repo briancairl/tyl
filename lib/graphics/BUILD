@@ -1,0 +1,12 @@
+cc_library(
+  name="graphics",
+  hdrs=glob(["include/*.hpp"]),
+  srcs=glob(["src/*.cpp"]),
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[
+    "@imgui//:gl3w",
+    "@stb//:stb",
+  ],
+  visibility=["//visibility:public"]
+)
