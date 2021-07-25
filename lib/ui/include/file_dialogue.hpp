@@ -1,3 +1,8 @@
+/**
+ * @copyright 2021-present Brian Cairl
+ *
+ * @file filesystem.hpp
+ */
 #pragma once
 
 // C++ Standard Library
