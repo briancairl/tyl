@@ -198,7 +198,7 @@ private:
   /**
    * @brief Update current directory navigation
    */
-  void update_path_navigation(const std::size_t max_directory_segments);
+  void update_path_navigation(std::size_t max_directory_segments);
 
   /// Display/interaction options
   Options options_;

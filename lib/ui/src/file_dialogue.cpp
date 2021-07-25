@@ -114,7 +114,7 @@ void FileDialogue::update_current_directory(const filesystem::path& next_directo
     [](const auto& path_part) -> std::string { return path_part.string(); });
 }
 
-void FileDialogue::update_path_navigation(const std::size_t max_directory_segments)
+void FileDialogue::update_path_navigation(std::size_t max_directory_segments)
 {
   // Draw menu bar with current directory
   if (current_dir_parts_.empty())
@@ -137,6 +137,31 @@ void FileDialogue::update_path_navigation(const std::size_t max_directory_segmen
     }
 
     ImGui::SameLine();
+  }
+
+  // Check how many directory parts we can fit in the current window
+  {
+    std::size_t fitting_directory_segments = 0;
+
+    const ImVec2 remaining_window_region = ImGui::GetContentRegionAvail() - ImGui::GetCursorPos();
+    const ImVec2 delim_size = ImGui::CalcTextSize(" / ");
+
+    ImVec2 total_path_parts_size{ImGui::CalcTextSize("... / ")};
+    for (auto ritr = current_dir_parts_.rbegin(); ritr != current_dir_parts_.rend(); ++ritr)
+    {
+      total_path_parts_size += ImGui::CalcTextSize(ritr->c_str());
+      total_path_parts_size += delim_size;
+
+      if (total_path_parts_size.x < remaining_window_region.x)
+      {
+        ++fitting_directory_segments;
+      }
+      else
+      {
+        break;
+      }
+    }
+    max_directory_segments = std::max(2UL, std::min(max_directory_segments, fitting_directory_segments));
   }
 
   // Get ImGui vars
