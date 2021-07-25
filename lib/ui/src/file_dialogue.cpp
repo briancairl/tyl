@@ -19,7 +19,9 @@ namespace  //  anonymous
 
 inline void sort_by_type(std::vector<FileListing>& listing)
 {
-  std::sort(listing.begin(), listing.end(), [](const auto& lhs, const auto& rhs) { return lhs.type > rhs.type; });
+  std::sort(listing.begin(), listing.end(), [](const auto& lhs, const auto& rhs) {
+    return std::tie(lhs.type, lhs.path) > std::tie(rhs.type, rhs.path);
+  });
 }
 
 constexpr bool is_option_set(const FileDialogueOptions lhs, const FileDialogueOptions rhs)
