@@ -144,8 +144,28 @@ int main(int argc, char** argv)
 
   ImVec4 bg_color{0.1f, 0.1f, 0.1f, 1.0f};
 
-  std::optional<tyl::ui::FileDialogue> dialogue;
-  dialogue.emplace();
+  tyl::ui::FileDialogue dialogue{"open", "png|jpe?g"};
+
+  struct TextureData
+  {
+    tyl::filesystem::path file_path;
+    tyl::graphics::Texture texture;
+    int height_px;
+    int width_px;
+
+    explicit TextureData(tyl::filesystem::path _file_path) :
+        file_path{std::move(_file_path)},
+        texture{[this]() -> tyl::graphics::Image {
+          auto image = tyl::graphics::Image::load_from_file(file_path.c_str());
+          this->height_px = image.rows();
+          this->width_px = image.cols();
+          return image;
+        }()}
+    {}
+  };
+
+  std::vector<TextureData> loaded_textures;
+
 
   while (!glfwWindowShouldClose(window))
   {
@@ -157,8 +177,34 @@ int main(int argc, char** argv)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("textures");
-    dialogue->update();
+    // Displays texture source file browser
+    ImGui::Begin("texture source browser");
+    if (tyl::ui::FileDialogue::UpdateStatus::Selected == dialogue.update())
+    {
+      for (const auto& file : dialogue)
+      {
+        if (std::find_if(loaded_textures.begin(), loaded_textures.end(), [&file](const auto& tex_data) {
+              return tex_data.file_path == file;
+            }) == loaded_textures.end())
+        {
+          loaded_textures.emplace_back(file);
+        }
+      }
+    }
+    ImGui::End();
+
+    // Previews texture sheets which have alread been load
+    ImGui::Begin("loaded textures");
+
+    for (const auto& tex_data : loaded_textures)
+    {
+      const float width = 100.f;
+      const float height_to_width = static_cast<float>(tex_data.width_px) / static_cast<float>(tex_data.height_px);
+
+      ImGui::TextUnformatted(tex_data.file_path.filename().c_str());
+      ImGui::Image(reinterpret_cast<void*>(tex_data.texture.get_id()), ImVec2{width, width * height_to_width});
+    }
+
     ImGui::End();
 
     // ImGui::ShowStyleEditor(&imgui_style);
