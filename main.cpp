@@ -18,8 +18,9 @@
 #include <GLFW/glfw3.h>
 
 // Tyl
-#include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/image.hpp>
+#include <tyl/graphics/texture.hpp>
+#include <tyl/ui/file_dialogue.hpp>
 
 /**
  * @brief Logging callback for when glfw shits a brick
@@ -143,11 +144,8 @@ int main(int argc, char** argv)
 
   ImVec4 bg_color{0.1f, 0.1f, 0.1f, 1.0f};
 
-  std::vector<tyl::graphics::Texture> loaded_textures;
-  std::vector<std::string> loaded_texture_filenames;
-  std::vector<std::tuple<unsigned, unsigned>> loaded_texture_dimensions;
-  float texture_preview_width = 100.f;
-  std::optional<unsigned> texture_selected{std::nullopt};
+  std::optional<tyl::ui::FileDialogue> dialogue;
+  dialogue.emplace();
 
   while (!glfwWindowShouldClose(window))
   {
@@ -160,93 +158,12 @@ int main(int argc, char** argv)
     ImGui::NewFrame();
 
     ImGui::Begin("textures");
-    {
-      static char image_filename_buf_s[256] = "";
-      if (ImGui::InputText("image file", image_filename_buf_s, sizeof(image_filename_buf_s), ImGuiInputTextFlags_EnterReturnsTrue))
-      {
-        tyl::graphics::Image new_image{tyl::graphics::Image::load_from_file(image_filename_buf_s)};
-        tyl::graphics::Texture new_texture{new_image};
-
-        loaded_textures.emplace_back(std::move(new_texture));
-        loaded_texture_filenames.emplace_back(image_filename_buf_s);
-        loaded_texture_dimensions.emplace_back(new_image.rows(), new_image.cols());
-      }
-
-      const ImGuiWindowFlags flags{
-        ImGuiWindowFlags_HorizontalScrollbar |
-        (ImGuiWindowFlags_NoScrollWithMouse * static_cast<bool>(texture_selected))};
-
-      ImGui::BeginChild("texture previews", ImVec2(0, 0), /*borders*/true, flags);
-      {
-        // Scale preview images when a texture is selected
-        if (texture_selected and ImGui::IsWindowHovered())
-        {
-          const float d = ImGui::GetIO().MouseWheel;
-          texture_preview_width += (d * 10.f);
-          texture_preview_width = std::max(100.f, std::min(texture_preview_width, 1000.f));
-        }
-
-        auto * const drawlist_p = ImGui::GetWindowDrawList();
-        auto texture_itr = loaded_textures.begin();
-        auto texture_fn_itr = loaded_texture_filenames.begin();
-        auto texture_dim_itr = loaded_texture_dimensions.begin();
-        while (texture_itr != loaded_textures.end())
-        {
-          const auto [rows, cols] = *texture_dim_itr;
-          const float ratio = static_cast<float>(cols) / static_cast<float>(rows);
-
-          ImGui::Image(reinterpret_cast<void*>(texture_itr->get_id()), ImVec2{texture_preview_width, texture_preview_width * ratio});
-
-          if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-          {
-            if (ImGui::IsItemHovered())
-            {
-              texture_selected = texture_itr->get_id();
-            }
-            else
-            {
-              texture_selected.reset();
-            }
-          }
-
-          if (ImGui::IsItemHovered())
-          {
-            const ImVec2 min_pos = ImGui::GetItemRectMin();
-            const ImVec2 max_pos = ImGui::GetItemRectMax();
-            drawlist_p->AddRect(min_pos, max_pos, IM_COL32(255, 0, 255, 100), 0.0f, ImDrawCornerFlags_All, 10.f);
-          }
-          else if (texture_selected and texture_itr->get_id() == texture_selected.value())
-          {
-            const ImVec2 min_pos = ImGui::GetItemRectMin();
-            const ImVec2 max_pos = ImGui::GetItemRectMax();
-            drawlist_p->AddRect(min_pos, max_pos, IM_COL32(255, 255, 0, 100), 0.0f, ImDrawCornerFlags_All, 10.f);
-          }
-
-          ImGui::TextUnformatted(texture_fn_itr->c_str());
-          ImGui::SameLine();
-          if (ImGui::Button("x"))
-          {
-            texture_itr = loaded_textures.erase(texture_itr);
-            texture_fn_itr = loaded_texture_filenames.erase(texture_fn_itr);
-            texture_dim_itr = loaded_texture_dimensions.erase(texture_dim_itr);
-          }
-          else
-          {
-            ++texture_itr;
-            ++texture_fn_itr;
-            ++texture_dim_itr;
-          }
-        }
-        ImGui::EndChild();
-      }
-
-      ImGui::End();
-    }
-
+    dialogue->update();
+    ImGui::End();
 
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
-  
+
     // Render dear imgui into screen
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -1,9 +1,8 @@
 cc_binary(
     name="main",
     srcs=["main.cpp"],
-    copts=[],
-    deps=["//lib/graphics:graphics", "@imgui//:imgui_cpp"],
+    linkopts=["-lstdc++fs"],
+    deps=["//lib/graphics", "//lib/ui", "@imgui//:imgui_cpp"],
     visibility=["//visibility:public"],
-    data=[],
-    linkstatic=False,
+    data=[]
 )

@@ -1,0 +1,13 @@
+cc_library(
+  name="ui",
+  hdrs=glob(["include/*.hpp"]),
+  srcs=glob(["src/*.cpp"]),
+  strip_include_prefix="include",
+  include_prefix="tyl/ui",
+  linkopts=["-lstdc++fs"],
+  deps=[
+    "@imgui//:imgui_cpp",
+    "//lib/common:filesystem"
+  ],
+  visibility=["//visibility:public"]
+)
