@@ -1,0 +1,9 @@
+cc_library(
+  name="filesystem",
+  hdrs=["include/filesystem.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  linkopts=["-lstdc++fs"],
+  deps=[],
+  visibility=["//visibility:public"]
+)
