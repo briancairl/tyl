@@ -5,8 +5,8 @@
  */
 
 // C++ Standard Library
-#include <assert.h>
 #include <algorithm>
+#include <assert.h>
 #include <iterator>
 #include <numeric>
 
