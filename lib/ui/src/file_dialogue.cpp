@@ -60,13 +60,13 @@ return std::make_unique<char[]>(selection_buffer_len);
 , selection_edit_buffer_len_{selection_buffer_len},
   file_listing_regex_{(file_listing_regex == nullptr) ? "" : file_listing_regex}
 {
-  update_current_directory(initial_directory, false /* no caching previous directory */);
+  update_current_directory(initial_directory, NextDirectoryMode::ForgetPrevious);
 }
 
-void FileDialogue::update_current_directory(const filesystem::path& next_directory, const bool cache_previous)
+void FileDialogue::update_current_directory(const filesystem::path& next_directory, const NextDirectoryMode mode)
 {
   // Add current directory to history
-  if (!current_dir_.empty() and cache_previous)
+  if (!current_dir_.empty() and (mode == NextDirectoryMode::CachePrevious))
   {
     previous_dirs_.push_back(current_dir_);
   }
@@ -85,9 +85,13 @@ void FileDialogue::update_current_directory(const filesystem::path& next_directo
   const auto is_accepted_file_type = [opt = options_,
                                       &re = file_listing_regex_](const auto& type, const auto& path) -> bool {
     std::cmatch m;
-    return (!is_option_set(opt, Options::NoRegularFiles) and type == filesystem::file_type::regular and
+    // clang-format off
+    return (!is_option_set(opt, Options::NoRegularFiles) and
+            (type == filesystem::file_type::regular) and
             std::regex_search(path, m, re)) or
-      (!is_option_set(opt, Options::NoDirectories) and type == filesystem::file_type::directory);
+           (!is_option_set(opt, Options::NoDirectories) and
+            (type == filesystem::file_type::directory));
+    // clang-format on
   };
 
   // Build valid file listing
@@ -114,21 +118,26 @@ void FileDialogue::update_current_directory(const filesystem::path& next_directo
     [](const auto& path_part) -> std::string { return path_part.string(); });
 }
 
-void FileDialogue::update_path_navigation(std::size_t max_directory_segments)
+std::pair<std::optional<filesystem::path>, FileDialogue::NextDirectoryMode>
+FileDialogue::update_path_navigation(std::size_t max_directory_segments)
 {
+  // Next directory navigation data
+  std::optional<filesystem::path> next_directory{std::nullopt};
+  NextDirectoryMode next_directory_mode{NextDirectoryMode::CachePrevious};
+
   // Draw menu bar with current directory
   if (current_dir_parts_.empty())
   {
-    return;
+    return std::make_pair(next_directory, next_directory_mode);
   }
 
   // Handle navigation history back-stepping
   {
     if (ImGui::ArrowButton("back", ImGuiDir_Left) and !previous_dirs_.empty())
     {
-      const filesystem::path next_directory = previous_dirs_.back();
+      next_directory = previous_dirs_.back();
+      next_directory_mode = NextDirectoryMode::ForgetPrevious;
       previous_dirs_.pop_back();
-      update_current_directory(next_directory, false /* no caching previous directory */);
     }
 
     if (!previous_dirs_.empty() and ImGui::IsItemHovered())
@@ -200,19 +209,18 @@ void FileDialogue::update_path_navigation(std::size_t max_directory_segments)
       if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
       {
         // Build new current directory up to selected sub-directory
-        filesystem::path next_directory;
+        next_directory.emplace();
         std::for_each(current_dir_parts_.begin(), std::next(itr), [&next_directory](const std::string& path_part) {
-          next_directory /= path_part;
+          (*next_directory) /= path_part;
         });
-
-        // Update current directory info
-        update_current_directory(next_directory);
       }
       ImGui::SameLine();
       ImGui::TextUnformatted(" / ");
       ImGui::SameLine();
     }
   }
+
+  return std::make_pair(next_directory, next_directory_mode);
 }
 
 FileDialogue::UpdateStatus FileDialogue::update(const std::size_t max_directory_segments)
@@ -224,7 +232,7 @@ FileDialogue::UpdateStatus FileDialogue::update(const std::size_t max_directory_
   auto* drawlist = ImGui::GetWindowDrawList();
 
   // Draw menu bar with current directory
-  update_path_navigation(max_directory_segments);
+  auto [next_directory, next_directory_mode] = update_path_navigation(max_directory_segments);
 
   // Get content origin/size before starting table element for main profiler panels
   const auto toggle_selection = [this](bool& toggle_selected) -> void {
@@ -306,8 +314,7 @@ FileDialogue::UpdateStatus FileDialogue::update(const std::size_t max_directory_
       }
       else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
       {
-        const filesystem::path next_directory{current_dir_ / path};
-        update_current_directory(next_directory);
+        next_directory.emplace(current_dir_ / path);
       }
       else if (is_option_set(options_, Options::AllowSelectDirectory))
       {
@@ -370,6 +377,12 @@ FileDialogue::UpdateStatus FileDialogue::update(const std::size_t max_directory_
   if (error_ != nullptr)
   {
     ImGui::TextColored(ImVec4{1.0f, 0.2f, 0.2f, 1.0f}, error_);
+  }
+
+  // Update directory contents last, since current directory info is being used for drawing
+  if (status == UpdateStatus::Working and next_directory)
+  {
+    update_current_directory(*next_directory, next_directory_mode);
   }
 
   return status;

@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <string>
 #include <vector>
@@ -190,15 +191,23 @@ public:
   }
 
 private:
+  /// Navigation history behavior modes
+  enum class NextDirectoryMode
+  {
+    ForgetPrevious,
+    CachePrevious
+  };
+
   /**
    * @brief Repopulated file_listing_cache_ given current_dir_
    */
-  void update_current_directory(const filesystem::path& next_directory, const bool cache_previous = true);
+  void update_current_directory(const filesystem::path& next_directory, const NextDirectoryMode mode);
 
   /**
    * @brief Update current directory navigation
    */
-  void update_path_navigation(std::size_t max_directory_segments);
+  std::pair<std::optional<filesystem::path>, NextDirectoryMode>
+  update_path_navigation(std::size_t max_directory_segments);
 
   /// Display/interaction options
   Options options_;
