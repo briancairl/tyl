@@ -193,7 +193,7 @@ private:
   /**
    * @brief Repopulated file_listing_cache_ given current_dir_
    */
-  void update_current_directory(const filesystem::path& next_directory);
+  void update_current_directory(const filesystem::path& next_directory, const bool cache_previous = true);
 
   /**
    * @brief Update current directory navigation

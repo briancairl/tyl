@@ -60,16 +60,18 @@ return std::make_unique<char[]>(selection_buffer_len);
 , selection_edit_buffer_len_{selection_buffer_len},
   file_listing_regex_{(file_listing_regex == nullptr) ? "" : file_listing_regex}
 {
-  update_current_directory(initial_directory);
+  update_current_directory(initial_directory, false /* no caching previous directory */);
 }
 
-void FileDialogue::update_current_directory(const filesystem::path& next_directory)
+void FileDialogue::update_current_directory(const filesystem::path& next_directory, const bool cache_previous)
 {
   // Add current directory to history
-  if (!current_dir_.empty())
+  if (!current_dir_.empty() and cache_previous)
   {
     previous_dirs_.push_back(current_dir_);
   }
+
+  // Set current directort
   current_dir_ = next_directory;
 
   // Reset active selection
@@ -120,6 +122,23 @@ void FileDialogue::update_path_navigation(const std::size_t max_directory_segmen
     return;
   }
 
+  // Handle navigation history back-stepping
+  {
+    if (ImGui::ArrowButton("back", ImGuiDir_Left) and !previous_dirs_.empty())
+    {
+      const filesystem::path next_directory = previous_dirs_.back();
+      previous_dirs_.pop_back();
+      update_current_directory(next_directory, false /* no caching previous directory */);
+    }
+
+    if (!previous_dirs_.empty() and ImGui::IsItemHovered())
+    {
+      ImGui::SetTooltip("go back to %s", previous_dirs_.back().c_str());
+    }
+
+    ImGui::SameLine();
+  }
+
   // Get ImGui vars
   const auto& style = ImGui::GetStyle();
   const ImVec4* const ColorLookup = style.Colors;
@@ -138,6 +157,7 @@ void FileDialogue::update_path_navigation(const std::size_t max_directory_segmen
     ImGui::TextColored(ColorLookup[ImGuiCol_TextDisabled], "...");
     ImGui::SameLine();
     ImGui::TextUnformatted(" / ");
+    ImGui::SameLine();
   }
   for (auto itr = start_itr; itr != current_dir_parts_.end(); ++itr)
   {
@@ -167,24 +187,6 @@ void FileDialogue::update_path_navigation(const std::size_t max_directory_segmen
       ImGui::TextUnformatted(" / ");
       ImGui::SameLine();
     }
-  }
-
-  // Handle navigation history stepping
-  if (previous_dirs_.empty())
-  {
-    return;
-  }
-
-  if (ImGui::ArrowButton("back", ImGuiDir_Left))
-  {
-    const filesystem::path next_directory = previous_dirs_.back();
-    previous_dirs_.pop_back();
-    update_current_directory(next_directory);
-  }
-
-  if (ImGui::IsItemHovered())
-  {
-    ImGui::SetTooltip("go back to %s", previous_dirs_.back().c_str());
   }
 }
 
