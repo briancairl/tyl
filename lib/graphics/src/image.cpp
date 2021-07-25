@@ -24,6 +24,14 @@
 namespace tyl::graphics
 {
 
+Image::~Image()
+{
+  if (data_ != nullptr)
+  {
+    free(data_);  // using c-style free to match malloc used in stbi_load
+  }
+}
+
 Image Image::load_from_file(const char* filename, const int force_channel_count)
 {
   Image im;
@@ -42,7 +50,7 @@ Image Image::load_from_file(const char* filename, const int force_channel_count)
   static_assert(std::is_same<decltype(im_ptr), std::uint8_t*>(), "Image data not loaded as byte array");
 
   // Set image data to managed pointer
-  im.data_.reset(im_ptr);
+  im.data_ = im_ptr;
   return im;
 }
 
