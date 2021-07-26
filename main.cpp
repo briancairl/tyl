@@ -8,6 +8,7 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
@@ -144,7 +145,11 @@ int main(int argc, char** argv)
 
   ImVec4 bg_color{0.1f, 0.1f, 0.1f, 1.0f};
 
-  tyl::ui::FileDialogue dialogue{"open", "png|jpe?g"};
+  tyl::ui::FileDialogue dialogue{"open",
+                                 "png|jpe?g",
+                                 tyl::ui::FileDialogue::Options::FileMustExist |
+                                   tyl::ui::FileDialogue::Options::AllowSelectRegularFile,
+                                 tyl::filesystem::path{"/home/brian/Desktop"}};
 
   struct TextureData
   {
@@ -152,6 +157,11 @@ int main(int argc, char** argv)
     tyl::graphics::Texture texture;
     int height_px;
     int width_px;
+    int cell_size_px;
+    int top_trim_px;
+    int left_trim_px;
+    float zoom_factor;
+    bool locked;
 
     explicit TextureData(tyl::filesystem::path _file_path) :
         file_path{std::move(_file_path)},
@@ -160,12 +170,28 @@ int main(int argc, char** argv)
           this->height_px = image.rows();
           this->width_px = image.cols();
           return image;
-        }()}
+        }()},
+        cell_size_px{16},
+        top_trim_px{0},
+        left_trim_px{0},
+        zoom_factor{1.f},
+        locked{false}
     {}
   };
 
   std::vector<TextureData> loaded_textures;
+  std::optional<tyl::filesystem::path> selected_texture_path;
+  auto selected_texture_itr = loaded_textures.end();
+  int selected_tile_id = -1;
 
+  int map_height = 100;
+  int map_width = 100;
+  std::vector<int> map_data;
+  map_data.resize(map_height * map_width, -1);
+
+  ImColor selection_color{1.f, 1.f, 0.f, 0.8f};
+  ImColor grid_line_color{1.f, 0.f, 0.f, 0.8f};
+  float* color_editting = nullptr;
 
   while (!glfwWindowShouldClose(window))
   {
@@ -176,6 +202,8 @@ int main(int argc, char** argv)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    bool refresh_selected_texture = false;
 
     // Displays texture source file browser
     ImGui::Begin("texture source browser");
@@ -188,21 +216,281 @@ int main(int argc, char** argv)
             }) == loaded_textures.end())
         {
           loaded_textures.emplace_back(file);
+          refresh_selected_texture = true;
         }
       }
     }
     ImGui::End();
 
     // Previews texture sheets which have alread been load
-    ImGui::Begin("loaded textures");
-
-    for (const auto& tex_data : loaded_textures)
     {
-      const float width = 100.f;
-      const float height_to_width = static_cast<float>(tex_data.width_px) / static_cast<float>(tex_data.height_px);
+      ImGui::Begin("loaded textures");
 
-      ImGui::TextUnformatted(tex_data.file_path.filename().c_str());
-      ImGui::Image(reinterpret_cast<void*>(tex_data.texture.get_id()), ImVec2{width, width * height_to_width});
+      // Handle loaded texture preview list interactions
+      auto removing_texture_itr = loaded_textures.end();
+      for (auto texture_itr = loaded_textures.begin(); texture_itr != loaded_textures.end(); ++texture_itr)
+      {
+        const float width = 100.f;
+        const float height_to_width =
+          static_cast<float>(texture_itr->height_px) / static_cast<float>(texture_itr->width_px);
+
+        ImGui::TextUnformatted("click to remove");
+        ImGui::SameLine();
+        if (ImGui::Button(texture_itr->file_path.filename().c_str()))
+        {
+          removing_texture_itr = texture_itr;
+        }
+        ImGui::BeginChild(
+          texture_itr->file_path.filename().c_str(), ImVec2{0.f, 200.f}, true /*borders*/
+        );
+        ImGui::Image(reinterpret_cast<void*>(texture_itr->texture.get_id()), ImVec2{width, height_to_width * width});
+        ImGui::EndChild();
+
+        if (ImGui::IsItemHovered())
+        {
+          auto* const child_draw_list = ImGui::GetWindowDrawList();
+          child_draw_list->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), selection_color);
+
+          if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+          {
+            selected_texture_path.emplace(texture_itr->file_path);
+            refresh_selected_texture = true;
+          }
+        }
+      }
+
+      // Handle texture unloading
+      if (removing_texture_itr != loaded_textures.end())
+      {
+        loaded_textures.erase(removing_texture_itr);
+        refresh_selected_texture = true;
+      }
+
+      ImGui::End();
+    }
+
+    // Handle selected texture updates
+    if (refresh_selected_texture)
+    {
+      if (selected_texture_path)
+      {
+        selected_texture_itr = std::find_if(
+          loaded_textures.begin(), loaded_textures.end(), [&selected_texture_path](const auto& texture_data) {
+            return texture_data.file_path == *selected_texture_path;
+          });
+      }
+      else
+      {
+        selected_texture_itr = loaded_textures.end();
+      }
+    }
+
+
+    // Adjacency Editor
+    ImGui::Begin("adjacency editor");
+    ImGui::PushItemWidth(200.f);
+    ImGui::ColorEdit4(
+      "cell selection color", reinterpret_cast<float*>(&selection_color), ImGuiColorEditFlags_NoSmallPreview);
+    if (
+      ImGui::IsItemClicked(ImGuiPopupFlags_MouseButtonLeft) and
+      ImGui::IsMouseDoubleClicked(ImGuiPopupFlags_MouseButtonLeft))
+    {
+      ImGui::OpenPopup("color picker");
+      color_editting = reinterpret_cast<float*>(&selection_color);
+    }
+
+    ImGui::ColorEdit4("grid color", reinterpret_cast<float*>(&grid_line_color), ImGuiColorEditFlags_NoSmallPreview);
+    if (
+      ImGui::IsItemClicked(ImGuiPopupFlags_MouseButtonLeft) and
+      ImGui::IsMouseDoubleClicked(ImGuiPopupFlags_MouseButtonLeft))
+    {
+      ImGui::OpenPopup("color picker");
+      color_editting = reinterpret_cast<float*>(&grid_line_color);
+    }
+
+    if (ImGui::BeginPopupModal("color picker"))
+    {
+      if (ImGui::Button("close"))
+      {
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::ColorPicker4("cell selection color", color_editting, ImGuiColorEditFlags_NoSmallPreview);
+      ImGui::EndPopup();
+    }
+    else
+    {
+      color_editting = nullptr;
+    }
+    ImGui::PopItemWidth();
+
+    if (selected_texture_itr != loaded_textures.end())
+    {
+      const float width = selected_texture_itr->width_px * selected_texture_itr->zoom_factor;
+      const float height = selected_texture_itr->height_px * selected_texture_itr->zoom_factor;
+      const float cell_size = selected_texture_itr->cell_size_px * selected_texture_itr->zoom_factor;
+
+      const int texture_width_c =
+        (selected_texture_itr->width_px - selected_texture_itr->left_trim_px) / selected_texture_itr->cell_size_px;
+      const int texture_height_c =
+        (selected_texture_itr->height_px - selected_texture_itr->top_trim_px) / selected_texture_itr->cell_size_px;
+
+      if (ImGui::BeginTable("##painting-sections", 2, ImGuiTableFlags_Resizable))
+      {
+        // Tile selector
+        {
+          ImGui::TableNextColumn();
+
+          if (!selected_texture_itr->locked)
+          {
+            ImGui::SliderInt("cell size", &selected_texture_itr->cell_size_px, 2, 128);
+            ImGui::SliderInt("top trim", &selected_texture_itr->top_trim_px, 0, selected_texture_itr->height_px);
+            ImGui::SliderInt("left trim", &selected_texture_itr->left_trim_px, 0, selected_texture_itr->width_px);
+            selected_texture_itr->locked = ImGui::Button("lock");
+          }
+          else
+          {
+            selected_texture_itr->locked = !ImGui::Button("unlock");
+          }
+
+          {
+            ImGui::BeginChild(
+              "##tile-selector", ImVec2{0.f, 0.f}, true /*borders*/, ImGuiWindowFlags_HorizontalScrollbar);
+
+            {
+              const ImVec2 origin = ImGui::GetWindowPos() + ImGui::GetCursorPos() -
+                ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
+                ImVec2(selected_texture_itr->left_trim_px, selected_texture_itr->top_trim_px);
+
+              ImGui::Image(reinterpret_cast<void*>(selected_texture_itr->texture.get_id()), ImVec2{width, height});
+
+              auto* const drawlist = ImGui::GetWindowDrawList();
+              const float line_height = texture_height_c * cell_size;
+              const float line_width = texture_width_c * cell_size;
+
+              for (int i = 0; i <= texture_width_c; i++)
+              {
+                drawlist->AddLine(
+                  origin + ImVec2{i * cell_size, 0.f}, origin + ImVec2{i * cell_size, line_height}, grid_line_color);
+              }
+
+              for (int j = 0; j <= texture_height_c; j++)
+              {
+                drawlist->AddLine(
+                  origin + ImVec2{0.f, j * cell_size}, origin + ImVec2{line_width, j * cell_size}, grid_line_color);
+              }
+
+              for (int i = 0; i < texture_height_c; i++)
+              {
+                for (int j = 0; j < texture_width_c; j++)
+                {
+                  const ImVec2 top_left{origin + ImVec2((j + 0) * cell_size, (i + 0) * cell_size)};
+                  const ImVec2 bottom_right{origin + ImVec2((j + 1) * cell_size, (i + 1) * cell_size)};
+
+                  if ((i * texture_width_c + j) == selected_tile_id)
+                  {
+                    drawlist->AddRectFilled(top_left, bottom_right, selection_color);
+                  }
+
+                  if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
+                  {
+                    drawlist->AddRectFilled(top_left, bottom_right, selection_color);
+                    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                    {
+                      selected_tile_id = i * texture_width_c + j;
+                    }
+                  }
+                }
+              }
+            }
+
+            ImGui::EndChild();
+          }
+        }
+
+        // Tile painter
+        {
+          ImGui::TableNextColumn();
+          ImGui::SliderFloat("zoom", &selected_texture_itr->zoom_factor, 1.f, 10.f);
+
+          bool resize_map = false;
+          resize_map |= ImGui::SliderInt("map height", &map_height, 20, 2000);
+          resize_map |= ImGui::SliderInt("map width", &map_width, 20, 2000);
+
+          if (resize_map)
+          {
+            map_data.resize(map_height * map_width, -1);
+          }
+
+          {
+            ImGui::BeginChild(
+              "##tile-painter", ImVec2{0.f, 0.f}, true /*borders*/, ImGuiWindowFlags_HorizontalScrollbar);
+
+            const ImVec2 origin = ImGui::GetWindowPos() + ImGui::GetCursorPos() -
+              ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
+              ImVec2(selected_texture_itr->left_trim_px, selected_texture_itr->top_trim_px);
+
+            ImGui::InvisibleButton("##nav-deadzone", ImVec2{map_width * cell_size, map_height * cell_size});
+
+            auto* const drawlist = ImGui::GetWindowDrawList();
+            const float line_height = map_height * cell_size;
+            const float line_width = map_width * cell_size;
+
+            for (int i = 0; i < map_height; i++)
+            {
+              for (int j = 0; j < map_width; j++)
+              {
+                const ImVec2 top_left{origin + ImVec2((j + 0) * cell_size, (i + 0) * cell_size)};
+                const ImVec2 bottom_right{origin + ImVec2((j + 1) * cell_size, (i + 1) * cell_size)};
+
+                if (const int id = map_data[i * map_width + j]; id >= 0)
+                {
+                  ImGui::SetCursorScreenPos(top_left);
+                  const int x = id / texture_width_c;
+                  const int y = id % texture_width_c;
+                  const float v0 = (1.0f / texture_height_c) * (x + 0);
+                  const float v1 = (1.0f / texture_height_c) * (x + 1);
+                  const float u0 = (1.0f / texture_width_c) * (y + 0);
+                  const float u1 = (1.0f / texture_width_c) * (y + 1);
+                  ImGui::Image(
+                    reinterpret_cast<void*>(selected_texture_itr->texture.get_id()),
+                    ImVec2{cell_size, cell_size},
+                    ImVec2{u0, v0},
+                    ImVec2{u1, v1});
+                }
+
+                if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
+                {
+                  drawlist->AddRectFilled(top_left, bottom_right, selection_color);
+                  if (selected_tile_id > -1 and ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                  {
+                    map_data[i * map_width + j] = selected_tile_id;
+                  }
+                  else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                  {
+                    map_data[i * map_width + j] = -1;
+                  }
+                }
+              }
+            }
+
+            for (int i = 0; i <= map_width; i++)
+            {
+              drawlist->AddLine(
+                origin + ImVec2{i * cell_size, 0.f}, origin + ImVec2{i * cell_size, line_height}, grid_line_color);
+            }
+
+            for (int j = 0; j <= map_height; j++)
+            {
+              drawlist->AddLine(
+                origin + ImVec2{0.f, j * cell_size}, origin + ImVec2{line_width, j * cell_size}, grid_line_color);
+            }
+
+            ImGui::EndChild();
+          }
+        }
+
+        ImGui::EndTable();
+      }
     }
 
     ImGui::End();
