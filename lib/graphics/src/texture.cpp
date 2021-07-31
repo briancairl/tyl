@@ -168,7 +168,7 @@ Texture::Texture(const long int h, const long int w, const double* const data, c
 {}
 
 Texture::Texture(const Image& image) :
-    Texture{image.rows(), image.cols(), image.data(), Options{image_channel_count_to_mode(image.channels())}}
+    Texture{image.cols(), image.rows(), image.data(), Options{image_channel_count_to_mode(image.channels())}}
 {}
 
 Texture::~Texture()
