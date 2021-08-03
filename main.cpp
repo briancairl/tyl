@@ -89,6 +89,82 @@ static void InitStyle(ImGuiStyle* style)
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
+
+struct TileAtlasData
+{
+  tyl::filesystem::path file_path;
+  tyl::graphics::Texture texture;
+  int height_px;
+  int width_px;
+  int tile_size_px;
+  int top_trim_px;
+  int left_trim_px;
+
+  explicit TileAtlasData(tyl::filesystem::path _file_path) :
+      file_path{std::move(_file_path)},
+      texture{[this]() -> tyl::graphics::Image {
+        auto image = tyl::graphics::Image::load_from_file(file_path.c_str());
+        this->height_px = image.rows();
+        this->width_px = image.cols();
+        return image;
+      }()},
+      tile_size_px{16},
+      top_trim_px{0},
+      left_trim_px{0}
+  {}
+
+  inline int tile_grid_height() const { return (this->height_px - this->top_trim_px) / this->tile_size_px; }
+
+  inline int tile_grid_width() const { return (this->width_px - this->left_trim_px) / this->tile_size_px; }
+};
+
+enum class Step
+{
+  SELECT_LOAD_DATA,
+  SELECT_TILE_SIZING,
+  INITIALIZE_MAP,
+  EDIT_MAP
+};
+
+struct MapData
+{
+  static constexpr int NO_TILE = -1;
+
+  inline void resize(int height, int width, int layer_count)
+  {
+    this->layers.resize(layer_count);
+    this->layer_labels.resize(layer_count);
+    this->layer_visibility.resize(layer_count, true);
+
+    for (std::size_t i = 0; i < this->layer_labels.size(); ++i)
+    {
+      std::ostringstream oss;
+      oss << "layer #" << i;
+      this->layer_labels[i] = oss.str();
+    }
+
+    for (auto& layer : this->layers)
+    {
+      layer.resize(height * width, NO_TILE);
+    }
+  }
+
+  inline bool empty() const { return layers.empty(); }
+
+  inline void clear()
+  {
+    for (auto& layer : this->layers)
+    {
+      std::fill(layer.begin(), layer.end(), NO_TILE);
+    }
+  }
+
+  std::vector<std::vector<int>> layers;
+  std::vector<std::string> layer_labels;
+  std::vector<std::uint8_t> layer_visibility;
+};
+
+
 int main(int argc, char** argv)
 {
   // Setup window
@@ -145,53 +221,34 @@ int main(int argc, char** argv)
 
   ImVec4 bg_color{0.1f, 0.1f, 0.1f, 1.0f};
 
-  tyl::ui::FileDialogue dialogue{"open",
-                                 "png|jpe?g",
-                                 tyl::ui::FileDialogue::Options::FileMustExist |
-                                   tyl::ui::FileDialogue::Options::AllowSelectRegularFile,
-                                 tyl::filesystem::path{"/home/brian/Desktop"}};
+  static constexpr auto dialogue_options = tyl::ui::FileDialogue::Options::NoMultiSelect |
+    tyl::ui::FileDialogue::Options::FileMustExist | tyl::ui::FileDialogue::Options::AllowSelectRegularFile;
 
-  struct TextureData
-  {
-    tyl::filesystem::path file_path;
-    tyl::graphics::Texture texture;
-    int height_px;
-    int width_px;
-    int cell_size_px;
-    int top_trim_px;
-    int left_trim_px;
-    float zoom_factor;
-    bool locked;
+  tyl::ui::FileDialogue dialogue{
+    "open", "png|jpe?g|tyl", dialogue_options, tyl::filesystem::path{"/home/brian/Desktop"}};
 
-    explicit TextureData(tyl::filesystem::path _file_path) :
-        file_path{std::move(_file_path)},
-        texture{[this]() -> tyl::graphics::Image {
-          auto image = tyl::graphics::Image::load_from_file(file_path.c_str());
-          this->height_px = image.rows();
-          this->width_px = image.cols();
-          return image;
-        }()},
-        cell_size_px{16},
-        top_trim_px{0},
-        left_trim_px{0},
-        zoom_factor{1.f},
-        locked{false}
-    {}
-  };
+  Step editor_step{Step::SELECT_LOAD_DATA};
 
-  std::vector<TextureData> loaded_textures;
-  std::optional<tyl::filesystem::path> selected_texture_path;
-  auto selected_texture_itr = loaded_textures.end();
-  int selected_tile_id = -1;
+  std::optional<TileAtlasData> loaded_atlas;
 
+  float zoom_factor = 4.f;
+
+  static constexpr int MAP_LAYER_COUNT_MAX = 10;
+  static constexpr int MAP_HEIGHT_MAX = 5000;
+  static constexpr int MAP_WIDTH_MAX = 5000;
+
+  int map_layer_count = 1;
   int map_height = 100;
   int map_width = 100;
-  std::vector<int> map_data;
-  map_data.resize(map_height * map_width, -1);
 
-  ImColor selection_color{1.f, 1.f, 0.f, 0.8f};
-  ImColor grid_line_color{1.f, 0.f, 0.f, 0.8f};
-  float* color_editting = nullptr;
+  int selected_tile_id = -1;
+  int selected_edit_map_layer = 0;
+
+  MapData map_data;
+
+  ImColor selection_fill_color{1.f, 1.f, 0.f, 0.8f};
+  ImColor selection_line_color{1.f, 0.f, 0.f, 0.8f};
+  ImColor grid_line_color{0.9f, 0.9f, 0.9f, 0.9f};
 
   while (!glfwWindowShouldClose(window))
   {
@@ -203,201 +260,329 @@ int main(int argc, char** argv)
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    bool refresh_selected_texture = false;
+    // clang-format off
+    const auto edittor_window_options =
+      ImGuiWindowFlags_NoTitleBar |
+      ImGuiWindowFlags_NoMove |
+      ImGuiWindowFlags_NoResize |
+      ImGuiWindowFlags_NoScrollbar |
+      ImGuiWindowFlags_NoScrollWithMouse |
+      ImGuiWindowFlags_MenuBar;
+    // clang-format on
 
-    // Displays texture source file browser
-    ImGui::Begin("texture source browser");
-    if (tyl::ui::FileDialogue::UpdateStatus::Selected == dialogue.update())
+    ImGui::SetNextWindowSize(ImVec2(display_w, display_h));
+    ImGui::SetNextWindowPos(ImVec2{0.f, 0.f});
     {
-      for (const auto& file : dialogue)
+      ImGui::Begin("##edittor", nullptr, edittor_window_options);
+
+      if (ImGui::BeginMenuBar())
       {
-        if (std::find_if(loaded_textures.begin(), loaded_textures.end(), [&file](const auto& tex_data) {
-              return tex_data.file_path == file;
-            }) == loaded_textures.end())
+        if (ImGui::BeginMenu("file"))
         {
-          loaded_textures.emplace_back(file);
-          refresh_selected_texture = true;
+          if (ImGui::MenuItem("new file"))
+          {
+            editor_step = Step::SELECT_LOAD_DATA;
+          }
+          ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("edit", editor_step == Step::EDIT_MAP))
+        {
+          if (ImGui::MenuItem("clear all"))
+          {
+            map_data.clear();
+          }
+          ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("options"))
+        {
+          if (ImGui::BeginMenu("app theme"))
+          {
+            if (ImGui::MenuItem("dark"))
+              ImGui::StyleColorsDark();
+            if (ImGui::MenuItem("light"))
+              ImGui::StyleColorsLight();
+            if (ImGui::MenuItem("classic"))
+              ImGui::StyleColorsClassic();
+            ImGui::EndMenu();
+          }
+
+          if (ImGui::BeginMenu("colors", editor_step == Step::EDIT_MAP or editor_step == Step::SELECT_TILE_SIZING))
+          {
+            if (ImGui::BeginMenu("grid line color"))
+            {
+              ImGui::ColorPicker4(
+                "color", reinterpret_cast<float*>(&grid_line_color), ImGuiColorEditFlags_NoSmallPreview);
+              ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("selection fill color"))
+            {
+              ImGui::ColorPicker4(
+                "color", reinterpret_cast<float*>(&selection_fill_color), ImGuiColorEditFlags_NoSmallPreview);
+              ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("selection line color"))
+            {
+              ImGui::ColorPicker4(
+                "color", reinterpret_cast<float*>(&selection_line_color), ImGuiColorEditFlags_NoSmallPreview);
+              ImGui::EndMenu();
+            }
+
+            ImGui::EndMenu();
+          }
+
+          ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("view"))
+        {
+          if (ImGui::BeginMenu("zoom"))
+          {
+            ImGui::SliderFloat("zoom", &zoom_factor, 0.1f, 10.f);
+            ImGui::EndMenu();
+          }
+          ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
       }
-    }
-    ImGui::End();
 
-    // Previews texture sheets which have alread been load
-    {
-      ImGui::Begin("loaded textures");
-
-      // Handle loaded texture preview list interactions
-      auto removing_texture_itr = loaded_textures.end();
-      for (auto texture_itr = loaded_textures.begin(); texture_itr != loaded_textures.end(); ++texture_itr)
+      switch (editor_step)
       {
-        const float width = 100.f;
-        const float height_to_width =
-          static_cast<float>(texture_itr->height_px) / static_cast<float>(texture_itr->width_px);
-
-        ImGui::TextUnformatted("click to remove");
-        ImGui::SameLine();
-        if (ImGui::Button(texture_itr->file_path.filename().c_str()))
+      case Step::SELECT_LOAD_DATA:
+      {
+        if (tyl::ui::FileDialogue::UpdateStatus::Selected == dialogue.update())
         {
-          removing_texture_itr = texture_itr;
+          for (const auto& file : dialogue)
+          {
+            // Load previous session data
+            if (file.extension() == ".tyl")
+            {
+            }
+            // Load new texture for new session
+            else
+            {
+              try
+              {
+                loaded_atlas.emplace(file);
+                editor_step = Step::SELECT_TILE_SIZING;
+              }
+              catch (const std::runtime_error& err)
+              {
+                // FAILED TO LOAD IMAGE
+              }
+            }
+            break;
+          }
         }
-        ImGui::BeginChild(
-          texture_itr->file_path.filename().c_str(), ImVec2{0.f, 200.f}, true /*borders*/
-        );
-        ImGui::Image(reinterpret_cast<void*>(texture_itr->texture.get_id()), ImVec2{width, height_to_width * width});
-        ImGui::EndChild();
+        break;
+      }
+      case Step::SELECT_TILE_SIZING:
+      {
+        static constexpr float button_width = 50.f;
 
+        // Button to go back to texture selection dialogue
+        if (ImGui::Button("back", ImVec2{button_width, 0.f}))
+        {
+          editor_step = Step::SELECT_LOAD_DATA;
+        }
         if (ImGui::IsItemHovered())
         {
-          auto* const child_draw_list = ImGui::GetWindowDrawList();
-          child_draw_list->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), selection_color);
-
-          if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-          {
-            selected_texture_path.emplace(texture_itr->file_path);
-            refresh_selected_texture = true;
-          }
+          ImGui::SetTooltip("go back to file selection dialogue");
         }
-      }
 
-      // Handle texture unloading
-      if (removing_texture_itr != loaded_textures.end())
-      {
-        loaded_textures.erase(removing_texture_itr);
-        refresh_selected_texture = true;
-      }
+        ImGui::SameLine();
+        ImGui::Dummy(ImVec2{ImGui::GetWindowContentRegionWidth() - button_width, 0.f} - ImGui::GetCursorPos());
+        ImGui::SameLine();
 
-      ImGui::End();
-    }
-
-    // Handle selected texture updates
-    if (refresh_selected_texture)
-    {
-      if (selected_texture_path)
-      {
-        selected_texture_itr = std::find_if(
-          loaded_textures.begin(), loaded_textures.end(), [&selected_texture_path](const auto& texture_data) {
-            return texture_data.file_path == *selected_texture_path;
-          });
-      }
-      else
-      {
-        selected_texture_itr = loaded_textures.end();
-      }
-    }
-
-
-    // Adjacency Editor
-    ImGui::Begin("adjacency editor");
-    ImGui::PushItemWidth(200.f);
-    ImGui::ColorEdit4(
-      "cell selection color", reinterpret_cast<float*>(&selection_color), ImGuiColorEditFlags_NoSmallPreview);
-    if (
-      ImGui::IsItemClicked(ImGuiPopupFlags_MouseButtonLeft) and
-      ImGui::IsMouseDoubleClicked(ImGuiPopupFlags_MouseButtonLeft))
-    {
-      ImGui::OpenPopup("color picker");
-      color_editting = reinterpret_cast<float*>(&selection_color);
-    }
-
-    ImGui::ColorEdit4("grid color", reinterpret_cast<float*>(&grid_line_color), ImGuiColorEditFlags_NoSmallPreview);
-    if (
-      ImGui::IsItemClicked(ImGuiPopupFlags_MouseButtonLeft) and
-      ImGui::IsMouseDoubleClicked(ImGuiPopupFlags_MouseButtonLeft))
-    {
-      ImGui::OpenPopup("color picker");
-      color_editting = reinterpret_cast<float*>(&grid_line_color);
-    }
-
-    if (ImGui::BeginPopupModal("color picker"))
-    {
-      if (ImGui::Button("close"))
-      {
-        ImGui::CloseCurrentPopup();
-      }
-      ImGui::ColorPicker4("cell selection color", color_editting, ImGuiColorEditFlags_NoSmallPreview);
-      ImGui::EndPopup();
-    }
-    else
-    {
-      color_editting = nullptr;
-    }
-    ImGui::PopItemWidth();
-
-    if (selected_texture_itr != loaded_textures.end())
-    {
-      const float width = selected_texture_itr->width_px * selected_texture_itr->zoom_factor;
-      const float height = selected_texture_itr->height_px * selected_texture_itr->zoom_factor;
-      const float cell_size = selected_texture_itr->cell_size_px * selected_texture_itr->zoom_factor;
-
-      const int texture_width_c =
-        (selected_texture_itr->width_px - selected_texture_itr->left_trim_px) / selected_texture_itr->cell_size_px;
-      const int texture_height_c =
-        (selected_texture_itr->height_px - selected_texture_itr->top_trim_px) / selected_texture_itr->cell_size_px;
-
-      if (ImGui::BeginTable("##painting-sections", 2, ImGuiTableFlags_Resizable))
-      {
-        // Tile selector
+        // Button to lock-in tile size and proceed to main editor
+        if (ImGui::Button("next", ImVec2{button_width, 0.f}))
         {
+          editor_step = Step::INITIALIZE_MAP;
+        }
+        if (ImGui::IsItemHovered())
+        {
+          ImGui::SetTooltip("finalize tile size settings and proceed to editor");
+        }
+
+        // Show the loaded texture with tile division layout
+        if (ImGui::BeginTable("##tile-settings-table", 2, ImGuiTableFlags_Resizable))
+        {
+          ImGui::TableSetupColumn("##texture-preview", ImGuiTableColumnFlags_WidthStretch, 0.75f);
+          ImGui::TableSetupColumn("##tile-properties", ImGuiTableColumnFlags_WidthStretch, 0.25f);
+          ImGui::TableHeadersRow();
+
           ImGui::TableNextColumn();
+          {
+            const float image_width = loaded_atlas->width_px * zoom_factor;
+            const float image_height = loaded_atlas->height_px * zoom_factor;
+            const float tile_size = loaded_atlas->tile_size_px * zoom_factor;
+            const float image_centering_offset = std::max(0.f, (ImGui::GetContentRegionAvail().x - image_width) * 0.5f);
 
-          if (!selected_texture_itr->locked)
-          {
-            ImGui::SliderInt("cell size", &selected_texture_itr->cell_size_px, 2, 128);
-            ImGui::SliderInt("top trim", &selected_texture_itr->top_trim_px, 0, selected_texture_itr->height_px);
-            ImGui::SliderInt("left trim", &selected_texture_itr->left_trim_px, 0, selected_texture_itr->width_px);
-            selected_texture_itr->locked = ImGui::Button("lock");
-          }
-          else
-          {
-            selected_texture_itr->locked = !ImGui::Button("unlock");
-          }
-
-          {
+            // clang-format off
             ImGui::BeginChild(
-              "##tile-selector", ImVec2{0.f, 0.f}, true /*borders*/, ImGuiWindowFlags_HorizontalScrollbar);
+              loaded_atlas->file_path.filename().c_str(),
+              ImVec2{0.f, 0.f},
+              true, /*borders*/
+              ImGuiWindowFlags_HorizontalScrollbar
+            );
+            // clang-format on
 
+            // clang-format off
+            const ImVec2 origin =
+              ImGui::GetWindowPos() +
+              ImGui::GetCursorPos() -
+              ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
+              ImVec2(loaded_atlas->left_trim_px + image_centering_offset, loaded_atlas->top_trim_px);
+            // clang-format on
+
+            ImGui::SetCursorPos(ImVec2{image_centering_offset, 0.f} + ImGui::GetCursorPos());
+            ImGui::Image(reinterpret_cast<void*>(loaded_atlas->texture.get_id()), ImVec2{image_width, image_height});
+
+            auto* const drawlist = ImGui::GetWindowDrawList();
+
+            const float line_height = loaded_atlas->tile_grid_height() * tile_size;
+            for (int i = 0; i <= loaded_atlas->tile_grid_width(); i++)
             {
-              const ImVec2 origin = ImGui::GetWindowPos() + ImGui::GetCursorPos() -
-                ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
-                ImVec2(selected_texture_itr->left_trim_px, selected_texture_itr->top_trim_px);
+              drawlist->AddLine(
+                origin + ImVec2{i * tile_size, 0.f}, origin + ImVec2{i * tile_size, line_height}, grid_line_color);
+            }
 
-              ImGui::Image(reinterpret_cast<void*>(selected_texture_itr->texture.get_id()), ImVec2{width, height});
+            const float line_width = loaded_atlas->tile_grid_width() * tile_size;
+            for (int j = 0; j <= loaded_atlas->tile_grid_height(); j++)
+            {
+              drawlist->AddLine(
+                origin + ImVec2{0.f, j * tile_size}, origin + ImVec2{line_width, j * tile_size}, grid_line_color);
+            }
 
-              auto* const drawlist = ImGui::GetWindowDrawList();
-              const float line_height = texture_height_c * cell_size;
-              const float line_width = texture_width_c * cell_size;
+            ImGui::EndChild();
+          }
 
-              for (int i = 0; i <= texture_width_c; i++)
+          ImGui::TableNextColumn();
+          {
+            {
+              ImGui::BeginChild(
+                "texture-info",
+                ImVec2{0.f, ImGui::GetTextLineHeightWithSpacing() * 4.f},
+                true, /*borders*/
+                ImGuiWindowFlags_NoScrollbar);
+
+              ImGui::Text("%s", loaded_atlas->file_path.c_str());
+              ImGui::Text("%d x %d px", loaded_atlas->height_px, loaded_atlas->width_px);
+              ImGui::Text("%d x %d tiles", loaded_atlas->tile_grid_height(), loaded_atlas->tile_grid_width());
+
+              ImGui::EndChild();
+            }
+            {
+              ImGui::BeginChild(
+                "tile-property-selections",
+                ImVec2{0.f, ImGui::GetTextLineHeightWithSpacing() * 5.f},
+                true, /*borders*/
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+              ImGui::SliderInt("tile size", &loaded_atlas->tile_size_px, 2, 128);
+              ImGui::SliderInt("top trim", &loaded_atlas->top_trim_px, 0, loaded_atlas->height_px);
+              ImGui::SliderInt("left trim", &loaded_atlas->left_trim_px, 0, loaded_atlas->width_px);
+              ImGui::EndChild();
+            }
+            {
+              ImGui::BeginChild(
+                "map-property-selections",
+                ImVec2{0.f, ImGui::GetTextLineHeightWithSpacing() * 5.f},
+                true, /*borders*/
+                ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+              ImGui::SliderInt("map layer count", &map_layer_count, 1, MAP_LAYER_COUNT_MAX);
+              ImGui::SliderInt("map height", &map_height, 1, MAP_HEIGHT_MAX);
+              ImGui::SliderInt("map width", &map_width, 1, MAP_WIDTH_MAX);
+
+              ImGui::EndChild();
+            }
+          }
+          ImGui::EndTable();
+        }
+        break;
+      }
+      case Step::INITIALIZE_MAP:
+      {
+        ImGui::TextUnformatted("initializing map data...");
+        editor_step = Step::EDIT_MAP;
+        break;
+      }
+      case Step::EDIT_MAP:
+      {
+        if (map_data.empty())
+        {
+          map_data.resize(map_height, map_width, map_layer_count);
+        }
+
+        if (ImGui::BeginTable("##main-edittor-table", 2, ImGuiTableFlags_Resizable))
+        {
+          const float available_column_height = ImGui::GetContentRegionAvail().y;
+
+          ImGui::TableNextColumn();
+          {
+            // clang-format off
+            ImGui::BeginChild(
+              "##tile-selector",
+              ImVec2{0.f, available_column_height * 0.75f},
+              true, /*borders*/
+              ImGuiWindowFlags_HorizontalScrollbar
+            );
+            // clang-format on
+
+            const float image_width = loaded_atlas->width_px * zoom_factor;
+            const float image_height = loaded_atlas->height_px * zoom_factor;
+            const float tile_size = loaded_atlas->tile_size_px * zoom_factor;
+            const float image_centering_offset = std::max(0.f, (ImGui::GetContentRegionAvail().x - image_width) * 0.5f);
+
+            // clang-format off
+            const ImVec2 origin =
+              ImGui::GetWindowPos() +
+              ImGui::GetCursorPos() -
+              ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
+              ImVec2(loaded_atlas->left_trim_px + image_centering_offset, loaded_atlas->top_trim_px);
+            // clang-format on
+
+            ImGui::SetCursorPos(ImVec2{image_centering_offset, 0.f} + ImGui::GetCursorPos());
+            ImGui::Image(reinterpret_cast<void*>(loaded_atlas->texture.get_id()), ImVec2{image_width, image_height});
+
+            auto* const drawlist = ImGui::GetWindowDrawList();
+
+            const int grid_height = loaded_atlas->tile_grid_height();
+            const int grid_width = loaded_atlas->tile_grid_width();
+
+            const float line_height = grid_height * tile_size;
+            for (int i = 0; i <= grid_width; i++)
+            {
+              drawlist->AddLine(
+                origin + ImVec2{i * tile_size, 0.f}, origin + ImVec2{i * tile_size, line_height}, grid_line_color);
+            }
+
+            const float line_width = grid_width * tile_size;
+            for (int j = 0; j <= grid_height; j++)
+            {
+              drawlist->AddLine(
+                origin + ImVec2{0.f, j * tile_size}, origin + ImVec2{line_width, j * tile_size}, grid_line_color);
+            }
+
+            for (int i = 0; i < grid_height; i++)
+            {
+              for (int j = 0; j < grid_width; j++)
               {
-                drawlist->AddLine(
-                  origin + ImVec2{i * cell_size, 0.f}, origin + ImVec2{i * cell_size, line_height}, grid_line_color);
-              }
+                const ImVec2 top_left{origin + ImVec2((j + 0) * tile_size, (i + 0) * tile_size)};
+                const ImVec2 bottom_right{origin + ImVec2((j + 1) * tile_size, (i + 1) * tile_size)};
 
-              for (int j = 0; j <= texture_height_c; j++)
-              {
-                drawlist->AddLine(
-                  origin + ImVec2{0.f, j * cell_size}, origin + ImVec2{line_width, j * cell_size}, grid_line_color);
-              }
-
-              for (int i = 0; i < texture_height_c; i++)
-              {
-                for (int j = 0; j < texture_width_c; j++)
+                if ((i * grid_width + j) == selected_tile_id)
                 {
-                  const ImVec2 top_left{origin + ImVec2((j + 0) * cell_size, (i + 0) * cell_size)};
-                  const ImVec2 bottom_right{origin + ImVec2((j + 1) * cell_size, (i + 1) * cell_size)};
-
-                  if ((i * texture_width_c + j) == selected_tile_id)
+                  drawlist->AddRectFilled(top_left, bottom_right, selection_fill_color);
+                  drawlist->AddRect(top_left, bottom_right, selection_line_color);
+                }
+                else if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
+                {
+                  drawlist->AddRectFilled(top_left, bottom_right, selection_fill_color);
+                  if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
                   {
-                    drawlist->AddRectFilled(top_left, bottom_right, selection_color);
-                  }
-
-                  if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
-                  {
-                    drawlist->AddRectFilled(top_left, bottom_right, selection_color);
-                    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-                    {
-                      selected_tile_id = i * texture_width_c + j;
-                    }
+                    selected_tile_id = i * grid_width + j;
                   }
                 }
               }
@@ -405,69 +590,134 @@ int main(int argc, char** argv)
 
             ImGui::EndChild();
           }
-        }
-
-        // Tile painter
-        {
-          ImGui::TableNextColumn();
-          ImGui::SliderFloat("zoom", &selected_texture_itr->zoom_factor, 1.f, 10.f);
-
-          bool resize_map = false;
-          resize_map |= ImGui::SliderInt("map height", &map_height, 20, 2000);
-          resize_map |= ImGui::SliderInt("map width", &map_width, 20, 2000);
-
-          if (resize_map)
-          {
-            map_data.resize(map_height * map_width, -1);
-          }
 
           {
+            // clang-format off
             ImGui::BeginChild(
-              "##tile-painter", ImVec2{0.f, 0.f}, true /*borders*/, ImGuiWindowFlags_HorizontalScrollbar);
+              "##layer-selector",
+              ImVec2{0.f, available_column_height * 0.25f},
+              true, /*borders*/
+              ImGuiWindowFlags_HorizontalScrollbar
+            );
+            // clang-format on
 
-            const ImVec2 origin = ImGui::GetWindowPos() + ImGui::GetCursorPos() -
-              ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
-              ImVec2(selected_texture_itr->left_trim_px, selected_texture_itr->top_trim_px);
-
-            ImGui::InvisibleButton("##nav-deadzone", ImVec2{map_width * cell_size, map_height * cell_size});
-
-            auto* const drawlist = ImGui::GetWindowDrawList();
-            const float line_height = map_height * cell_size;
-            const float line_width = map_width * cell_size;
-
-            for (int i = 0; i < map_height; i++)
+            if (ImGui::BeginTable("##layer-selector-table", 2, ImGuiTableFlags_Resizable))
             {
-              for (int j = 0; j < map_width; j++)
               {
-                const ImVec2 top_left{origin + ImVec2((j + 0) * cell_size, (i + 0) * cell_size)};
-                const ImVec2 bottom_right{origin + ImVec2((j + 1) * cell_size, (i + 1) * cell_size)};
+                ImGui::TableSetupColumn("editting", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+                ImGui::TableSetupColumn("visibility", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+                ImGui::TableHeadersRow();
+              }
 
-                if (const int id = map_data[i * map_width + j]; id >= 0)
+              for (int l = 0; l < static_cast<int>(map_data.layers.size()); ++l)
+              {
+                ImGui::TableNextColumn();
+                ImGui::PushID(l);
+                if (ImGui::RadioButton(map_data.layer_labels[l].c_str(), selected_edit_map_layer == l))
                 {
-                  ImGui::SetCursorScreenPos(top_left);
-                  const int x = id / texture_width_c;
-                  const int y = id % texture_width_c;
-                  const float v0 = (1.0f / texture_height_c) * (x + 0);
-                  const float v1 = (1.0f / texture_height_c) * (x + 1);
-                  const float u0 = (1.0f / texture_width_c) * (y + 0);
-                  const float u1 = (1.0f / texture_width_c) * (y + 1);
-                  ImGui::Image(
-                    reinterpret_cast<void*>(selected_texture_itr->texture.get_id()),
-                    ImVec2{cell_size, cell_size},
-                    ImVec2{u0, v0},
-                    ImVec2{u1, v1});
+                  selected_edit_map_layer = l;
                 }
 
-                if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
+                ImGui::TableNextColumn();
+                if (ImGui::RadioButton("visible", map_data.layer_visibility[l]))
                 {
-                  drawlist->AddRectFilled(top_left, bottom_right, selection_color);
-                  if (selected_tile_id > -1 and ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                  map_data.layer_visibility[l] = !map_data.layer_visibility[l];
+                }
+              }
+
+              for (int l = 0; l < static_cast<int>(map_data.layers.size()); ++l)
+              {
+                ImGui::PopID();
+              }
+
+              ImGui::EndTable();
+            }
+
+            ImGui::EndChild();
+          }
+
+          ImGui::TableNextColumn();
+          {
+            ImGui::BeginChild("##map-editor", ImVec2{0.f, 0.f}, true /*borders*/, ImGuiWindowFlags_HorizontalScrollbar);
+
+            // clang-format off
+            const ImVec2 origin =
+              ImGui::GetWindowPos() +
+              ImGui::GetCursorPos() -
+              ImVec2{ImGui::GetScrollX(), ImGui::GetScrollY()} +
+              ImVec2(loaded_atlas->left_trim_px, loaded_atlas->top_trim_px);
+            // clang-format on
+
+            const int atlas_grid_height = loaded_atlas->tile_grid_height();
+            const int atlas_grid_width = loaded_atlas->tile_grid_width();
+            const float tile_size = loaded_atlas->tile_size_px * zoom_factor;
+
+            ImGui::InvisibleButton("##nav-deadzone", ImVec2{map_width * tile_size, map_height * tile_size});
+
+            auto* const drawlist = ImGui::GetWindowDrawList();
+            const float line_height = map_height * tile_size;
+            const float line_width = map_width * tile_size;
+
+            for (std::size_t l = 0; l != map_data.layers.size(); ++l)
+            {
+              if (!map_data.layer_visibility[l])
+              {
+                continue;
+              }
+
+              auto& layer = map_data.layers[l];
+
+              for (int i = 0; i < map_height; i++)
+              {
+                for (int j = 0; j < map_width; j++)
+                {
+                  const ImVec2 top_left{origin + ImVec2((j + 0) * tile_size, (i + 0) * tile_size)};
+                  if (const int id = layer[i * map_width + j]; id >= 0)
                   {
-                    map_data[i * map_width + j] = selected_tile_id;
+                    ImGui::SetCursorScreenPos(top_left);
+                    const int x = id / atlas_grid_width;
+                    const int y = id % atlas_grid_width;
+                    const float v0 = (1.0f / atlas_grid_height) * (x + 0);
+                    const float v1 = (1.0f / atlas_grid_height) * (x + 1);
+                    const float u0 = (1.0f / atlas_grid_width) * (y + 0);
+                    const float u1 = (1.0f / atlas_grid_width) * (y + 1);
+                    ImGui::Image(
+                      reinterpret_cast<void*>(loaded_atlas->texture.get_id()),
+                      ImVec2{tile_size, tile_size},
+                      ImVec2{u0, v0},
+                      ImVec2{u1, v1});
                   }
-                  else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                }
+              }
+            }
+
+            {
+              auto& layer = map_data.layers[selected_edit_map_layer];
+              for (int i = 0; i < map_height; i++)
+              {
+                for (int j = 0; j < map_width; j++)
+                {
+                  const ImVec2 top_left{origin + ImVec2((j + 0) * tile_size, (i + 0) * tile_size)};
+                  const ImVec2 bottom_right{origin + ImVec2((j + 1) * tile_size, (i + 1) * tile_size)};
+                  if (ImGui::IsMouseHoveringRect(top_left, bottom_right))
                   {
-                    map_data[i * map_width + j] = -1;
+                    drawlist->AddRectFilled(top_left, bottom_right, selection_fill_color);
+                    if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+                    {
+                      layer[i * map_width + j] = MapData::NO_TILE;
+                    }
+                    else if (selected_tile_id != MapData::NO_TILE)
+                    {
+                      const int current_id = layer[i * map_width + j];
+                      if (current_id == MapData::NO_TILE and ImGui::IsMouseDown(ImGuiMouseButton_Left))
+                      {
+                        layer[i * map_width + j] = selected_tile_id;
+                      }
+                      else if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                      {
+                        layer[i * map_width + j] = selected_tile_id;
+                      }
+                    }
                   }
                 }
               }
@@ -476,24 +726,29 @@ int main(int argc, char** argv)
             for (int i = 0; i <= map_width; i++)
             {
               drawlist->AddLine(
-                origin + ImVec2{i * cell_size, 0.f}, origin + ImVec2{i * cell_size, line_height}, grid_line_color);
+                origin + ImVec2{i * tile_size, 0.f}, origin + ImVec2{i * tile_size, line_height}, grid_line_color);
             }
 
             for (int j = 0; j <= map_height; j++)
             {
               drawlist->AddLine(
-                origin + ImVec2{0.f, j * cell_size}, origin + ImVec2{line_width, j * cell_size}, grid_line_color);
+                origin + ImVec2{0.f, j * tile_size}, origin + ImVec2{line_width, j * tile_size}, grid_line_color);
             }
 
             ImGui::EndChild();
           }
+
+          ImGui::EndTable();
         }
-
-        ImGui::EndTable();
+        break;
       }
+      default:
+      {
+        break;
+      }
+      }  // switch (editor_step)
+      ImGui::End();
     }
-
-    ImGui::End();
 
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
@@ -502,7 +757,6 @@ int main(int argc, char** argv)
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    int display_w, display_h;
     glfwGetFramebufferSize(window, &display_w, &display_h);
     glViewport(0, 0, display_w, display_h);
     glfwSwapBuffers(window);
