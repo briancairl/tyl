@@ -17,4 +17,11 @@ using DomainChunkType = std::uint8_t;
 
 static constexpr unsigned DomainChunkBits = 8 * sizeof(DomainChunkType);
 
+struct Loc
+{
+  std::size_t layer;
+  std::size_t x;
+  std::size_t y;
+};
+
 }  // namespace tyl::wfc

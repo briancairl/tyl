@@ -19,9 +19,12 @@
 #include <GLFW/glfw3.h>
 
 // Tyl
+#include <tyl/common/array_view/std_vector.hpp>
 #include <tyl/graphics/image.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/ui/file_dialogue.hpp>
+#include <tyl/wfc/adjacency.hpp>
+#include <tyl/wfc/wave.hpp>
 
 /**
  * @brief Logging callback for when glfw shits a brick
@@ -116,6 +119,8 @@ struct TileAtlasData
   inline int tile_grid_height() const { return (this->height_px - this->top_trim_px) / this->tile_size_px; }
 
   inline int tile_grid_width() const { return (this->width_px - this->left_trim_px) / this->tile_size_px; }
+
+  inline std::size_t total() const { return tile_grid_width() * tile_grid_height(); }
 };
 
 enum class Step
@@ -163,6 +168,11 @@ struct MapData
   std::vector<std::string> layer_labels;
   std::vector<std::uint8_t> layer_visibility;
 };
+
+
+static std::optional<tyl::wfc::adjacency::Table> adj_table;
+static std::optional<tyl::wfc::Wave> wave;
+static std::vector<float> tile_probabilities;
 
 
 int main(int argc, char** argv)
@@ -237,7 +247,7 @@ int main(int argc, char** argv)
   static constexpr int MAP_HEIGHT_MAX = 5000;
   static constexpr int MAP_WIDTH_MAX = 5000;
 
-  int map_layer_count = 1;
+  int map_layer_count = 2;
   int map_height = 100;
   int map_width = 100;
 
@@ -515,6 +525,11 @@ int main(int argc, char** argv)
           map_data.resize(map_height, map_width, map_layer_count);
         }
 
+        if (tile_probabilities.size() != loaded_atlas->total())
+        {
+          tile_probabilities.resize(loaded_atlas->total(), 0.f);
+        }
+
         if (ImGui::BeginTable("##main-edittor-table", 2, ImGuiTableFlags_Resizable))
         {
           const float available_column_height = ImGui::GetContentRegionAvail().y;
@@ -572,7 +587,8 @@ int main(int argc, char** argv)
                 const ImVec2 top_left{origin + ImVec2((j + 0) * tile_size, (i + 0) * tile_size)};
                 const ImVec2 bottom_right{origin + ImVec2((j + 1) * tile_size, (i + 1) * tile_size)};
 
-                if ((i * grid_width + j) == selected_tile_id)
+                const int index = i * grid_width + j;
+                if (index == selected_tile_id)
                 {
                   drawlist->AddRectFilled(top_left, bottom_right, selection_fill_color);
                   drawlist->AddRect(top_left, bottom_right, selection_line_color);
@@ -582,8 +598,14 @@ int main(int argc, char** argv)
                   drawlist->AddRectFilled(top_left, bottom_right, selection_fill_color);
                   if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
                   {
-                    selected_tile_id = i * grid_width + j;
+                    selected_tile_id = index;
                   }
+                }
+
+                {
+                  static char num_buffer[10];
+                  std::sprintf(num_buffer, "%.3f", tile_probabilities[index]);
+                  drawlist->AddText(top_left, grid_line_color, num_buffer, nullptr);
                 }
               }
             }
@@ -595,7 +617,7 @@ int main(int argc, char** argv)
             // clang-format off
             ImGui::BeginChild(
               "##layer-selector",
-              ImVec2{0.f, available_column_height * 0.25f},
+              ImVec2{0.f, available_column_height * 0.15f},
               true, /*borders*/
               ImGuiWindowFlags_HorizontalScrollbar
             );
@@ -631,6 +653,113 @@ int main(int argc, char** argv)
               }
 
               ImGui::EndTable();
+            }
+
+            ImGui::EndChild();
+          }
+
+          {
+            ImGui::BeginChild(
+              "##wfc",
+              ImVec2{0.f, available_column_height * 0.05f},
+              true, /*borders*/
+              ImGuiWindowFlags_HorizontalScrollbar);
+
+            if (ImGui::Button("auto fill"))
+            {
+              using namespace tyl::wfc;
+
+              adj_table.emplace(loaded_atlas->total());
+
+              std::vector<std::size_t> hist;
+              hist.resize(loaded_atlas->total(), 0.f);
+              for (int l = 0; l < map_layer_count; ++l)
+              {
+                auto& layer = map_data.layers[l];
+                for (int i = 1; i < map_height - 1; i++)
+                {
+                  for (int j = 1; j < map_width - 1; j++)
+                  {
+                    const auto id = layer[i * map_width + j];
+
+                    if (id < 0)
+                    {
+                      continue;
+                    }
+
+                    hist[id]++;
+
+                    constexpr static std::array<std::tuple<int, int, adjacency::Direction>, 4> sce_cardinal_offsets{{
+                      {-1, 0, adjacency::Direction::Up},
+                      {+1, 0, adjacency::Direction::Down},
+                      {0, -1, adjacency::Direction::Left},
+                      {0, +1, adjacency::Direction::Right},
+                    }};
+
+                    for (const auto [di, dj, direction] : sce_cardinal_offsets)
+                    {
+                      if (const auto other_id = layer[(i + di) * map_width + (j + dj)]; other_id < 0)
+                      {
+                        continue;
+                      }
+                      else
+                      {
+                        adj_table->allow(id, other_id, direction);
+                      }
+                    }
+                  }
+                }
+
+
+                if (l > 0)
+                {
+                  for (int i = 1; i < map_height - 1; i++)
+                  {
+                    for (int j = 1; j < map_width - 1; j++)
+                    {
+                      const auto id = map_data.layers[l][i * map_width + j];
+                      const auto other_id = map_data.layers[l - 1][i * map_width + j];
+                      if (id > -1 and other_id > -1)
+                      {
+                        adj_table->allow(id, other_id, adjacency::Direction::Below);
+                      }
+                    }
+                  }
+                }
+
+                if (l < map_layer_count - 1)
+                {
+                  for (int i = 1; i < map_height - 1; i++)
+                  {
+                    for (int j = 1; j < map_width - 1; j++)
+                    {
+                      const auto id = map_data.layers[l][i * map_width + j];
+                      const auto other_id = map_data.layers[l + 1][i * map_width + j];
+                      if (id > -1 and other_id > -1)
+                      {
+                        adj_table->allow(id, other_id, adjacency::Direction::Above);
+                      }
+                    }
+                  }
+                }
+              }
+
+              const std::size_t total = std::accumulate(
+                hist.begin(), hist.end(), 0UL, [](const std::size_t prev, const std::size_t count) -> std::size_t {
+                  return prev + count;
+                });
+
+              tile_probabilities.resize(hist.size());
+              std::transform(
+                hist.begin(),
+                hist.end(),
+                tile_probabilities.begin(),
+                [div = 1.f / total](const std::size_t count) -> float { return div * count; });
+
+              wave.emplace(WaveParameters{.layer_count = static_cast<std::size_t>(map_layer_count),
+                                          .row_count = static_cast<std::size_t>(map_height),
+                                          .col_count = static_cast<std::size_t>(map_width),
+                                          .element_probabilities = tyl::make_const_array_view(tile_probabilities)});
             }
 
             ImGui::EndChild();

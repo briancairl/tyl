@@ -5,6 +5,8 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/wfc",
   deps=[
+    "//lib/common:assert",
+    "//lib/common:array_view",
     "//lib/common:bitops"
   ],
   visibility=["//visibility:public"]
