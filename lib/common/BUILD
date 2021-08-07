@@ -1,4 +1,14 @@
 cc_library(
+  name="bitops",
+  hdrs=["include/bitops.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="filesystem",
   hdrs=["include/filesystem.hpp"],
   strip_include_prefix="include",
