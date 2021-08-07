@@ -1,0 +1,11 @@
+cc_library(
+  name="wfc",
+  hdrs=glob(["include/*.hpp"]),
+  srcs=glob(["src/*.cpp"]),
+  strip_include_prefix="include",
+  include_prefix="tyl/wfc",
+  deps=[
+    "//lib/common:bitops"
+  ],
+  visibility=["//visibility:public"]
+)
