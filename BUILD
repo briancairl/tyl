@@ -23,8 +23,8 @@ MODE_LINKOPTS = select({
 })
 
 cc_binary(
-    name="main",
-    srcs=["main.cpp"],
+    name="map-generator",
+    srcs=["map-generator.cpp"],
     deps=["//lib/graphics", "//lib/ui", "//lib/wfc", "@imgui//:imgui_cpp"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
