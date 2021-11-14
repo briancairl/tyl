@@ -31,3 +31,14 @@ cc_binary(
     copts=MODE_COPTS,
     data=[]
 )
+
+
+cc_binary(
+    name="engine",
+    srcs=["engine.cpp"],
+    deps=["//lib/graphics", "//lib/ui", "@imgui//:imgui_cpp"],
+    visibility=["//visibility:public"],
+    linkopts=MODE_LINKOPTS,
+    copts=MODE_COPTS,
+    data=[]
+)
