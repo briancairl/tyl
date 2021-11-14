@@ -29,6 +29,15 @@ new_git_repository(
   build_file="@//external:stb.BUILD",
 )
 
+# SPDLOG
+new_git_repository(
+  name="spdlog",
+  remote="git@github.com:gabime/spdlog.git",
+  commit="5b4c4f3f770acbd25400d866f3fc2fdf669d5b7e",
+  shallow_since="1627377994 +0300",
+  build_file="@//external:spdlog.BUILD",
+)
+
 # GTest/GMock
 http_archive(
     name="googletest",
