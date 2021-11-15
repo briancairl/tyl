@@ -3,6 +3,13 @@ workspace(name="tyl")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Entt
+git_repository(
+  name="entt",
+  remote="https://github.com/skypjack/entt.git",
+  commit="7a949dd32849e8230b15a5ff8ad1104c7f748c2a",
+  shallow_since="1610207127 +0100"
+)
 
 # ImGui
 http_archive(
