@@ -12,16 +12,22 @@
 #include <GLFW/glfw3.h>
 
 // Tyl
+#include <tyl/logging/logging.hpp>
 #include <tyl/ui/style.hpp>
 
 /**
  * @brief Logging callback for when glfw shits a brick
  */
-static void glfw_error_callback(int error, const char* description) {}
+static void glfw_error_callback(int error, const char* description)
+{
+  TYL_CRITICAL("[glfw] error-code={d} msg={}", error, description);
+}
 
 
 int main(int argc, char** argv)
 {
+  tyl::logging::initialize();
+
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
   if (!glfwInit())
@@ -75,6 +81,7 @@ int main(int argc, char** argv)
 
   ImVec4 bg_color{0.1f, 0.1f, 0.1f, 1.0f};
 
+  TYL_INFO("[main] starting");
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -96,6 +103,7 @@ int main(int argc, char** argv)
     glViewport(0, 0, display_w, display_h);
     glfwSwapBuffers(window);
   }
+  TYL_INFO("[main] closing");
 
   // Cleanup
   ImGui_ImplOpenGL3_Shutdown();
