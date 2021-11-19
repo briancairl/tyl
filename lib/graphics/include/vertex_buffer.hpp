@@ -3,8 +3,7 @@
  *
  * @file vertex_buffer.hpp
  */
-#ifndef TYL_GRAPHICS_VERTEX_BUFFER_HPP
-#define TYL_GRAPHICS_VERTEX_BUFFER_HPP
+#pragma once
 
 // C++ Standard Library
 #include <cstdint>
@@ -133,5 +132,3 @@ private:
 };
 
 }  // namespace tyl::graphics
-
-#endif  // TYL_GRAPHICS_VERTEX_BUFFER_HPP

@@ -3,8 +3,7 @@
  *
  * @file shader.h
  */
-#ifndef TYL_GRAPHICS_SHADER_H
-#define TYL_GRAPHICS_SHADER_H
+#pragma once
 
 // C++ Standard Library
 #include <cstdint>
@@ -190,5 +189,3 @@ private:
 std::string get_shader_version_preamble();
 
 }  // namespace tyl::graphics
-
-#endif  // TYL_GRAPHICS_SHADER_H

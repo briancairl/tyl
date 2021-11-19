@@ -3,8 +3,7 @@
  *
  * @file texture.h
  */
-#ifndef TYL_GRAPHICS_TEXTURE_H
-#define TYL_GRAPHICS_TEXTURE_H
+#pragma once
 
 // C++ Standard Library
 #include <cstdint>
@@ -325,5 +324,3 @@ inline Texture create_texture_from_merged(
 }
 
 }  // namespace tyl::graphics
-
-#endif  // TYL_GRAPHICS_TEXTURE_H

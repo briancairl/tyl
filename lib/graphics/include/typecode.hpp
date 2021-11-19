@@ -3,8 +3,7 @@
  *
  * @file typecode.h
  */
-#ifndef TYL_GRAPHICS_TYPECODE_H
-#define TYL_GRAPHICS_TYPECODE_H
+#pragma once
 
 // C++ Standard Library
 #include <cstdint>
@@ -65,5 +64,3 @@ template <> constexpr TypeCode type_to_code<unsigned>()
 };
 
 }  // arg::graphics
-
-#endif  // TYL_GRAPHICS_TYPECODE_H
