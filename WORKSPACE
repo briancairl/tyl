@@ -11,6 +11,23 @@ git_repository(
   shallow_since="1610207127 +0100"
 )
 
+# MultiFieldArray
+git_repository(
+  name="multi_field_array",
+  remote="git@github.com:briancairl/multi_field_array.git",
+  commit="f65a42d8eb9f0ee5bc691b994e36f49de338a2d7",
+  shallow_since="1633584653 -0400"
+)
+
+# Eigen
+http_archive(
+    name="eigen",
+    url="https://github.com/eigenteam/eigen-git-mirror/archive/3.3.4.zip",
+    sha256="f5580adc34ea45a4c30200e4100f8a55c55af22b77d4ed05985118fd0b15b77e",
+    build_file="eigen.BUILD",
+    strip_prefix="eigen-git-mirror-3.3.4",
+)
+
 # ImGui
 http_archive(
   name="imgui",
