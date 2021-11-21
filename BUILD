@@ -36,7 +36,7 @@ cc_binary(
 cc_binary(
     name="engine",
     srcs=["engine.cpp"],
-    deps=["//lib/graphics", "//lib/engine:app", "@multi_field_array//:mf", "@eigen//:eigen"],
+    deps=["//lib/render", "//lib/engine:app", "@multi_field_array//:mf", "@entt//:entt"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,
