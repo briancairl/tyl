@@ -32,6 +32,6 @@ struct TopDownCamera
  *
  * @return 3x3 view matrix
  */
-Mat3f get_view_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size);
+Mat3f make_view_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size);
 
 }  // namespace tyl::render

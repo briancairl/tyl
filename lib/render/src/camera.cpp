@@ -20,7 +20,7 @@ inline float aspect_ratio(const ViewportSize& vs)
 
 }  // namespace anonymous
 
-Mat3f get_view_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size)
+Mat3f make_view_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size)
 {
   const float rectified_zoom = std::ceil(100 * camera.zoom) / 100.f;
   const float rectified_panning_x = std::round(100 * camera.panning.x()) / 100.f;

@@ -84,10 +84,11 @@ int main(int argc, char** argv)
       in vec2 vTexCoord;
 
       uniform sampler2D uTextureID;
+      uniform vec4 uShading;
 
       void main()
       {
-        FragColor = texture(uTextureID, vTexCoord);
+        FragColor = 0.5 * uShading + 0.5 * texture(uTextureID, vTexCoord);
       }
 
       )FragmentShader"
@@ -99,6 +100,8 @@ int main(int argc, char** argv)
 
   registry.set<tyl::render::TopDownCamera>();
 
+  ImVec4 shading_color{1.f, 1.f, 1.f, 1.f};
+
   return app.run([&](const tyl::render::ViewportSize& window_size) -> bool {
     auto& camera = registry.ctx<tyl::render::TopDownCamera>();
     ImGui::Begin("camera");
@@ -107,7 +110,7 @@ int main(int argc, char** argv)
     ImGui::SliderFloat("panning.x", &camera.panning[0], -10.f, 10.f);
     ImGui::SliderFloat("panning.y", &camera.panning[1], -10.f, 10.f);
 
-    const auto view_matrix = tyl::render::get_view_matrix(camera, window_size);
+    const auto view_matrix = tyl::render::make_view_matrix(camera, window_size);
 
     ImGui::Text(
       "[%8.3f, %8.3f, %8.3f]\n"
@@ -127,10 +130,15 @@ int main(int argc, char** argv)
 
     const tyl::Mat3f model{tyl::Mat3f::Identity()};
 
+    ImGui::Begin("rendering");
+    ImGui::ColorPicker4("color", reinterpret_cast<float*>(&shading_color), ImGuiColorEditFlags_NoSmallPreview);
+    ImGui::End();
+
     shader.bind();
     shader.setMat3("uView", view_matrix.data());
     shader.setMat3("uModel", model.data());
     shader.setMat3("uTextureID", 0);
+    shader.setVec4("uShading", reinterpret_cast<const float*>(&shading_color));
     new_mesh.draw();
 
     return true;
