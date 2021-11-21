@@ -25,7 +25,8 @@ public:
 
   Image& operator=(Image&& other) = default;
 
-  static Image load_from_file(const char* filename, const int force_channel_count = 0);
+  static Image
+  load_from_file(const char* filename, const int force_channel_count = 0, const bool flip_vertically = false);
 
   inline int rows() const { return rows_; }
 

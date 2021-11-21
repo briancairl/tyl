@@ -32,8 +32,10 @@ Image::~Image()
   }
 }
 
-Image Image::load_from_file(const char* filename, const int force_channel_count)
+Image Image::load_from_file(const char* filename, const int force_channel_count, const bool flip_vertically)
 {
+  stbi_set_flip_vertically_on_load(flip_vertically);
+
   Image im;
   int source_channels = 0;
   auto* im_ptr = stbi_load(filename, &im.cols_, &im.rows_, &source_channels, force_channel_count);

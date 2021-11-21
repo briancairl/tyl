@@ -44,10 +44,10 @@ int main(int argc, char** argv)
 
   {
     const Vec2f points[] = {
-      Vec2f{0.f, 0.f},
-      Vec2f{1.f, 0.f},
-      Vec2f{1.f, 1.f},
       Vec2f{0.f, 1.f},
+      Vec2f{1.f, 1.f},
+      Vec2f{1.f, 0.f},
+      Vec2f{0.f, 0.f},
     };
     new_mesh.set_vertex_data(1, reinterpret_cast<const float*>(points));
   }
@@ -63,14 +63,13 @@ int main(int argc, char** argv)
       layout (location = 0) in vec2 aPos;
       layout (location = 1) in vec2 aTexCoord;
 
-      uniform mat3 uModel;
-      uniform mat3 uView;
+      uniform mat3 uModelView;
 
       out vec2 vTexCoord;
 
       void main()
       {
-        gl_Position =  vec4(uView * uModel * vec3(aPos, 1), 1);
+        gl_Position =  vec4(uModelView * vec3(aPos, 1), 1);
         vTexCoord = aTexCoord;
       }
 
@@ -102,6 +101,8 @@ int main(int argc, char** argv)
 
   ImVec4 shading_color{1.f, 1.f, 1.f, 1.f};
 
+  tyl::Vec3f model_state{0.f, 0.f, 0.f};
+
   return app.run([&](const tyl::render::ViewportSize& window_size) -> bool {
     auto& camera = registry.ctx<tyl::render::TopDownCamera>();
     ImGui::Begin("camera");
@@ -128,15 +129,29 @@ int main(int argc, char** argv)
 
     ImGui::End();
 
-    const tyl::Mat3f model{tyl::Mat3f::Identity()};
+    ImGui::Begin("model");
+    ImGui::InputFloat3("state", model_state.data());
+    ImGui::End();
+
+    tyl::Mat3f model;
+    model(0, 0) = std::cos(model_state.z());
+    model(0, 1) = -std::sin(model_state.z());
+    model(0, 2) = model_state.x();
+    model(1, 0) = std::sin(model_state.z());
+    model(1, 1) = std::cos(model_state.z());
+    model(1, 2) = model_state.y();
+    model(2, 0) = 0.f;
+    model(2, 1) = 0.f;
+    model(2, 2) = 1.f;
+
 
     ImGui::Begin("rendering");
     ImGui::ColorPicker4("color", reinterpret_cast<float*>(&shading_color), ImGuiColorEditFlags_NoSmallPreview);
     ImGui::End();
 
     shader.bind();
-    shader.setMat3("uView", view_matrix.data());
-    shader.setMat3("uModel", model.data());
+    const tyl::Mat3f mvp{view_matrix * model};
+    shader.setMat3("uModelView", mvp.data());
     shader.setMat3("uTextureID", 0);
     shader.setVec4("uShading", reinterpret_cast<const float*>(&shading_color));
     new_mesh.draw();

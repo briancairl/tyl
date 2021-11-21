@@ -28,9 +28,9 @@ Mat3f make_view_matrix(const TopDownCamera& camera, const ViewportSize& viewport
 
   Mat3f cm = Mat3f::Zero();
   cm(0, 0) = rectified_zoom * aspect_ratio(viewport_size);
-  cm(1, 1) = -rectified_zoom;
-  cm(0, 2) = -rectified_panning_x;
-  cm(1, 2) = -rectified_panning_y;
+  cm(1, 1) = rectified_zoom;
+  cm(0, 2) = rectified_panning_x;
+  cm(1, 2) = rectified_panning_y;
   cm(2, 2) = 1.0f;
   return cm.inverse().eval();
 }
