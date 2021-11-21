@@ -55,8 +55,10 @@ int main(int argc, char** argv)
   const Texture texture{Image::load_from_file("/home/brian/Downloads/smol_bilal_cat.png")};
   texture.bind(0);
 
-  const Shader shader{ShaderSource{get_shader_version_preamble() +
-                                     R"VertexShader(
+  // clang-format off
+  const Shader shader{
+    ShaderSource::vertex(
+      R"VertexShader(
 
       layout (location = 0) in vec2 aPos;
       layout (location = 1) in vec2 aTexCoord;
@@ -72,10 +74,10 @@ int main(int argc, char** argv)
         vTexCoord = aTexCoord;
       }
 
-      )VertexShader",
-                                   ShaderType::VERTEX},
-                      ShaderSource{get_shader_version_preamble() +
-                                     R"FragmentShader(
+      )VertexShader"
+    ),
+    ShaderSource::fragment(
+      R"FragmentShader(
 
       out vec4 FragColor;
 
@@ -88,8 +90,10 @@ int main(int argc, char** argv)
         FragColor = texture(uTextureID, vTexCoord);
       }
 
-      )FragmentShader",
-                                   ShaderType::FRAGMENT}};
+      )FragmentShader"
+    )
+  };
+  // clang-format on
 
   entt::registry registry;
 

@@ -5,8 +5,11 @@
  */
 
 // C++ Standard Library
+#include <algorithm>
+#include <exception>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 // Art
 #include <tyl/graphics/gl.hpp>
@@ -14,8 +17,58 @@
 
 namespace tyl::graphics
 {
+namespace  // anonymous
+{
 
-inline static GLuint to_gl_shader_code(const ShaderType shader_type)
+/**
+ * @brief Exception thrown when a Shader program fails to compile
+ */
+class GLShaderCompilationFailure final : public std::exception
+{
+public:
+  template <typename DetailsT>
+  explicit GLShaderCompilationFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
+  {}
+
+  const char* what() const noexcept override { return details_.c_str(); }
+
+private:
+  std::string details_;
+};
+
+/**
+ * @brief Exception thrown when a Shader program fails to link
+ */
+class GLShaderLinkageFailure final : public std::exception
+{
+public:
+  template <typename DetailsT>
+  explicit GLShaderLinkageFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
+  {}
+
+  const char* what() const noexcept override { return details_.c_str(); }
+
+private:
+  std::string details_;
+};
+
+/**
+ * @brief Exception thrown when a Shader program source cannot be loaded from disk
+ */
+class ShaderFileReadFailure final : public std::exception
+{
+public:
+  template <typename DetailsT>
+  explicit ShaderFileReadFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
+  {}
+
+  const char* what() const noexcept override { return details_.c_str(); }
+
+private:
+  std::string details_;
+};
+
+inline GLuint to_gl_shader_code(const ShaderType shader_type)
 {
   switch (shader_type)
   {
@@ -32,7 +85,7 @@ inline static GLuint to_gl_shader_code(const ShaderType shader_type)
 }
 
 
-inline static const char* to_gl_shader_str(const ShaderType shader_type)
+inline const char* to_gl_shader_str(const ShaderType shader_type)
 {
   switch (shader_type)
   {
@@ -48,17 +101,16 @@ inline static const char* to_gl_shader_str(const ShaderType shader_type)
   return "ShaderType[INVALID]";
 }
 
-inline static shader_id_t create_gl_shader_source(const ShaderType shader_type)
+inline shader_id_t create_gl_shader_source(const ShaderType shader_type)
 {
   return glCreateShader(to_gl_shader_code(shader_type));
 }
 
 
-inline static shader_id_t create_gl_shader() { return glCreateProgram(); }
+inline shader_id_t create_gl_shader() { return glCreateProgram(); }
 
 
-static void
-validate_gl_shader_compilation(const GLuint shader_id, const ShaderType shader_type, const std::string& code)
+void validate_gl_shader_compilation(const GLuint shader_id, const ShaderType shader_type)
 {
   // Check compilation status
   GLint success;
@@ -83,12 +135,12 @@ validate_gl_shader_compilation(const GLuint shader_id, const ShaderType shader_t
     oss << "glCompileShader [" << to_gl_shader_str(shader_type) << ':' << shader_id << "]\n\n(" << written
         << " char)\n\n"
         << info_log_contents;
-    throw ShaderSource::CompilationFailure{oss.str()};
+    throw GLShaderCompilationFailure{oss.str()};
   }
 }
 
 
-static void validate_gl_shader_linkage(const GLuint program_id)
+void validate_gl_shader_linkage(const GLuint program_id)
 {
   // Check compilation status
   GLint success;
@@ -111,16 +163,26 @@ static void validate_gl_shader_linkage(const GLuint program_id)
 
     std::ostringstream oss;
     oss << "glLinkProgram [" << program_id << "]\n\n(" << written << " char)\n\n" << info_log_contents;
-    throw ShaderSource::LinkageFailure{oss.str()};
+    throw GLShaderLinkageFailure{oss.str()};
   }
 }
 
-ShaderSource::ShaderSource(std::string code, const ShaderType type) :
+void put_shader_version_preamble(std::ostream& os)
+{
+  GLint major, minor;
+  glGetIntegerv(GL_MAJOR_VERSION, &major);
+  glGetIntegerv(GL_MINOR_VERSION, &minor);
+  os << "#version " << major << minor << 0 << "\n\n";
+}
+
+}  // namespace anonymous
+
+ShaderSource::ShaderSource(std::string_view code, const ShaderType type) :
     shader_id_{create_gl_shader_source(type)},
     shader_type_{type}
 {
   // Transfer source code
-  const char* c_code = code.c_str();
+  const char* c_code = code.data();
   const GLint c_len = code.size();
   glShaderSource(*shader_id_, 1, &c_code, &c_len);
 
@@ -128,7 +190,7 @@ ShaderSource::ShaderSource(std::string code, const ShaderType type) :
   glCompileShader(*shader_id_);
 
   // Validate compilation
-  validate_gl_shader_compilation(*shader_id_, type, code);
+  validate_gl_shader_compilation(*shader_id_, type);
 }
 
 ShaderSource::ShaderSource(ShaderSource&& other) : shader_id_{other.shader_id_} { other.shader_id_.reset(); }
@@ -139,28 +201,55 @@ ShaderSource& ShaderSource::operator=(ShaderSource&& other)
   return *this;
 }
 
-ShaderSource ShaderSource::load_from_file(const char* filename, const std::string& premable, const ShaderType type)
+ShaderSource ShaderSource::vertex(std::string_view code)
 {
-  std::ifstream ifs{filename};
-  if (ifs.is_open())
+  std::ostringstream oss;
+  put_shader_version_preamble(oss);
+  oss << code;
+  return ShaderSource{oss.str(), ShaderType::VERTEX};
+}
+
+ShaderSource ShaderSource::fragment(std::string_view code)
+{
+  std::ostringstream oss;
+  put_shader_version_preamble(oss);
+  oss << code;
+  return ShaderSource{oss.str(), ShaderType::FRAGMENT};
+}
+
+ShaderSource ShaderSource::geometry(std::string_view code)
+{
+  std::ostringstream oss;
+  put_shader_version_preamble(oss);
+  oss << code;
+  return ShaderSource{oss.str(), ShaderType::GEOMETRY};
+}
+
+ShaderSource ShaderSource::load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble)
+{
+  if (std::ifstream ifs{filename}; ifs.is_open())
   {
-    return ShaderSource{premable + std::string{std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>()},
-                        type};
+    std::ostringstream oss;
+
+    // Add detected version preamble
+    if (fill_version_preamble)
+    {
+      put_shader_version_preamble(oss);
+    }
+
+    // Add code from file
+    std::copy(
+      std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>(), std::ostreambuf_iterator<char>(oss));
+
+    return ShaderSource{oss.str(), type};
   }
   else
   {
     std::ostringstream oss;
     oss << "Could not open shader source file " << filename;
-    throw FileReadFailure{oss.str()};
+    throw ShaderFileReadFailure{oss.str()};
   }
 }
-
-
-ShaderSource ShaderSource::load_from_file(const char* filename, const ShaderType type)
-{
-  return load_from_file(filename, get_shader_version_preamble(), type);
-}
-
 
 ShaderSource::~ShaderSource()
 {
@@ -282,17 +371,6 @@ Shader::~Shader()
   {
     glDeleteProgram(shader_id_.value());
   }
-}
-
-std::string get_shader_version_preamble()
-{
-  GLint major, minor;
-  glGetIntegerv(GL_MAJOR_VERSION, &major);
-  glGetIntegerv(GL_MINOR_VERSION, &minor);
-
-  char buffer[1024];
-  sprintf(buffer, "#version %d%d0\n\n", major, minor);
-  return std::string{buffer};
 }
 
 }  // namespace tyl::graphics

@@ -7,9 +7,8 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <exception>
 #include <optional>
-#include <string>
+#include <string_view>
 #include <utility>
 
 namespace tyl::graphics
@@ -40,54 +39,7 @@ enum class ShaderType
 class ShaderSource
 {
 public:
-  /**
-   * @brief Exception thrown when a Shader program fails to compile
-   */
-  class CompilationFailure final : public std::exception
-  {
-  public:
-    template <typename DetailsT>
-    explicit CompilationFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-    {}
-
-    const char* what() const noexcept override { return details_.c_str(); }
-
-  private:
-    std::string details_;
-  };
-
-  /**
-   * @brief Exception thrown when a Shader program fails to link
-   */
-  class LinkageFailure final : public std::exception
-  {
-  public:
-    template <typename DetailsT> explicit LinkageFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-    {}
-
-    const char* what() const noexcept override { return details_.c_str(); }
-
-  private:
-    std::string details_;
-  };
-
-  /**
-   * @brief Exception thrown when a Shader program source cannot be loaded from disk
-   */
-  class FileReadFailure final : public std::exception
-  {
-  public:
-    template <typename DetailsT>
-    explicit FileReadFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-    {}
-
-    const char* what() const noexcept override { return details_.c_str(); }
-
-  private:
-    std::string details_;
-  };
-
-  ShaderSource(std::string code, const ShaderType type);
+  ShaderSource(std::string_view code, const ShaderType type);
   ShaderSource(ShaderSource&&);
   ~ShaderSource();
 
@@ -99,14 +51,25 @@ public:
   inline ShaderType get_type() const { return shader_type_; };
 
   /**
-   * @brief Loads shader source code from a file
+   * @brief Creates vertex shader source with detected graphics library version header
    */
-  static ShaderSource load_from_file(const char* filename, const ShaderType type);
+  static ShaderSource vertex(std::string_view code);
+
+  /**
+   * @brief Creates fragment shader source with detected graphics library version header
+   */
+  static ShaderSource fragment(std::string_view code);
+
+  /**
+   * @brief Creates geometry shader source with detected graphics library version header
+   */
+  static ShaderSource geometry(std::string_view code);
 
   /**
    * @brief Loads shader source code from a file
    */
-  static ShaderSource load_from_file(const char* filename, const std::string& premable, const ShaderType type);
+  static ShaderSource
+  load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble = true);
 
 private:
   ShaderSource(const ShaderSource&) = default;
@@ -181,11 +144,5 @@ public:
 private:
   Shader(const Shader&) = default;
 };
-
-
-/**
- * @brief Returns shader version string
- */
-std::string get_shader_version_preamble();
 
 }  // namespace tyl::graphics
