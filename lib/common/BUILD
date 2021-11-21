@@ -37,3 +37,13 @@ cc_library(
   deps=[],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="matrix",
+  hdrs=["include/matrix.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  linkopts=[],
+  deps=["@eigen//:eigen"],
+  visibility=["//visibility:public"]
+)
