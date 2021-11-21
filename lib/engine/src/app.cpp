@@ -36,7 +36,10 @@ void glfw_error_callback(int error, const char* description)
 }  // namespace anonymous
 
 
-App::App(const char* name, const WindowSize& size) : window_name_{name}, window_ctx_{nullptr}, window_size_{size}
+App::App(const char* name, const render::ViewportSize& size) :
+    window_name_{name},
+    window_ctx_{nullptr},
+    window_size_{size}
 {
   logging::initialize();
 
@@ -114,7 +117,7 @@ App::~App()
   }
 }
 
-int App::run(const std::function<bool(const WindowSize&)>& loop_fn)
+int App::run(const std::function<bool(const render::ViewportSize&)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 

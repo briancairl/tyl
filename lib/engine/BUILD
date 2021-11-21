@@ -4,7 +4,7 @@ cc_library(
   srcs=["src/app.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
-  deps=["//lib/ui", "@imgui//:imgui_cpp", "//lib/logging"],
+  deps=["//lib/ui", "@imgui//:imgui_cpp", "//lib/logging", "//lib/render"],
   visibility=["//visibility:public"]
 )
 

@@ -8,28 +8,25 @@
 // C++ Standard Library
 #include <functional>
 
+// Tyl
+#include <tyl/render/viewport.hpp>
+
 namespace tyl::engine
 {
-
-struct WindowSize
-{
-  int height_px;
-  int width_px;
-};
 
 class App
 {
 public:
-  App(const char* name, const WindowSize& size);
+  App(const char* name, const render::ViewportSize& size);
 
   ~App();
 
-  int run(const std::function<bool(const WindowSize&)>& loop_fn);
+  int run(const std::function<bool(const render::ViewportSize&)>& loop_fn);
 
 private:
   const char* window_name_;
   void* window_ctx_;
-  WindowSize window_size_;
+  render::ViewportSize window_size_;
 };
 
 }  // namespace tyl::engine
