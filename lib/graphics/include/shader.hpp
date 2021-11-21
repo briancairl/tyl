@@ -11,11 +11,11 @@
 #include <string_view>
 #include <utility>
 
+// Tyl
+#include <tyl/graphics/fwd.hpp>
+
 namespace tyl::graphics
 {
-
-class Shader;
-
 
 /// ID type used for shaders, ideally identical to the graphics API ID
 using shader_id_t = unsigned;

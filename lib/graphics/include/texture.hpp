@@ -11,14 +11,11 @@
 #include <optional>
 #include <type_traits>
 
+// Tyl
+#include <tyl/graphics/fwd.hpp>
 
 namespace tyl::graphics
 {
-
-class Texture;
-class Image;
-class ShaderHandle;
-
 
 /// ID type used for textures, ideally identical to the graphics API ID
 using texture_id_t = unsigned;

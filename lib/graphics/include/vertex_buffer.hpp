@@ -12,15 +12,13 @@
 #include <vector>
 
 // Art
+#include <tyl/graphics/fwd.hpp>
 #include <tyl/graphics/typecode.hpp>
 
 namespace tyl::graphics
 {
 
 using vertex_buffer_id_t = unsigned;
-
-class VertexBuffer;
-
 
 /**
  * @brief Specifies attributes about a vertex, used for creating VertexBuffer objects
