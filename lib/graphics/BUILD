@@ -5,6 +5,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
   deps=[
+    "//lib/common:assert",
     "@imgui//:gl3w",
     "@stb//:stb",
   ],

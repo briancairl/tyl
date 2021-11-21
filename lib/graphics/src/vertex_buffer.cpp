@@ -6,11 +6,11 @@
 
 // C++ Standard Library
 #include <algorithm>
-#include <assert.h>
 #include <iterator>
 #include <numeric>
 
 // Art
+#include <tyl/common/assert.hpp>
 #include <tyl/graphics/gl.hpp>
 #include <tyl/graphics/vertex_buffer.hpp>
 
@@ -169,20 +169,20 @@ void VertexBuffer::set_vertex_data(const std::size_t attr_index, const void* con
 
 void VertexBuffer::set_vertex_data(const std::size_t attr_index, const float* const data) const
 {
-  assert(attr_index < vertex_attributes_.size());
+  TYL_ASSERT_LT(attr_index, vertex_attributes_.size());
   set_vertex_data(attr_index, static_cast<const void* const>(data));
 }
 
 void VertexBuffer::set_vertex_data(const std::size_t attr_index, const int* const data) const
 {
-  assert(attr_index < vertex_attributes_.size());
+  TYL_ASSERT_LT(attr_index, vertex_attributes_.size());
   set_vertex_data(attr_index, static_cast<const void* const>(data));
 }
 
 void VertexBuffer::set_index_data(const unsigned* const data) const
 {
   static_assert(std::is_same<unsigned, GLuint>(), "'GUint != unsigned integer type");
-  assert(ebo_);
+  TYL_ASSERT_TRUE(ebo_);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * index_count_, data);
 }
