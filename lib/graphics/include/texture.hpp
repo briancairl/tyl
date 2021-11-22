@@ -43,6 +43,10 @@ public:
    */
   inline texture_id_t get_id() const { return *texture_id_; };
 
+  inline bool valid() const { return static_cast<bool>(texture_id_); }
+
+  inline operator bool() const { return this->valid(); }
+
   template <typename ID_T>
   inline explicit TextureHandle(ID_T&& texture_id) : texture_id_{std::forward<ID_T>(texture_id)}
   {}
