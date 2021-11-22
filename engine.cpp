@@ -3,56 +3,27 @@
 
 // Tyl
 #include <tyl/engine/app.hpp>
+#include <tyl/engine/camera.hpp>
+#include <tyl/engine/geometry.hpp>
+#include <tyl/engine/tile_map.hpp>
+#include <tyl/engine/tile_map_rendering.hpp>
 #include <tyl/graphics/image.hpp>
 #include <tyl/graphics/shader.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/vertex_buffer.hpp>
-#include <tyl/render/camera.hpp>
 
 // ImGui
 #include <imgui.h>
 
 int main(int argc, char** argv)
 {
-  tyl::engine::App app{"tyl", tyl::render::ViewportSize{720, 720}};
+  tyl::engine::App app{"tyl", tyl::engine::ViewportSize{720, 720}};
 
   using namespace tyl::graphics;
 
-  using Vec2f = Eigen::Matrix<float, 2, 1>;
+  const auto image = Image::load_from_file("resources/test/poke-gba.png");
 
-  VertexBuffer new_mesh{6UL,
-                        {
-                          VertexAttributeDescriptor{TypeCode::Float32, 2, 4, 0},  // vertex position
-                          VertexAttributeDescriptor{TypeCode::Float32, 2, 4, 0},  // texture quad extents
-                        },
-                        VertexBuffer::BufferMode::STATIC};
-
-  {
-    const unsigned indices[] = {0, 1, 2, 2, 3, 0};
-    new_mesh.set_index_data(indices);
-  }
-
-  {
-    const Vec2f points[] = {
-      Vec2f{-0.1f, -0.1f},
-      Vec2f{+0.1f, -0.1f},
-      Vec2f{+0.1f, +0.1f},
-      Vec2f{-0.1f, +0.1f},
-    };
-    new_mesh.set_vertex_data(0, reinterpret_cast<const float*>(points));
-  }
-
-  {
-    const Vec2f points[] = {
-      Vec2f{0.f, 1.f},
-      Vec2f{1.f, 1.f},
-      Vec2f{1.f, 0.f},
-      Vec2f{0.f, 0.f},
-    };
-    new_mesh.set_vertex_data(1, reinterpret_cast<const float*>(points));
-  }
-
-  const Texture texture{Image::load_from_file("/home/brian/Downloads/smol_bilal_cat.png")};
+  const Texture texture{image};
   texture.bind(0);
 
   // clang-format off
@@ -62,15 +33,17 @@ int main(int argc, char** argv)
 
       layout (location = 0) in vec2 aPos;
       layout (location = 1) in vec2 aTexCoord;
+      layout (location = 2) in vec2 aPosOffset;
+      layout (location = 3) in vec2 aTexCoordOffset;
 
       uniform mat3 uModelView;
 
-      out vec2 vTexCoord;
+      out vec2 vsTexCoord;
 
       void main()
       {
-        gl_Position =  vec4(uModelView * vec3(aPos, 1), 1);
-        vTexCoord = aTexCoord;
+        gl_Position =  vec4(uModelView * vec3(aPos + aPosOffset, 1), 1);
+        vsTexCoord = aTexCoord + aTexCoordOffset;
       }
 
       )VertexShader"
@@ -80,14 +53,13 @@ int main(int argc, char** argv)
 
       out vec4 FragColor;
 
-      in vec2 vTexCoord;
+      in vec2 vsTexCoord;
 
       uniform sampler2D uTextureID;
-      uniform vec4 uShading;
 
       void main()
       {
-        FragColor = 0.5 * uShading + 0.5 * texture(uTextureID, vTexCoord);
+        FragColor = texture(uTextureID, vsTexCoord) * 0.8 + vec4(1, 1, 1, 1) * 0.2;
       }
 
       )FragmentShader"
@@ -97,64 +69,47 @@ int main(int argc, char** argv)
 
   entt::registry registry;
 
-  registry.set<tyl::render::TopDownCamera>();
+  registry.set<tyl::engine::TopDownCamera>();
+  registry.set<tyl::engine::UnitConversion>(tyl::engine::UnitConversion{.pixels_per_meter = 100.f});
 
-  ImVec4 shading_color{1.f, 1.f, 1.f, 1.f};
+  const auto tile_map_entity = tyl::engine::create_tile_map(
+    registry,
+    tyl::engine::TileMapDimensions{10, 10},
+    tyl::engine::TileSizePx{16, 16},
+    tyl::engine::Transform::Identity(),
+    1);
 
-  tyl::Vec3f model_state{0.f, 0.f, 0.f};
+  tyl::engine::add_tile_map_render_data(
+    registry, tile_map_entity, tyl::engine::TileAtlasSizePx{image.rows(), image.cols()}, texture, shader);
 
-  return app.run([&](const tyl::render::ViewportSize& window_size) -> bool {
-    auto& camera = registry.ctx<tyl::render::TopDownCamera>();
-    ImGui::Begin("camera");
+  return app.run([&](const tyl::engine::WindowProperties& window_props) -> bool {
+    auto& camera = registry.ctx<tyl::engine::TopDownCamera>();
 
+    const auto inverse_view_matrix = tyl::engine::make_inverse_view_projection_matrix(
+      camera, window_props.viewport_size, registry.ctx<tyl::engine::UnitConversion>());
+
+    ImGui::Begin("engine-debug");
     ImGui::SliderFloat("zoom", &camera.zoom, 0.1f, 10.f);
     ImGui::SliderFloat("panning.x", &camera.panning[0], -10.f, 10.f);
     ImGui::SliderFloat("panning.y", &camera.panning[1], -10.f, 10.f);
-
-    const auto view_matrix = tyl::render::make_view_matrix(camera, window_size);
-
-    ImGui::Text(
-      "[%8.3f, %8.3f, %8.3f]\n"
-      "[%8.3f, %8.3f, %8.3f]\n"
-      "[%8.3f, %8.3f, %8.3f]\n",
-      view_matrix(0, 0),
-      view_matrix(0, 1),
-      view_matrix(0, 2),
-      view_matrix(1, 0),
-      view_matrix(1, 1),
-      view_matrix(1, 2),
-      view_matrix(2, 0),
-      view_matrix(2, 1),
-      view_matrix(2, 2));
-
+    {
+      const auto cursor_position = window_props.get_cursor_position();
+      const auto cursor_position_normalized = window_props.get_cursor_position_normalized();
+      const auto cursor_position_world =
+        (inverse_view_matrix.block<2, 2>(0, 0) * cursor_position_normalized + inverse_view_matrix.block<2, 1>(0, 2))
+          .eval();
+      ImGui::Text(
+        "cursor : %d, %d (%f, %f : %f, %f)",
+        cursor_position.x(),
+        cursor_position.y(),
+        cursor_position_normalized.x(),
+        cursor_position_normalized.y(),
+        cursor_position_world.x(),
+        cursor_position_world.y());
+    }
     ImGui::End();
 
-    ImGui::Begin("model");
-    ImGui::InputFloat3("state", model_state.data());
-    ImGui::End();
-
-    tyl::Mat3f model;
-    model(0, 0) = std::cos(model_state.z());
-    model(0, 1) = -std::sin(model_state.z());
-    model(0, 2) = model_state.x();
-    model(1, 0) = std::sin(model_state.z());
-    model(1, 1) = std::cos(model_state.z());
-    model(1, 2) = model_state.y();
-    model(2, 0) = 0.f;
-    model(2, 1) = 0.f;
-    model(2, 2) = 1.f;
-
-
-    ImGui::Begin("rendering");
-    ImGui::ColorPicker4("color", reinterpret_cast<float*>(&shading_color), ImGuiColorEditFlags_NoSmallPreview);
-    ImGui::End();
-
-    shader.bind();
-    const tyl::Mat3f mvp{view_matrix * model};
-    shader.setMat3("uModelView", mvp.data());
-    shader.setMat3("uTextureID", 0);
-    shader.setVec4("uShading", reinterpret_cast<const float*>(&shading_color));
-    new_mesh.draw();
+    tyl::engine::render_tile_maps(registry, inverse_view_matrix.inverse());
 
     return true;
   });

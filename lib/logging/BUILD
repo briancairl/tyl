@@ -3,7 +3,7 @@ cc_library(
   hdrs=["include/logging.hpp"],
   srcs=["src/logging.cpp"],
   strip_include_prefix="include",
-  include_prefix="tyl/logging",
+  include_prefix="tyl",
   linkopts=[],
   deps=["@spdlog//:spdlog"],
   visibility=["//visibility:public"]

@@ -36,9 +36,9 @@ cc_binary(
 cc_binary(
     name="engine",
     srcs=["engine.cpp"],
-    deps=["//lib/render", "//lib/engine:app", "@multi_field_array//:mf", "@entt//:entt"],
+    deps=["//lib/engine:tile_map", "//lib/engine:app", "@multi_field_array//:mf", "@entt//:entt"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,
-    data=[]
+    data=["resources/test/poke-gba.png"]
 )

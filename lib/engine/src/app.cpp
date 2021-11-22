@@ -17,7 +17,7 @@
 
 // Art
 #include <tyl/engine/app.hpp>
-#include <tyl/logging/logging.hpp>
+#include <tyl/logging.hpp>
 #include <tyl/ui/style.hpp>
 
 namespace tyl::engine
@@ -36,12 +36,11 @@ void glfw_error_callback(int error, const char* description)
 }  // namespace anonymous
 
 
-App::App(const char* name, const render::ViewportSize& size) :
-    window_name_{name},
-    window_ctx_{nullptr},
-    window_size_{size}
+App::App(const char* name, const ViewportSize& size) : window_name_{name}, window_ctx_{nullptr}
 {
   logging::initialize();
+
+  window_properties_.viewport_size = size;
 
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
@@ -68,7 +67,7 @@ App::App(const char* name, const render::ViewportSize& size) :
 #endif
 
   // Create window with graphics context
-  GLFWwindow* window = glfwCreateWindow(window_size_.width_px, window_size_.height_px, window_name_, NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(size.x(), size.y(), window_name_, NULL, NULL);
 
   if (window == NULL)
   {
@@ -117,7 +116,7 @@ App::~App()
   }
 }
 
-int App::run(const std::function<bool(const render::ViewportSize&)>& loop_fn)
+int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 
@@ -127,8 +126,14 @@ int App::run(const std::function<bool(const render::ViewportSize&)>& loop_fn)
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
+    glfwGetCursorPos(
+      window,
+      &window_properties_.cursor_position_full_resolution.x(),
+      &window_properties_.cursor_position_full_resolution.y());
+
     glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
+
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -137,7 +142,7 @@ int App::run(const std::function<bool(const render::ViewportSize&)>& loop_fn)
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
-    if (!loop_fn(window_size_))
+    if (!loop_fn(window_properties_))
     {
       break;
     }
@@ -146,8 +151,8 @@ int App::run(const std::function<bool(const render::ViewportSize&)>& loop_fn)
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwGetFramebufferSize(window, &window_size_.width_px, &window_size_.height_px);
-    glViewport(0, 0, window_size_.width_px, window_size_.height_px);
+    glfwGetFramebufferSize(window, &window_properties_.viewport_size.x(), &window_properties_.viewport_size.y());
+    glViewport(0, 0, window_properties_.viewport_size.x(), window_properties_.viewport_size.y());
     glfwSwapBuffers(window);
   }
   TYL_INFO("[{}] closing", window_name_);

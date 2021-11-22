@@ -11,7 +11,7 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 // TYL
-#include <tyl/logging/logging.hpp>
+#include <tyl/logging.hpp>
 
 namespace tyl::logging
 {
