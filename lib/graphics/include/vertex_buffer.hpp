@@ -69,9 +69,31 @@ struct VertexAttributeDescriptor
 };
 
 /**
- * @brief RAII wrapper around a mesh resource
+ * @brief RAII wrapper around a vertex buffer pointer
+ */
+class MappedBufferPtr
+{
+public:
+  ~MappedBufferPtr();
+
+  template <typename T> constexpr T* const as() { return reinterpret_cast<T* const>(ptr_); }
+
+private:
+  explicit MappedBufferPtr(const unsigned buffer_type, const unsigned buffer_mode, const std::size_t byte_offset);
+
+  /// Type of buffer being mapped
+  unsigned buffer_type_;
+
+  /// Pointer to buffer (offset)
+  void* const ptr_;
+
+  friend class VertexBuffer;
+};
+
+/**
+ * @brief RAII wrapper around a vertex resource
  *
- *        Creates and destroys mesh vertex/index buffers through graphics API
+ *        Creates and destroys vertex vertex/index buffers through graphics API
  */
 class VertexBuffer
 {
@@ -107,11 +129,17 @@ public:
 
   void draw_instanced(const std::size_t instance_count, const DrawMode mode = DrawMode::TRIANGLES) const;
 
-  void set_vertex_data(const std::size_t attr_index, const int* const data) const;
-
   void set_vertex_data(const std::size_t attr_index, const float* const data) const;
 
-  void set_index_data(const unsigned* const data) const;
+  void set_vertex_data(const std::size_t attr_index, const std::int32_t* const data) const;
+
+  void set_vertex_data(const std::size_t attr_index, const std::uint32_t* const data) const;
+
+  void set_index_data(const std::uint32_t* const data) const;
+
+  MappedBufferPtr get_vertex_ptr(const std::size_t attr_index) const;
+
+  MappedBufferPtr get_index_ptr() const;
 
   ~VertexBuffer();
 

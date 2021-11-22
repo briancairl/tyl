@@ -16,6 +16,8 @@
 
 namespace tyl::graphics
 {
+namespace  // anonymous
+{
 
 inline static GLuint to_gl_buffer_mode(const VertexBuffer::BufferMode mode)
 {
@@ -47,6 +49,22 @@ inline static GLuint to_gl_draw_mode(const VertexBuffer::DrawMode mode)
     break;
   }
   return -1;
+}
+
+}  // namespace anonymous
+
+MappedBufferPtr::MappedBufferPtr(
+  const unsigned buffer_type,
+  const unsigned buffer_mode,
+  const std::size_t byte_offset) :
+    buffer_type_{buffer_type},
+    ptr_{reinterpret_cast<void*>(reinterpret_cast<std::uint8_t*>(glMapBuffer(buffer_type, buffer_mode)) + byte_offset)}
+{}
+
+MappedBufferPtr::~MappedBufferPtr()
+{
+  glUnmapBuffer(buffer_type_);
+  glBindBuffer(buffer_type_, 0);
 }
 
 VertexBuffer::VertexBuffer(
@@ -173,15 +191,21 @@ void VertexBuffer::set_vertex_data(const std::size_t attr_index, const float* co
   set_vertex_data(attr_index, static_cast<const void* const>(data));
 }
 
-void VertexBuffer::set_vertex_data(const std::size_t attr_index, const int* const data) const
+void VertexBuffer::set_vertex_data(const std::size_t attr_index, const std::int32_t* const data) const
 {
   TYL_ASSERT_LT(attr_index, vertex_attributes_.size());
   set_vertex_data(attr_index, static_cast<const void* const>(data));
 }
 
-void VertexBuffer::set_index_data(const unsigned* const data) const
+void VertexBuffer::set_vertex_data(const std::size_t attr_index, const std::uint32_t* const data) const
 {
-  static_assert(std::is_same<unsigned, GLuint>(), "'GUint != unsigned integer type");
+  TYL_ASSERT_LT(attr_index, vertex_attributes_.size());
+  set_vertex_data(attr_index, static_cast<const void* const>(data));
+}
+
+void VertexBuffer::set_index_data(const std::uint32_t* const data) const
+{
+  static_assert(std::is_same<std::uint32_t, GLuint>(), "'GUint != std::uint32_t integer type");
   TYL_ASSERT_TRUE(ebo_);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * index_count_, data);
@@ -230,6 +254,29 @@ VertexBuffer::~VertexBuffer()
     GLuint delete_buffer = *ebo_;
     glDeleteBuffers(1, &delete_buffer);
   }
+}
+
+MappedBufferPtr VertexBuffer::get_vertex_ptr(const std::size_t attr_index) const
+{
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+
+  // Get iterator to vertex attribute
+  const auto attr_itr = std::next(vertex_attributes_.begin(), attr_index);
+
+  // Compute data offset before data to set
+  const std::size_t data_offset = std::accumulate(
+    vertex_attributes_.begin(), attr_itr, 0UL, [](const std::size_t prev, const VertexAttributeDescriptor& attr) {
+      return prev + attr.total_bytes();
+    });
+
+  return MappedBufferPtr{GL_ARRAY_BUFFER, GL_WRITE_ONLY, data_offset};
+}
+
+MappedBufferPtr VertexBuffer::get_index_ptr() const
+{
+  TYL_ASSERT_TRUE(ebo_);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
+  return MappedBufferPtr{GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, 0};
 }
 
 }  // namespace tyl::graphics
