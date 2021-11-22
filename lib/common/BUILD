@@ -47,3 +47,23 @@ cc_library(
   deps=["@eigen//:eigen"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="ecs",
+  hdrs=["include/ecs.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  linkopts=[],
+  deps=["@entt//:entt"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="macros",
+  hdrs=["include/strong_alias.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)
