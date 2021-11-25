@@ -30,8 +30,8 @@ int main(int argc, char** argv)
 
   const auto tile_map_shader_entity = tyl::engine::create_tile_map_default_shader(registry);
 
-  registry.set<tyl::engine::TopDownCamera>();
-  registry.set<tyl::engine::UnitConversion>(tyl::engine::UnitConversion{.pixels_per_meter = 100.f});
+  const auto player_entity = registry.create();
+  registry.emplace<tyl::engine::TopDownCamera>(player_entity);
 
   const auto tile_map_entity = tyl::engine::create_tile_map(
     registry,
@@ -48,33 +48,33 @@ int main(int argc, char** argv)
     registry.get<Shader>(tile_map_shader_entity));
 
   return app.run([&](const tyl::engine::WindowProperties& window_props) -> bool {
-    auto& camera = registry.ctx<tyl::engine::TopDownCamera>();
+    // ImGui::Begin("engine-debug");
+    // ImGui::SliderFloat("zoom", &camera.zoom, 0.1f, 10.f);
+    // ImGui::SliderFloat("panning.x", &camera.panning[0], -10.f, 10.f);
+    // ImGui::SliderFloat("panning.y", &camera.panning[1], -10.f, 10.f);
+    // ImGui::Text(
+    //   "cursor : %e, %e (%f, %f : %f, %f)",
+    //   window_props.cursor_position_full_resolution.x(),
+    //   window_props.cursor_position_full_resolution.y(),
+    //   window_props.cursor_position_normalized.x(),
+    //   window_props.cursor_position_normalized.y(),
+    //   window_props.cursor_position_world.x(),
+    //   window_props.cursor_position_world.y());
+    // ImGui::End();
 
-    const auto inverse_view_matrix = tyl::engine::make_inverse_view_projection_matrix(
-      camera, window_props.viewport_size, registry.ctx<tyl::engine::UnitConversion>());
-
-    ImGui::Begin("engine-debug");
-    ImGui::SliderFloat("zoom", &camera.zoom, 0.1f, 10.f);
-    ImGui::SliderFloat("panning.x", &camera.panning[0], -10.f, 10.f);
-    ImGui::SliderFloat("panning.y", &camera.panning[1], -10.f, 10.f);
+    auto view = registry.view<tyl::engine::TopDownCamera>();
+    for (const auto e : view)
     {
-      const auto cursor_position = window_props.get_cursor_position();
-      const auto cursor_position_normalized = window_props.get_cursor_position_normalized();
-      const auto cursor_position_world =
-        (inverse_view_matrix.block<2, 2>(0, 0) * cursor_position_normalized + inverse_view_matrix.block<2, 1>(0, 2))
-          .eval();
-      ImGui::Text(
-        "cursor : %d, %d (%f, %f : %f, %f)",
-        cursor_position.x(),
-        cursor_position.y(),
-        cursor_position_normalized.x(),
-        cursor_position_normalized.y(),
-        cursor_position_world.x(),
-        cursor_position_world.y());
-    }
-    ImGui::End();
+      // To transform from screen -> world space
+      const auto ivpm = tyl::engine::make_inverse_view_projection_matrix(
+        registry.get<tyl::engine::TopDownCamera>(e), window_props.viewport_size);
 
-    tyl::engine::render_tile_maps(registry, inverse_view_matrix.inverse());
+      // To transform from world -> screen space
+      const auto vpm = tyl::engine::make_view_projection_matrix(ivpm);
+
+      // Runder all tilemap sectors
+      tyl::engine::render_tile_maps(registry, vpm);
+    }
 
     return true;
   });

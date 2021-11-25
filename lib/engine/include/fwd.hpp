@@ -16,7 +16,6 @@ class TileMapGrid;
 class TileAtlasSizePx;
 class TileSizePx;
 class ViewProjectionMatrix;
-class UnitConversion;
 class UpdateFlags;
 
 }  // namespace tyl::engine

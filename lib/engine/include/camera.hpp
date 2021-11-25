@@ -14,6 +14,11 @@ namespace tyl::engine
 {
 
 /**
+ * @brief Describes inverted view projection matrix based on camera
+ */
+TYL_DEFINE_STRONG_ALIAS(InverseViewProjectionMatrix, Mat3f);
+
+/**
  * @brief Describes view projection matrix based on camera
  */
 TYL_DEFINE_STRONG_ALIAS(ViewProjectionMatrix, Mat3f);
@@ -24,8 +29,7 @@ TYL_DEFINE_STRONG_ALIAS(ViewProjectionMatrix, Mat3f);
 struct TopDownCamera
 {
   Vec2f panning = Vec2f::Zero();
-
-  float zoom = 1.f;
+  float zoom = 100.f;
 
   TopDownCamera() = default;
 };
@@ -35,14 +39,32 @@ struct TopDownCamera
  *
  * @param camera  top-down camera parameters
  * @param viewport_size  current viewport dimensions
- * @param unit_conversion  specifies pixel-to-real unit conversions
  *
  * @return 3x3 view matrix
  */
-ViewProjectionMatrix make_inverse_view_projection_matrix(
-  const TopDownCamera& camera,
-  const ViewportSize& viewport_size,
-  const UnitConversion& unit_conversion);
+InverseViewProjectionMatrix
+make_inverse_view_projection_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size);
 
+/**
+ * @brief Returns view matrix given a camera and viewport
+ *
+ * @param camera  top-down camera parameters
+ * @param viewport_size  current viewport dimensions
+ *
+ * @return 3x3 view matrix
+ */
+ViewProjectionMatrix make_view_projection_matrix(const TopDownCamera& camera, const ViewportSize& viewport_size);
+
+/**
+ * @brief Returns view matrix given an INVERSE view matrix
+ *
+ * @param inv_vpm  inverse view projection matrix
+ *
+ * @return 3x3 view matrix
+ */
+inline ViewProjectionMatrix make_view_projection_matrix(const InverseViewProjectionMatrix& inv_vpm)
+{
+  return inv_vpm.inverse();
+}
 
 }  // namespace tyl::engine

@@ -17,6 +17,7 @@
 
 // Art
 #include <tyl/engine/app.hpp>
+#include <tyl/engine/camera.hpp>
 #include <tyl/logging.hpp>
 #include <tyl/ui/style.hpp>
 
@@ -31,6 +32,16 @@ namespace  // anonymous
 void glfw_error_callback(int error, const char* description)
 {
   TYL_CRITICAL("[glfw_error_callback] error-code={d} msg={}", error, description);
+}
+
+/**
+ * @brief Computes normalized cursor position
+ */
+inline Vec2f get_cursor_position_normalized(const WindowProperties& win_prop)
+{
+  const float xn = win_prop.cursor_position_full_resolution.x() / win_prop.viewport_size.x();
+  const float yn = win_prop.cursor_position_full_resolution.y() / win_prop.viewport_size.y();
+  return Vec2f{2.f * xn - 1.0f, 1.0f - 2.f * yn};
 }
 
 }  // namespace anonymous
@@ -130,10 +141,10 @@ int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
       window,
       &window_properties_.cursor_position_full_resolution.x(),
       &window_properties_.cursor_position_full_resolution.y());
+    window_properties_.cursor_position_normalized = get_cursor_position_normalized(window_properties_);
 
     glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
-
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
