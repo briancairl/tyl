@@ -35,9 +35,9 @@ int main(int argc, char** argv)
 
   const auto tile_map_entity = tyl::engine::create_tile_map(
     registry,
-    tyl::engine::TileMapDimensions{10, 10},
+    tyl::Vec2i{10, 10},
     tyl::engine::TileSizePx{16, 16},
-    tyl::engine::Transform::Identity(),
+    tyl::engine::Transform::translation(tyl::Vec2f{-80.f, -80.f}),
     1);
 
   tyl::engine::add_tile_map_render_data(

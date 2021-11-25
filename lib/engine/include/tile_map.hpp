@@ -21,7 +21,7 @@ TYL_DEFINE_STRONG_ALIAS(TileSizePx, Vec2i);
 
 Entity create_tile_map(
   ECSRegistry& registry,
-  const TileMapDimensions& tile_map_dim,
+  const Vec2i& tile_map_dim,
   const TileSizePx& tile_size,
   const Transform& transform,
   const int initial_tile_id = 0);
@@ -29,7 +29,7 @@ Entity create_tile_map(
 void add_tile_map(
   ECSRegistry& registry,
   const Entity entity,
-  const TileMapDimensions& tile_map_dim,
+  const Vec2i& tile_map_dim,
   const TileSizePx& tile_size,
   const Transform& transform,
   const int initial_tile_id = 0);

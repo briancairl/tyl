@@ -5,6 +5,10 @@
  */
 #pragma once
 
+#define TYL_ENSURE_LAYOUT_COMPAT(query, target)                                                                        \
+  static_assert(sizeof(query) == sizeof(target), "'sizeof aliasing type does not match sizeof aliased type");          \
+  static_assert(alignof(query) == alignof(target), "'alignof aliasing type does not match alignof aliased type");
+
 /**
  * @brief Creates a strong alias of a type
  */
@@ -14,5 +18,4 @@
     using original_type::original_type;                                                                                \
     using original_type::operator=;                                                                                    \
   };                                                                                                                   \
-  static_assert(sizeof(name) == sizeof(original_type), "'sizeof aliasing type does not match sizeof aliased type");    \
-  static_assert(alignof(name) == alignof(original_type), "'alignof aliasing type does not match alignof aliased type");
+  TYL_ENSURE_LAYOUT_COMPAT(name, original_type)
