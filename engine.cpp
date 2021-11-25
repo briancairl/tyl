@@ -26,48 +26,9 @@ int main(int argc, char** argv)
   const Texture texture{image};
   texture.bind(0);
 
-  // clang-format off
-  const Shader shader{
-    ShaderSource::vertex(
-      R"VertexShader(
-
-      layout (location = 0) in vec2 aPos;
-      layout (location = 1) in vec2 aTexCoord;
-      layout (location = 2) in vec2 aPosOffset;
-      layout (location = 3) in vec2 aTexCoordOffset;
-
-      uniform mat3 uModelView;
-
-      out vec2 vsTexCoord;
-
-      void main()
-      {
-        gl_Position =  vec4(uModelView * vec3(aPos + aPosOffset, 1), 1);
-        vsTexCoord = aTexCoord + aTexCoordOffset;
-      }
-
-      )VertexShader"
-    ),
-    ShaderSource::fragment(
-      R"FragmentShader(
-
-      out vec4 FragColor;
-
-      in vec2 vsTexCoord;
-
-      uniform sampler2D uTextureID;
-
-      void main()
-      {
-        FragColor = texture(uTextureID, vsTexCoord) * 0.8 + vec4(1, 1, 1, 1) * 0.2;
-      }
-
-      )FragmentShader"
-    )
-  };
-  // clang-format on
-
   entt::registry registry;
+
+  const auto tile_map_shader_entity = tyl::engine::create_tile_map_default_shader(registry);
 
   registry.set<tyl::engine::TopDownCamera>();
   registry.set<tyl::engine::UnitConversion>(tyl::engine::UnitConversion{.pixels_per_meter = 100.f});
@@ -80,7 +41,11 @@ int main(int argc, char** argv)
     1);
 
   tyl::engine::add_tile_map_render_data(
-    registry, tile_map_entity, tyl::engine::TileAtlasSizePx{image.rows(), image.cols()}, texture, shader);
+    registry,
+    tile_map_entity,
+    tyl::engine::TileAtlasSizePx{image.rows(), image.cols()},
+    texture,
+    registry.get<Shader>(tile_map_shader_entity));
 
   return app.run([&](const tyl::engine::WindowProperties& window_props) -> bool {
     auto& camera = registry.ctx<tyl::engine::TopDownCamera>();

@@ -40,6 +40,8 @@ private:
   std::vector<Vec2f> uv_offsets_;
 };
 
+Entity create_tile_map_default_shader(ECSRegistry& registry);
+
 void add_tile_map_render_data(
   ECSRegistry& registry,
   const Entity entity,

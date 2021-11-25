@@ -41,6 +41,54 @@ TileAtlasUVLookup::TileAtlasUVLookup(const TileSizePx& tile_size, const TileAtla
   }
 }
 
+Entity create_tile_map_default_shader(ECSRegistry& registry)
+{
+  const Entity entity = registry.create();
+
+  // clang-format off
+  registry.emplace<graphics::Shader>(
+    entity,
+    graphics::ShaderSource::vertex(
+      R"VertexShader(
+
+      layout (location = 0) in vec2 aPos;
+      layout (location = 1) in vec2 aTexCoord;
+      layout (location = 2) in vec2 aPosOffset;
+      layout (location = 3) in vec2 aTexCoordOffset;
+
+      uniform mat3 uModelView;
+
+      out vec2 vsTexCoord;
+
+      void main()
+      {
+        gl_Position =  vec4(uModelView * vec3(aPos + aPosOffset, 1), 1);
+        vsTexCoord = aTexCoord + aTexCoordOffset;
+      }
+
+      )VertexShader"
+    ),
+    graphics::ShaderSource::fragment(
+      R"FragmentShader(
+
+      out vec4 FragColor;
+
+      in vec2 vsTexCoord;
+
+      uniform sampler2D uTextureID;
+
+      void main()
+      {
+        FragColor = texture(uTextureID, vsTexCoord) * 0.8 + vec4(1, 1, 1, 1) * 0.2;
+      }
+
+      )FragmentShader"
+    )
+  );
+  // clang-format on
+  return entity;
+}
+
 void add_tile_map_render_data(
   ECSRegistry& registry,
   const Entity entity,
