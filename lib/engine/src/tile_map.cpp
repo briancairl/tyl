@@ -9,7 +9,6 @@
 
 // Tyl
 #include <tyl/engine/geometry.hpp>
-#include <tyl/engine/state.hpp>
 #include <tyl/engine/tile_map.hpp>
 
 namespace tyl::engine
@@ -39,7 +38,6 @@ void add_tile_map(
   registry.emplace<TileMapGrid>(entity, tile_map_dim.x(), tile_map_dim.y()).fill(initial_tile_id);
   registry.emplace<TileSizePx>(entity, tile_size);
   registry.emplace<Transform>(entity, transform);
-  registry.emplace<UpdateFlags>(entity, 0xFFFFFFFF);
 }
 
 }  // namespace tyl::engine

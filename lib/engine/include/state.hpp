@@ -5,12 +5,12 @@
  */
 #pragma once
 
+// Tyl
+#include <tyl/common/ecs.hpp>
+
 namespace tyl::engine
 {
 
-struct UpdateFlags
-{
-  std::size_t has_render_changes : 1;
-};
+using HasRenderUpdate = entt::tag<"has_render_update"_hs>;
 
 }  // namespace tyl::engine

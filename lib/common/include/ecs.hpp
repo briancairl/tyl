@@ -13,5 +13,6 @@ namespace tyl
 
 using Entity = entt::entity;
 using ECSRegistry = entt::registry;
+using namespace entt::literals;
 
 }  // namespace tyl

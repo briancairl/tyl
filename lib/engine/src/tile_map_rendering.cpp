@@ -56,13 +56,14 @@ Entity create_tile_map_default_shader(ECSRegistry& registry)
       layout (location = 2) in vec2 aPosOffset;
       layout (location = 3) in vec2 aTexCoordOffset;
 
-      uniform mat3 uModelView;
+      uniform mat3 uView;
+      uniform mat3 uModel;
 
       out vec2 vsTexCoord;
 
       void main()
       {
-        gl_Position =  vec4(uModelView * vec3(aPos + aPosOffset, 1), 1);
+        gl_Position =  vec4(uView * uModel * vec3(aPos + aPosOffset, 1), 1);
         vsTexCoord = aTexCoord + aTexCoordOffset;
       }
 
@@ -98,6 +99,7 @@ void add_tile_map_render_data(
 {
   using namespace graphics;
 
+  registry.emplace<HasRenderUpdate>(entity);
   registry.emplace<TileAtlasUVLookup>(entity, registry.get<TileSizePx>(entity), tile_altas_size);
   registry.emplace<TextureHandle>(entity, tile_atlas_tex);
   registry.emplace<ShaderHandle>(entity, tile_map_shader);
@@ -176,47 +178,41 @@ void render_tile_maps(ECSRegistry& registry, const ViewProjectionMatrix& view_pr
 {
   using namespace graphics;
 
-  const auto view = registry.view<
-    const Transform,
-    const TileAtlasUVLookup,
-    const TileMapGrid,
-    const TextureHandle,
-    const ShaderHandle,
-    const VertexBuffer,
-    UpdateFlags>();
-
-  view.each([&view_projection_matrix](
-              const Transform& transform,
-              const TileAtlasUVLookup& tile_atlas_offset,
-              const TileMapGrid& tile_map_cells,
-              const TextureHandle& texture,
-              const ShaderHandle& shader,
-              const VertexBuffer& vertex_buffer,
-              UpdateFlags& update_flags) {
-    TYL_ASSERT_TRUE(shader);
-    TYL_ASSERT_TRUE(texture);
-
-    // Update tile UV offset if there are render changes to be made
-    if (update_flags.has_render_changes)
+  // Apply any updates to graphical components of tilemaps
+  {
+    auto view = registry.view<HasRenderUpdate, TileAtlasUVLookup, TileMapGrid, VertexBuffer>();
+    for (const Entity e : view)
     {
+      const auto& [uv_lookup, grid, vertex_buffer] = view.get<TileAtlasUVLookup, TileMapGrid, VertexBuffer>(e);
+
       auto vbptr = vertex_buffer.get_vertex_ptr(3);
-
       std::transform(
-        tile_map_cells.data(),
-        tile_map_cells.data() + tile_map_cells.size(),
-        vbptr.as<Vec2f>(),
-        [&tile_atlas_offset](const unsigned cell_index) -> Vec2f { return tile_atlas_offset[cell_index]; });
+        grid.data(), grid.data() + grid.size(), vbptr.template as<Vec2f>(), [&uv_lookup](const int id) -> Vec2f {
+          return uv_lookup[id];
+        });
 
-      update_flags.has_render_changes = false;
-    }
+      registry.remove<HasRenderUpdate>(e);
+    };
+  }
 
-    texture.bind(0);
-    shader.bind();
-    const tyl::Mat3f mvp{view_projection_matrix * transform};
-    shader.setMat3("uModelView", mvp.data());
-    shader.setMat3("uTextureID", 0);
-    vertex_buffer.draw_instanced(tile_map_cells.size());
-  });
+  // Draw tilemaps
+  registry.view<Transform, TileMapGrid, TextureHandle, ShaderHandle, VertexBuffer>().each(
+    [&view_projection_matrix](
+      const Transform& transform,
+      const TileMapGrid& tile_map_cells,
+      const TextureHandle& texture,
+      const ShaderHandle& shader,
+      const VertexBuffer& vertex_buffer) {
+      TYL_ASSERT_TRUE(shader);
+      TYL_ASSERT_TRUE(texture);
+
+      texture.bind(0);
+      shader.bind();
+      shader.setMat3("uView", view_projection_matrix.data());
+      shader.setMat3("uModel", transform.data());
+      shader.setMat3("uTextureID", 0);
+      vertex_buffer.draw_instanced(tile_map_cells.size());
+    });
 }
 
 }  // namespace tyl::engine
