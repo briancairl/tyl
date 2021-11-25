@@ -43,7 +43,7 @@ int main(int argc, char** argv)
   tyl::engine::add_tile_map_render_data(
     registry,
     tile_map_entity,
-    tyl::engine::TileAtlasSizePx{image.rows(), image.cols()},
+    tyl::Vec2i{image.rows(), image.cols()},
     texture,
     registry.get<Shader>(tile_map_shader_entity));
 

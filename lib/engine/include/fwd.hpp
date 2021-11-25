@@ -11,9 +11,7 @@ namespace tyl::engine
 class ViewportSize;
 class TopDownCamera;
 class Transform;
-class TileMapDimensions;
 class TileMapGrid;
-class TileAtlasSizePx;
 class TileSizePx;
 class ViewProjectionMatrix;
 

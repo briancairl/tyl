@@ -19,12 +19,10 @@
 namespace tyl::engine
 {
 
-TYL_DEFINE_STRONG_ALIAS(TileAtlasSizePx, Vec2i);
-
 class TileAtlasUVLookup
 {
 public:
-  TileAtlasUVLookup(const TileSizePx& tile_size, const TileAtlasSizePx& tile_altas_size);
+  TileAtlasUVLookup(const TileSizePx& tile_size, const Vec2i& tile_altas_size);
 
   inline const Vec2f& operator[](const std::size_t index) const { return uv_offsets_[index]; }
 
@@ -45,7 +43,7 @@ Entity create_tile_map_default_shader(ECSRegistry& registry);
 void add_tile_map_render_data(
   ECSRegistry& registry,
   const Entity entity,
-  const TileAtlasSizePx& tile_altas_size,
+  const Vec2i& tile_altas_size,
   const graphics::TextureHandle& tile_atlas_tex,
   const graphics::ShaderHandle& tile_map_shader);
 

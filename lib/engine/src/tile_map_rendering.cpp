@@ -23,7 +23,7 @@
 namespace tyl::engine
 {
 
-TileAtlasUVLookup::TileAtlasUVLookup(const TileSizePx& tile_size, const TileAtlasSizePx& tile_altas_size)
+TileAtlasUVLookup::TileAtlasUVLookup(const TileSizePx& tile_size, const Vec2i& tile_altas_size)
 {
   const int quantized_tile_rows = tile_altas_size.x() / tile_size.x();
   const int quantized_tile_cols = tile_altas_size.y() / tile_size.y();
@@ -93,15 +93,15 @@ Entity create_tile_map_default_shader(ECSRegistry& registry)
 void add_tile_map_render_data(
   ECSRegistry& registry,
   const Entity entity,
-  const TileAtlasSizePx& tile_altas_size,
-  const graphics::TextureHandle& tile_atlas_tex,
+  const Vec2i& tile_altas_size,
+  const graphics::TextureHandle& tile_atlas_texture,
   const graphics::ShaderHandle& tile_map_shader)
 {
   using namespace graphics;
 
   registry.emplace<HasRenderUpdate>(entity);
   registry.emplace<TileAtlasUVLookup>(entity, registry.get<TileSizePx>(entity), tile_altas_size);
-  registry.emplace<TextureHandle>(entity, tile_atlas_tex);
+  registry.emplace<TextureHandle>(entity, tile_atlas_texture);
   registry.emplace<ShaderHandle>(entity, tile_map_shader);
   registry.emplace<VertexBuffer>(
     entity,

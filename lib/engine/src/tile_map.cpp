@@ -34,7 +34,6 @@ void add_tile_map(
   const Transform& transform,
   const int initial_tile_id)
 {
-  registry.emplace<TileMapDimensions>(entity, dimensions);
   registry.emplace<TileMapGrid>(entity, dimensions.x(), dimensions.y()).fill(initial_tile_id);
   registry.emplace<TileSizePx>(entity, tile_size);
   registry.emplace<Transform>(entity, transform);
