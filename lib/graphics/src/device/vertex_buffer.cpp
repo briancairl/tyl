@@ -11,10 +11,10 @@
 
 // Art
 #include <tyl/assert.hpp>
-#include <tyl/graphics/gl.hpp>
-#include <tyl/graphics/vertex_buffer.hpp>
+#include <tyl/graphics/device/gl.inl>
+#include <tyl/graphics/device/vertex_buffer.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -279,4 +279,4 @@ MappedBufferPtr VertexBuffer::get_index_ptr() const
   return MappedBufferPtr{GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, 0};
 }
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::device

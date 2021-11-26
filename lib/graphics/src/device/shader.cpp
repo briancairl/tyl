@@ -12,10 +12,10 @@
 #include <string>
 
 // Art
-#include <tyl/graphics/gl.hpp>
-#include <tyl/graphics/shader.hpp>
+#include <tyl/graphics/device/gl.inl>
+#include <tyl/graphics/device/shader.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -259,70 +259,7 @@ ShaderSource::~ShaderSource()
   }
 }
 
-void ShaderHandle::bind() const { glUseProgram(shader_id_.value()); }
-
-void ShaderHandle::unbind() const { glUseProgram(0); }
-
-void ShaderHandle::setBool(const char* var_name, const bool value) const
-{
-  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), static_cast<GLint>(value));
-}
-
-void ShaderHandle::setInt(const char* var_name, const int value) const
-{
-  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), value);
-}
-
-void ShaderHandle::setFloat(const char* var_name, const float value) const
-{
-  glUniform1f(glGetUniformLocation(shader_id_.value(), var_name), value);
-}
-
-void ShaderHandle::setVec2(const char* var_name, const float* data) const
-{
-  glUniform2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
-}
-
-void ShaderHandle::setVec2(const char* var_name, const float x, const float y) const
-{
-  glUniform2f(glGetUniformLocation(shader_id_.value(), var_name), x, y);
-}
-
-void ShaderHandle::setVec3(const char* var_name, const float* data) const
-{
-  glUniform3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
-}
-void ShaderHandle::setVec3(const char* var_name, const float x, const float y, const float z) const
-{
-  glUniform3f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z);
-}
-
-void ShaderHandle::setVec4(const char* var_name, const float* data) const
-{
-  glUniform4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
-}
-
-void ShaderHandle::setVec4(const char* var_name, const float x, const float y, const float z, const float w) const
-{
-  glUniform4f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z, w);
-}
-
-void ShaderHandle::setMat2(const char* var_name, const float* data) const
-{
-  glUniformMatrix2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
-}
-
-void ShaderHandle::setMat3(const char* var_name, const float* data) const
-{
-  glUniformMatrix3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
-}
-
-void ShaderHandle::setMat4(const char* var_name, const float* data) const
-{
-  glUniformMatrix4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
-}
-
-Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : ShaderHandle{create_gl_shader()}
+Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_.value(), vertex_source.get_id());
   glAttachShader(shader_id_.value(), fragment_source.get_id());
@@ -339,7 +276,7 @@ Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : S
 }
 
 Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, ShaderSource&& geometry_source) :
-    ShaderHandle{create_gl_shader()}
+    Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_.value(), vertex_source.get_id());
   glAttachShader(shader_id_.value(), fragment_source.get_id());
@@ -357,7 +294,7 @@ Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, Sha
   glDetachShader(shader_id_.value(), geometry_source.get_id());
 }
 
-Shader::Shader(Shader&& other) : ShaderHandle{other.shader_id_} { other.shader_id_.reset(); }
+Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_.reset(); }
 
 Shader& Shader::operator=(Shader&& other)
 {
@@ -373,4 +310,68 @@ Shader::~Shader()
   }
 }
 
-}  // namespace tyl::graphics
+void Shader::bind() const { glUseProgram(shader_id_.value()); }
+
+void Shader::unbind() const { glUseProgram(0); }
+
+void Shader::setBool(const char* var_name, const bool value) const
+{
+  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), static_cast<GLint>(value));
+}
+
+void Shader::setInt(const char* var_name, const int value) const
+{
+  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), value);
+}
+
+void Shader::setFloat(const char* var_name, const float value) const
+{
+  glUniform1f(glGetUniformLocation(shader_id_.value(), var_name), value);
+}
+
+void Shader::setVec2(const char* var_name, const float* data) const
+{
+  glUniform2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+}
+
+void Shader::setVec2(const char* var_name, const float x, const float y) const
+{
+  glUniform2f(glGetUniformLocation(shader_id_.value(), var_name), x, y);
+}
+
+void Shader::setVec3(const char* var_name, const float* data) const
+{
+  glUniform3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+}
+void Shader::setVec3(const char* var_name, const float x, const float y, const float z) const
+{
+  glUniform3f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z);
+}
+
+void Shader::setVec4(const char* var_name, const float* data) const
+{
+  glUniform4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+}
+
+void Shader::setVec4(const char* var_name, const float x, const float y, const float z, const float w) const
+{
+  glUniform4f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z, w);
+}
+
+void Shader::setMat2(const char* var_name, const float* data) const
+{
+  glUniformMatrix2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+}
+
+void Shader::setMat3(const char* var_name, const float* data) const
+{
+  glUniformMatrix3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+}
+
+void Shader::setMat4(const char* var_name, const float* data) const
+{
+  glUniformMatrix4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+}
+
+
+}  // namespace tyl::graphics::device

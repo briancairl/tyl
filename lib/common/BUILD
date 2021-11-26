@@ -29,11 +29,41 @@ cc_library(
 )
 
 cc_library(
-  name="macros",
+  name="types",
   hdrs=["include/strong_alias.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
   deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="ref",
+  hdrs=["include/ref.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=[":assert"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="vec",
+  hdrs=["include/vec.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=["@eigen//:eigen"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="ecs",
+  hdrs=["include/ecs.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=["@entt//:entt"],
   visibility=["//visibility:public"]
 )

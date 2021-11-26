@@ -1,12 +1,64 @@
 cc_library(
-  name="graphics",
-  hdrs=glob(["include/*.hpp"]),
-  srcs=glob(["src/*.cpp"]),
+  name="gl_user_types",
+  hdrs=["include/device/typecode.hpp",
+        "include/device/typedef.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
   deps=[
-    "//lib/utility:assert",
     "@imgui//:gl3w",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="gl_internal",
+  hdrs=glob(["src/device/gl.inl"]),
+  strip_include_prefix="src",
+  include_prefix="tyl/graphics",
+  deps=[":gl_user_types",],
+  visibility=["//visibility:private"]
+)
+
+
+cc_library(
+  name="device",
+  hdrs=[
+    "include/device/fwd.hpp",
+    "include/device/shader.hpp",
+    "include/device/texture.hpp",
+    "include/device/vertex_buffer.hpp",
+  ],
+  srcs=[
+    "src/device/shader.cpp",
+    "src/device/texture.cpp",
+    "src/device/vertex_buffer.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[":gl_internal", "//lib/common:assert"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="graphics",
+  hdrs=[
+    "include/fwd.hpp",
+    "include/image.hpp",
+    "include/shader.hpp",
+    "include/texture.hpp",
+    "include/vertex_buffer.hpp"
+  ],
+  srcs=[
+    "src/image.cpp",
+    "src/texture.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[
+    "//lib/common:assert",
+    "//lib/common:ref",
+    "//lib/common:vec",
+    ":device",
     "@stb//:stb",
   ],
   visibility=["//visibility:public"]

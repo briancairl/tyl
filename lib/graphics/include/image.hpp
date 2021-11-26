@@ -10,6 +10,9 @@
 #include <memory>
 #include <type_traits>
 
+// Tyl
+#include <tyl/vec.hpp>
+
 namespace tyl::graphics
 {
 
@@ -28,20 +31,17 @@ public:
   static Image
   load_from_file(const char* filename, const int force_channel_count = 0, const bool flip_vertically = false);
 
-  inline int rows() const { return rows_; }
+  constexpr const Size& size() const { return size_; }
 
-  inline int cols() const { return cols_; }
+  constexpr int channels() const { return channels_; }
 
-  inline int channels() const { return channels_; }
+  constexpr std::uint8_t* data() { return data_; }
 
-  inline std::uint8_t* data() { return data_; }
-
-  inline std::uint8_t* const data() const { return data_; }
+  constexpr std::uint8_t* const data() const { return data_; }
 
 private:
   std::uint8_t* data_ = nullptr;
-  int rows_ = 0;
-  int cols_ = 0;
+  Size size_ = Size{0, 0};
   int channels_ = 0;
 };
 

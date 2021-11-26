@@ -9,11 +9,6 @@ namespace tyl::graphics
 {
 
 class Image;
-class Shader;
-class ShaderHandle;
-class Texture;
-class TextureHandle;
-class VertexAttributeDescriptor;
-class VertexBuffer;
+class TextureResource;
 
 }  // namespace tyl::graphics

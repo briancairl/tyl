@@ -38,7 +38,7 @@ Image Image::load_from_file(const char* filename, const int force_channel_count,
 
   Image im;
   int source_channels = 0;
-  auto* im_ptr = stbi_load(filename, &im.cols_, &im.rows_, &source_channels, force_channel_count);
+  auto* im_ptr = stbi_load(filename, &im.size_.x(), &im.size_.y(), &source_channels, force_channel_count);
   im.channels_ = force_channel_count > 0 ? force_channel_count : source_channels;
 
   // Check if image point is valid
