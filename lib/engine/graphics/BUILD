@@ -1,0 +1,21 @@
+cc_library(
+  name="graphics",
+  hdrs=[
+    "include/components.hpp",
+    "include/resources.hpp",
+    "include/uv_lookup.hpp"
+  ],
+  srcs=[
+    "src/resources.cpp",
+    "src/uv_lookup.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps = [
+    "//lib/engine/common",
+    "//lib/graphics:graphics",
+    "//lib/platform:filesystem",
+    "//lib/utility:macros",
+  ],
+  visibility=["//visibility:public"]
+)

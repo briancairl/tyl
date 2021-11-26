@@ -16,12 +16,11 @@
 #include <GLFW/glfw3.h>
 
 // Art
-#include <tyl/engine/app.hpp>
-#include <tyl/engine/camera.hpp>
+#include <tyl/app/loop.hpp>
 #include <tyl/logging.hpp>
 #include <tyl/ui/style.hpp>
 
-namespace tyl::engine
+namespace tyl::app
 {
 namespace  // anonymous
 {
@@ -37,21 +36,21 @@ void glfw_error_callback(int error, const char* description)
 /**
  * @brief Computes normalized cursor position
  */
-inline Vec2f get_cursor_position_normalized(const WindowProperties& win_prop)
+inline Vec2f get_cursor_position_normalized(const State& state)
 {
-  const float xn = win_prop.cursor_position_full_resolution.x() / win_prop.viewport_size.x();
-  const float yn = win_prop.cursor_position_full_resolution.y() / win_prop.viewport_size.y();
+  const float xn = state.cursor_position_full_resolution.x() / state.viewport_size.x();
+  const float yn = state.cursor_position_full_resolution.y() / state.viewport_size.y();
   return Vec2f{2.f * xn - 1.0f, 1.0f - 2.f * yn};
 }
 
 }  // namespace anonymous
 
 
-App::App(const char* name, const ViewportSize& size) : window_name_{name}, window_ctx_{nullptr}
+Loop::Loop(const char* name, const Vec2i& size) : window_name_{name}, window_ctx_{nullptr}
 {
   logging::initialize();
 
-  window_properties_.viewport_size = size;
+  window_state_.viewport_size = size;
 
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
@@ -110,7 +109,7 @@ App::App(const char* name, const ViewportSize& size) : window_name_{name}, windo
   window_ctx_ = reinterpret_cast<void*>(window);
 }
 
-App::~App()
+Loop::~Loop()
 {
   if (window_ctx_ != nullptr)
   {
@@ -127,7 +126,7 @@ App::~App()
   }
 }
 
-int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
+int Loop::run(const std::function<bool(const State&)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 
@@ -138,10 +137,8 @@ int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
   {
     glfwPollEvents();
     glfwGetCursorPos(
-      window,
-      &window_properties_.cursor_position_full_resolution.x(),
-      &window_properties_.cursor_position_full_resolution.y());
-    window_properties_.cursor_position_normalized = get_cursor_position_normalized(window_properties_);
+      window, &window_state_.cursor_position_full_resolution.x(), &window_state_.cursor_position_full_resolution.y());
+    window_state_.cursor_position_normalized = get_cursor_position_normalized(window_state_);
 
     glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -153,7 +150,7 @@ int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
-    if (!loop_fn(window_properties_))
+    if (!loop_fn(window_state_))
     {
       break;
     }
@@ -162,12 +159,12 @@ int App::run(const std::function<bool(const WindowProperties&)>& loop_fn)
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwGetFramebufferSize(window, &window_properties_.viewport_size.x(), &window_properties_.viewport_size.y());
-    glViewport(0, 0, window_properties_.viewport_size.x(), window_properties_.viewport_size.y());
+    glfwGetFramebufferSize(window, &window_state_.viewport_size.x(), &window_state_.viewport_size.y());
+    glViewport(0, 0, window_state_.viewport_size.x(), window_state_.viewport_size.y());
     glfwSwapBuffers(window);
   }
   TYL_INFO("[{}] closing", window_name_);
   return 0;
 }
 
-}  // namespace tyl::engine
+}  // namespace tyl::app

@@ -7,7 +7,7 @@ cc_library(
   linkopts=["-lstdc++fs"],
   deps=[
     "@imgui//:imgui_cpp",
-    "//lib/common:filesystem"
+    "//lib/platform:filesystem"
   ],
   visibility=["//visibility:public"]
 )

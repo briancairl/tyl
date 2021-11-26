@@ -10,7 +10,7 @@
 #include <numeric>
 
 // Art
-#include <tyl/common/assert.hpp>
+#include <tyl/assert.hpp>
 #include <tyl/graphics/gl.hpp>
 #include <tyl/graphics/vertex_buffer.hpp>
 

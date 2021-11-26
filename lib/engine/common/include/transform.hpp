@@ -1,15 +1,15 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file geometry.hpp
+ * @file transform.hpp
  */
 #pragma once
 
 // Tyl
-#include <tyl/common/matrix.hpp>
-#include <tyl/common/strong_alias.hpp>
+#include <tyl/matrix.hpp>
+#include <tyl/strong_alias.hpp>
 
-namespace tyl::engine
+namespace tyl
 {
 
 struct Transform : Mat3f
@@ -55,4 +55,4 @@ struct Transform : Mat3f
 
 TYL_ENSURE_LAYOUT_COMPAT(Transform, Mat3f);
 
-}  // namespace tyl::engine
+}  // namespace tyl

@@ -8,11 +8,13 @@
 // Eigen
 #include <entt/entt.hpp>
 
-namespace tyl
+namespace tyl::ecs
 {
 
 using Entity = entt::entity;
-using ECSRegistry = entt::registry;
+
+using Registry = entt::registry;
+
 using namespace entt::literals;
 
-}  // namespace tyl
+}  // namespace tyl::ecs
