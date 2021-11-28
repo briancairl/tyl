@@ -46,16 +46,19 @@ cc_library(
     "include/image.hpp",
     "include/shader.hpp",
     "include/texture.hpp",
+    "include/tile_uv_lookup.hpp",
     "include/vertex_buffer.hpp"
   ],
   srcs=[
     "src/image.cpp",
     "src/texture.cpp",
+    "src/tile_uv_lookup.cpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
   deps=[
     "//lib/common:assert",
+    "//lib/common:rect",
     "//lib/common:ref",
     "//lib/common:vec",
     ":device",

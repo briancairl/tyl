@@ -17,8 +17,9 @@ namespace tyl::graphics
 /**
  * @brief Texture resource
  */
-struct Texture : RefCounted<Texture>, device::Texture
+class Texture : public RefCounted<Texture>, public device::Texture
 {
+public:
   using ChannelMode = device::TextureChannelMode;
 
   using Options = device::TextureOptions;
@@ -27,22 +28,27 @@ struct Texture : RefCounted<Texture>, device::Texture
 
   template <typename DataPtrT>
   Texture(
-    const Size size,
+    const Size2i size,
     const DataPtrT* const data,
     const ChannelMode mode = ChannelMode::R,
     const Options& options = Options{}) :
       RefCounted<Texture>{},
-      device::Texture{size.x(), size.y(), data, mode, options}
+      device::Texture{size.x(), size.y(), data, mode, options},
+      size_{size}
   {}
 
   ~Texture() = default;
+
+  inline const Size2i& size() const { return size_; }
+
+private:
+  Size2i size_;
 };
 
 /**
  * @brief Creates a Texture from Image data
  */
 Texture to_texture(const Image& image, const Texture::Options& options = Texture::Options{});
-
 
 namespace detail
 {

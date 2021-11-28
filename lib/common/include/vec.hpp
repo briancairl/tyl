@@ -32,6 +32,7 @@ using Mat3i = Eigen::Matrix<int, 3, 3>;
 using VecXi = Eigen::Matrix<int, Eigen::Dynamic, 1>;
 using MatXi = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>;
 
-using Size = Eigen::Matrix<int, 2, 1>;
+using Size2i = Eigen::Matrix<int, 2, 1>;
+using Size2f = Eigen::Matrix<float, 2, 1>;
 
 }  // namespace tyl

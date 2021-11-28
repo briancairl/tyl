@@ -24,17 +24,27 @@ template <typename T> class Ref
 public:
   using non_const_t = std::remove_const_t<T>;
 
-  constexpr operator non_const_t&() { return *value_ptr_; }
+  constexpr std::size_t use_count() const { return *use_count_ptr_; }
 
-  constexpr operator const non_const_t&() const { return *value_ptr_; }
+  constexpr non_const_t* ptr() { return value_ptr_; }
 
-  constexpr non_const_t& operator*() { return *value_ptr_; }
+  constexpr const non_const_t* ptr() const { return value_ptr_; }
 
-  constexpr const non_const_t& operator*() const { return *value_ptr_; }
+  constexpr non_const_t& value() { return *value_ptr_; }
 
-  constexpr non_const_t* operator->() { return value_ptr_; }
+  constexpr const non_const_t& value() const { return *value_ptr_; }
 
-  constexpr const non_const_t* operator->() const { return value_ptr_; }
+  constexpr operator non_const_t&() { return value(); }
+
+  constexpr operator const non_const_t&() const { return value(); }
+
+  constexpr non_const_t& operator*() { return value(); }
+
+  constexpr const non_const_t& operator*() const { return value(); }
+
+  constexpr non_const_t* operator->() { return ptr(); }
+
+  constexpr const non_const_t* operator->() const { return ptr(); }
 
   ~Ref() { --(*use_count_ptr_); }
 
@@ -46,11 +56,24 @@ private:
     ++(*use_count_ptr_);
   }
 
-  std::size_t* use_count_ptr_;
   T* value_ptr_;
+
+  std::size_t* use_count_ptr_;
 
   friend class RefCounted<T>;
 };
+
+template <typename LhsT, typename RhsT> constexpr bool operator==(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+{
+  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
+  return lhs.ptr() == rhs.ptr();
+}
+
+template <typename LhsT, typename RhsT> constexpr bool operator!=(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+{
+  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
+  return lhs.ptr() != rhs.ptr();
+}
 
 template <typename T> class RefCounted
 {
@@ -58,6 +81,8 @@ template <typename T> class RefCounted
 
 public:
   using non_const_t = std::remove_const_t<T>;
+
+  constexpr std::size_t use_count() const { return use_count_; }
 
   constexpr Ref<non_const_t> ref() { return Ref<non_const_t>{this}; }
 

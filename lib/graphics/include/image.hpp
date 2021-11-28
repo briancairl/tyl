@@ -31,7 +31,7 @@ public:
   static Image
   load_from_file(const char* filename, const int force_channel_count = 0, const bool flip_vertically = false);
 
-  constexpr const Size& size() const { return size_; }
+  constexpr const Size2i& size() const { return size_; }
 
   constexpr int channels() const { return channels_; }
 
@@ -41,7 +41,7 @@ public:
 
 private:
   std::uint8_t* data_ = nullptr;
-  Size size_ = Size{0, 0};
+  Size2i size_ = Size2i{0, 0};
   int channels_ = 0;
 };
 

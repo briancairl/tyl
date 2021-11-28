@@ -59,6 +59,16 @@ cc_library(
 )
 
 cc_library(
+  name="rect",
+  hdrs=["include/rect.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=[":vec"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="ecs",
   hdrs=["include/ecs.hpp"],
   strip_include_prefix="include",
