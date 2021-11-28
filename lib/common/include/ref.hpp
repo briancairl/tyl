@@ -1,11 +1,12 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file bitops.hpp
+ * @file ref.hpp
  */
 #pragma once
 
 // C++ Standard Library
+#include <atomic>
 #include <cstdlib>
 #include <type_traits>
 
@@ -14,6 +15,12 @@
 
 namespace tyl
 {
+
+/// Type used to count references to a resource
+using use_count_t = std::size_t;
+
+/// Type used to count references to a resource (atomic)
+using use_count_atomic_t = std::atomic<use_count_t>;
 
 template <typename T> class RefCounted;
 
@@ -24,7 +31,7 @@ template <typename T> class Ref
 public:
   using non_const_t = std::remove_const_t<T>;
 
-  constexpr std::size_t use_count() const { return *use_count_ptr_; }
+  constexpr use_count_t use_count() const { return *use_count_ptr_; }
 
   constexpr non_const_t* ptr() { return value_ptr_; }
 
@@ -51,14 +58,14 @@ public:
   Ref(const Ref& other) : value_ptr_{other.value_ptr_}, use_count_ptr_{other.use_count_ptr_} { ++(*use_count_ptr_); }
 
 private:
-  Ref(T* ptr, std::size_t* const use_count_ptr) : value_ptr_{ptr}, use_count_ptr_{use_count_ptr}
+  Ref(T* ptr, use_count_atomic_t* const use_count_ptr) : value_ptr_{ptr}, use_count_ptr_{use_count_ptr}
   {
     ++(*use_count_ptr_);
   }
 
   T* value_ptr_;
 
-  std::size_t* use_count_ptr_;
+  use_count_atomic_t* use_count_ptr_;
 
   friend class RefCounted<T>;
 };
@@ -82,7 +89,7 @@ template <typename T> class RefCounted
 public:
   using non_const_t = std::remove_const_t<T>;
 
-  constexpr std::size_t use_count() const { return use_count_; }
+  constexpr use_count_t use_count() const { return use_count_; }
 
   constexpr Ref<non_const_t> ref() { return Ref<non_const_t>{this}; }
 
@@ -94,7 +101,7 @@ protected:
   RefCounted() = default;
 
 private:
-  std::size_t use_count_ = 0;
+  use_count_atomic_t use_count_ = 0;
 };
 
 }  // namespace tyl
