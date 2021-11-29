@@ -47,27 +47,27 @@ inline std::size_t byte_count(const TypeCode code)
   return 0UL;
 }
 
-template <typename T> constexpr TypeCode type_to_code();
+template <typename T> constexpr TypeCode typecode();
 
-template <> constexpr TypeCode type_to_code<float>()
+template <> constexpr TypeCode typecode<float>()
 {
   static_assert(sizeof(float) == byte_count<TypeCode::Float32>());
   return TypeCode::Float32;
 };
 
-template <> constexpr TypeCode type_to_code<double>()
+template <> constexpr TypeCode typecode<double>()
 {
   static_assert(sizeof(double) == byte_count<TypeCode::Float64>());
   return TypeCode::Float64;
 };
 
-template <> constexpr TypeCode type_to_code<int>()
+template <> constexpr TypeCode typecode<int>()
 {
   static_assert(sizeof(int) == byte_count<TypeCode::SInt32>());
   return TypeCode::SInt32;
 };
 
-template <> constexpr TypeCode type_to_code<unsigned>()
+template <> constexpr TypeCode typecode<unsigned>()
 {
   static_assert(sizeof(unsigned) == byte_count<TypeCode::UInt32>());
   return TypeCode::UInt32;
