@@ -9,6 +9,16 @@ cc_library(
 )
 
 cc_library(
+  name="strong_alias",
+  hdrs=["include/strong_alias.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="array_view",
   hdrs=["include/array_view.hpp"] + glob(["include/array_view/*.hpp"]),
   strip_include_prefix="include",
@@ -35,16 +45,6 @@ cc_library(
   include_prefix="tyl",
   linkopts=[],
   deps=[],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="ref",
-  hdrs=["include/ref.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[":assert"],
   visibility=["//visibility:public"]
 )
 

@@ -45,12 +45,14 @@ cc_library(
     "include/fwd.hpp",
     "include/image.hpp",
     "include/shader.hpp",
+    "include/sprite.hpp",
     "include/texture.hpp",
     "include/tile_uv_lookup.hpp",
     "include/vertex_buffer.hpp"
   ],
   srcs=[
     "src/image.cpp",
+    "src/sprite.cpp",
     "src/texture.cpp",
     "src/tile_uv_lookup.cpp",
   ],
@@ -58,8 +60,9 @@ cc_library(
   include_prefix="tyl/graphics",
   deps=[
     "//lib/common:assert",
+    "//lib/common:ecs",
+    "//lib/common:strong_alias",
     "//lib/common:rect",
-    "//lib/common:ref",
     "//lib/common:vec",
     ":device",
     "@stb//:stb",

@@ -6,8 +6,8 @@
 #pragma once
 
 // Tyl
+#include <tyl/ecs.hpp>
 #include <tyl/graphics/device/shader.hpp>
-#include <tyl/ref.hpp>
 
 namespace tyl::graphics
 {
@@ -17,16 +17,18 @@ using ShaderSource = device::ShaderSource;
 /**
  * @brief Shader resource
  */
-struct Shader : RefCounted<Shader>, device::Shader
+struct Shader : ecs::make_ref_from_this<Shader>, device::Shader
 {
   Shader(Shader&& other) = default;
+  Shader& operator=(Shader&&) = default;
+
   Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) :
-      RefCounted<Shader>{},
+      ecs::make_ref_from_this<Shader>{},
       device::Shader{std::move(vertex_source), std::move(fragment_source)}
   {}
 
   Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, ShaderSource&& geometry_source) :
-      RefCounted<Shader>{},
+      ecs::make_ref_from_this<Shader>{},
       device::Shader{std::move(vertex_source), std::move(fragment_source), std::move(geometry_source)}
   {}
 

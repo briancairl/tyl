@@ -12,7 +12,6 @@
 // Tyl
 #include <tyl/graphics/fwd.hpp>
 #include <tyl/rect.hpp>
-#include <tyl/ref.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::graphics
@@ -21,16 +20,17 @@ namespace tyl::graphics
 /**
  * @brief Lookup from ID to UV offset in an altas texture
  */
-class TileUVLookup : public RefCounted<TileUVLookup>
+class TileUVLookup : public ecs::make_ref_from_this<TileUVLookup>
 {
 public:
   TileUVLookup(TileUVLookup&& other) = default;
+  TileUVLookup& operator=(TileUVLookup&&) = default;
 
-  TileUVLookup(const Size2i tile_size_px, Ref<Texture> atlas_texture);
+  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture);
 
-  TileUVLookup(const Size2i tile_size_px, Ref<Texture> atlas_texture, const Rect2i& region);
+  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture, const Rect2i& region);
 
-  TileUVLookup(const Size2i tile_size_px, Ref<Texture> atlas_texture, std::initializer_list<Rect2i> regions);
+  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture, std::initializer_list<Rect2i> regions);
 
   ~TileUVLookup();
 
@@ -38,9 +38,9 @@ public:
 
   inline Size2f tile_size_uv() const { return tile_size_uv_; }
 
-  inline const Vec2f& operator[](const std::size_t id) const { return tile_uv_offsets_[id]; }
+  inline std::size_t tile_count() const { return tile_uv_offsets_.size(); }
 
-  inline Ref<Texture> atlas_texture() const { return atlas_texture_; }
+  inline const Vec2f& operator[](const std::size_t id) const { return tile_uv_offsets_[id]; }
 
 private:
   /// Size of a tile in pixels
@@ -48,9 +48,6 @@ private:
 
   /// Size of tile in UV space
   Size2f tile_size_uv_;
-
-  /// Parent atlas texture
-  Ref<Texture> atlas_texture_;
 
   /// Corner offsets of tiles
   std::vector<Vec2f> tile_uv_offsets_;

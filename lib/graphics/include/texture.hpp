@@ -6,9 +6,9 @@
 #pragma once
 
 // Tyl
+#include <tyl/ecs.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/fwd.hpp>
-#include <tyl/ref.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::graphics
@@ -17,7 +17,7 @@ namespace tyl::graphics
 /**
  * @brief Texture resource
  */
-class Texture : public RefCounted<Texture>, public device::Texture
+class Texture : public ecs::make_ref_from_this<Texture>, public device::Texture
 {
 public:
   using ChannelMode = device::TextureChannelMode;
@@ -25,6 +25,7 @@ public:
   using Options = device::TextureOptions;
 
   Texture(Texture&& other) = default;
+  Texture& operator=(Texture&&) = default;
 
   template <typename DataPtrT>
   Texture(
@@ -32,7 +33,7 @@ public:
     const DataPtrT* const data,
     const ChannelMode mode = ChannelMode::R,
     const Options& options = Options{}) :
-      RefCounted<Texture>{},
+      ecs::make_ref_from_this<Texture>{},
       device::Texture{size.x(), size.y(), data, mode, options},
       size_{size}
   {}

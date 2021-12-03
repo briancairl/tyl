@@ -31,25 +31,23 @@ inline Vec2f rectified_uv_extents(const Size2i tile_size_px, const Texture& atla
 
 }  // namespace anonymous
 
-TileUVLookup::TileUVLookup(const Size2i tile_size_px, Ref<Texture> atlas_texture) :
-    TileUVLookup{tile_size_px, std::move(atlas_texture), Rect2i{Vec2i{0, 0}, atlas_texture->size()}}
+TileUVLookup::TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture) :
+    TileUVLookup{tile_size_px, atlas_texture, Rect2i{Vec2i{0, 0}, atlas_texture.size()}}
 {}
 
-TileUVLookup::TileUVLookup(const Size2i tile_size_px, Ref<Texture> atlas_texture, const Rect2i& region) :
-    TileUVLookup{tile_size_px, std::move(atlas_texture), {region}}
+TileUVLookup::TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture, const Rect2i& region) :
+    TileUVLookup{tile_size_px, atlas_texture, {region}}
 {}
 
 TileUVLookup::TileUVLookup(
   const Size2i tile_size_px,
-  Ref<Texture> atlas_texture,
+  const Texture& atlas_texture,
   std::initializer_list<Rect2i> regions) :
+    ecs::make_ref_from_this<TileUVLookup>{},
     tile_size_px_{tile_size_px},
-    atlas_texture_{std::move(atlas_texture)}
+    tile_size_uv_{rectified_uv_extents(tile_size_px, atlas_texture).array() /
+                  (atlas_texture.size().array() / tile_size_px.array()).cast<float>()}
 {
-  // Compute tile size in UV space
-  tile_size_uv_ = rectified_uv_extents(tile_size_px, atlas_texture_).array() /
-    (atlas_texture_->size().array() / tile_size_px.array()).cast<float>();
-
   for (const auto& region : regions)
   {
     // Get the (N x M) tile count of the region

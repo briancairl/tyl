@@ -13,6 +13,7 @@ namespace tyl
 
 using Vec2f = Eigen::Matrix<float, 2, 1>;
 using Vec3f = Eigen::Matrix<float, 3, 1>;
+using Vec4f = Eigen::Matrix<float, 4, 1>;
 using Mat2f = Eigen::Matrix<float, 2, 2>;
 using Mat3f = Eigen::Matrix<float, 3, 3>;
 using VecXf = Eigen::Matrix<float, Eigen::Dynamic, 1>;
