@@ -21,7 +21,7 @@
 #include <tyl/logging.hpp>
 #include <tyl/ui/style.hpp>
 
-namespace tyl
+namespace tyl::app
 {
 namespace  // anonymous
 {
@@ -170,4 +170,4 @@ int Loop::run(const std::function<bool(const graphics::Target&, const WindowStat
   return 0;
 }
 
-}  // namespace tyl
+}  // namespace tyl::app

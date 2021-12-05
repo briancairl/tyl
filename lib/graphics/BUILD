@@ -75,6 +75,7 @@ cc_library(
     "//lib/common:ecs",
     "//lib/common:components",
     "//lib/common:rect",
+    "//lib/common:time",
     ":device",
     ":device_debug",
     "@stb//:stb",

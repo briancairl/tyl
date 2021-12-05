@@ -69,6 +69,8 @@ TileUVLookup::TileUVLookup(
           region_tile_origin.x() + x * tile_size_uv_.x(), region_tile_origin.y() + y * tile_size_uv_.y());
       }
     }
+
+    TYL_ASSERT_FALSE(tile_uv_offsets_.empty());
   }
 }
 

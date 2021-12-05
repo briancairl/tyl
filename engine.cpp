@@ -11,6 +11,8 @@
 #include <tyl/graphics/sprite.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/tile_uv_lookup.hpp>
+#include <tyl/logging.hpp>
+#include <tyl/time.hpp>
 
 // ImGui
 #include <imgui.h>
@@ -19,7 +21,7 @@ using namespace tyl;
 
 int main(int argc, char** argv)
 {
-  Loop loop{"tyl", Vec2i{720, 720}};
+  app::Loop loop{"tyl", Vec2i{720, 720}};
 
   graphics::device::enable_error_logs();
 
@@ -28,17 +30,16 @@ int main(int argc, char** argv)
   {
     const auto texture_id = registry.create();
     const auto& texture =
-      registry.emplace<graphics::Texture>(texture_id, graphics::load_texture("resources/test/poke-gba.png"));
-    const auto& uv_lookup =
-      registry.emplace<graphics::TileUVLookup>(texture_id, Size2i{16, 16}, texture, Rect2i{Vec2i{0, 0}, Vec2i{64, 64}});
+      registry.emplace<graphics::Texture>(texture_id, graphics::load_texture("resources/test/patrick-run.png"));
+    const auto& uv_lookup = registry.emplace<graphics::TileUVLookup>(
+      texture_id, Size2i{41, 50}, texture, Rect2i{Vec2i{0, 0}, Vec2i{286, 50}});
 
-    const auto sprite_id = graphics::create_sprite(
-      registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{0, 0}, RectSize2D{16, 16});
-    registry.get<graphics::SpriteTileID>(sprite_id).id = 2;
+    TYL_INFO("{}", uv_lookup.tile_count());
 
-    const auto sprite_id2 = graphics::create_sprite(
+    const auto animated_sprite_id = graphics::create_sprite(
       registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{32, 32}, RectSize2D{16, 16});
-    registry.get<graphics::SpriteTileID>(sprite_id2).id = 5;
+    registry.get<graphics::SpriteTileID>(animated_sprite_id).id = 0;
+    graphics::attach_sprite_sequence(registry, animated_sprite_id, 5, 10.0f, true);
   }
 
   {
@@ -48,8 +49,8 @@ int main(int argc, char** argv)
 
   graphics::create_sprite_batch_renderer(registry, 10);
 
-  return loop.run([&](const graphics::Target& render_target, const WindowState& win_state) -> bool {
-    graphics::render_sprites(registry, render_target);
+  return loop.run([&](const graphics::Target& render_target, const app::WindowState& win_state) -> bool {
+    graphics::render_sprites(registry, render_target, clock::now());
 
     return true;
   });

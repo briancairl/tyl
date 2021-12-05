@@ -1,7 +1,7 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file sprite.cpp
+ * @file sprite_sequence.cpp
  */
 
 // C++ Standard Library
@@ -9,9 +9,7 @@
 
 // Tyl
 #include <tyl/assert.hpp>
-#include <tyl/components.hpp>
 #include <tyl/graphics/camera.hpp>
-#include <tyl/graphics/device/typecode.hpp>
 #include <tyl/graphics/shader.hpp>
 #include <tyl/graphics/sprite.hpp>
 #include <tyl/graphics/texture.hpp>
@@ -147,7 +145,7 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, const Target& render_target)
+void render_sprites(ecs::registry& registry, const Target& render_target, const time_point stamp)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
@@ -158,6 +156,7 @@ void render_sprites(ecs::registry& registry, const Target& render_target)
   registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
     const auto view_projection = camera.get_view_projection_matrix(render_target);
 
+    // Submit sprite draw data
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
       [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
         // Set shader program if its not already active
@@ -216,6 +215,34 @@ void render_sprites(ecs::registry& registry, const Target& render_target)
         // Draw all the sprites that we buffered
         vertex_buffer.draw_instanced(sprite_count);
       });
+
+    // Update looped dynamic sprite sequences
+    registry.view<SpriteSequenceLooped, SpriteSequence, SpriteTileID, duration>().each(
+      [stamp](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
+        if (stamp - sequence.update_stamp < update_period)
+        {
+          return;
+        }
+        else if (tile.id == sequence.stop_id)
+        {
+          tile.id = sequence.start_id;
+        }
+        else
+        {
+          ++tile.id;
+        }
+        sequence.update_stamp = stamp;
+      });
+
+    // Update one-shot dynamic sprite sequences
+    registry.view<SpriteSequenceOneShot, SpriteSequence, SpriteTileID, duration>().each(
+      [stamp](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
+        if (stamp - sequence.update_stamp > update_period and tile.id < sequence.stop_id)
+        {
+          ++tile.id;
+          sequence.update_stamp = stamp;
+        }
+      });
   });
 }
 
@@ -239,11 +266,57 @@ void attach_sprite(
   const Position2D& sprite_position,
   const RectSize2D& sprite_size)
 {
+  TYL_ASSERT_FALSE(registry.has<SpriteTileID>(entity_id));
   registry.emplace<ecs::Ref<Texture>>(entity_id, std::move(atlas_texture));
   registry.emplace<ecs::Ref<TileUVLookup>>(entity_id, std::move(uv_lookup));
   registry.emplace<Position2D>(entity_id, sprite_position);
   registry.emplace<RectSize2D>(entity_id, sprite_size);
   registry.emplace<SpriteTileID>(entity_id, 0UL);
+}
+
+void attach_sprite_sequence(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const std::size_t stop_id,
+  const float rate,
+  const bool looped)
+{
+  TYL_ASSERT_FALSE(registry.has<SpriteSequence>(entity_id));
+  TYL_ASSERT_TRUE(registry.has<SpriteTileID>(entity_id));
+  TYL_ASSERT_GT(rate, 0.0f);
+
+  {
+    const std::size_t start_id = registry.get<SpriteTileID>(entity_id).id;
+    TYL_ASSERT_LE(start_id, stop_id);
+    registry.emplace<SpriteSequence>(entity_id, start_id, stop_id, clock::now());
+  }
+
+  registry.emplace<duration>(entity_id, make_duration(1.f / rate));
+
+  if (looped)
+  {
+    registry.emplace<SpriteSequenceLooped>(entity_id);
+  }
+  else
+  {
+    registry.emplace<SpriteSequenceOneShot>(entity_id);
+  }
+}
+
+void detach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id)
+{
+  TYL_ASSERT_TRUE(registry.has<SpriteSequence>(entity_id));
+  registry.remove<SpriteSequence, duration>(entity_id);
+  registry.remove_if_exists<SpriteSequenceOneShot>(entity_id);
+  registry.remove_if_exists<SpriteSequenceLooped>(entity_id);
+}
+
+
+void retrigger_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id)
+{
+  TYL_ASSERT_TRUE((registry.has<SpriteSequence, SpriteTileID>(entity_id)));
+  auto [sequence, tile] = registry.get<SpriteSequence, SpriteTileID>(entity_id);
+  tile.id = sequence.start_id;
 }
 
 }  // namespace tyl::graphics

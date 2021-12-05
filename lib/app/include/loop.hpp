@@ -12,7 +12,7 @@
 #include <tyl/graphics/target.hpp>
 #include <tyl/vec.hpp>
 
-namespace tyl
+namespace tyl::app
 {
 
 /**
@@ -46,4 +46,4 @@ private:
   graphics::Target window_render_target_;
 };
 
-}  // namespace tyl
+}  // namespace tyl::app

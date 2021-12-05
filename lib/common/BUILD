@@ -87,3 +87,13 @@ cc_library(
   deps=[":vec", ":strong_alias"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="time",
+  hdrs=["include/time.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)

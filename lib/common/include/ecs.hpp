@@ -69,6 +69,18 @@ private:
   friend class make_ref_from_this<T>;
 };
 
+template <typename LhsT, typename RhsT> constexpr bool operator<(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+{
+  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
+  return lhs.id() < rhs.id();
+}
+
+template <typename LhsT, typename RhsT> constexpr bool operator>(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+{
+  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
+  return lhs.id() > rhs.id();
+}
+
 template <typename LhsT, typename RhsT> constexpr bool operator==(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
 {
   static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
