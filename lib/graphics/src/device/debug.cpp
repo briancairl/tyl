@@ -9,6 +9,8 @@
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/logging.hpp>
 
+#warning "Compiling with graphical device (OpenGL) debugging enabled"
+
 namespace tyl::graphics::device
 {
 namespace  // anonymous

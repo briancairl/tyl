@@ -31,7 +31,7 @@ int main(int argc, char** argv)
 
     const auto tile_uv_lookup_id = graphics::create_tile_uv_lookup(
       registry,
-      ecs::Ref<graphics::Texture>(registry, texture_id),
+      ecs::ref<graphics::Texture>(registry, texture_id),
       {graphics::UniformlyDividedRegion{.subdivisions = Vec2i{6, 1},
                                         .inner_padding_px = Vec2i{1, 0},
                                         .area_px = Rect2i{Vec2i{0, 0}, Vec2i{245, 50}},
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
       registry,
       ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, tile_uv_lookup_id),
       Position2D{0, 0},
-      RectSize2D{15, 16});
+      RectSize2D{30, 32});
 
     graphics::attach_sprite_sequence(registry, animated_sprite_id, 30.0f, true);
   }

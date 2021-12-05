@@ -19,10 +19,20 @@ cc_library(
   visibility=["//visibility:private"]
 )
 
+config_setting(
+    name = "debug",
+    values = {"compilation_mode": "dbg"},
+)
+
+DEVICE_DEBUG_SOURCES = select({
+    ":debug": ["src/device/debug.cpp"],
+    "//conditions:default": ["src/device/debug_null.cpp"],
+})
+
 cc_library(
   name="device_debug",
   hdrs=["include/device/debug.hpp"],
-  srcs=["src/device/debug.cpp"],
+  srcs=DEVICE_DEBUG_SOURCES,
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
   deps=[":gl_internal", "//lib/logging"],
