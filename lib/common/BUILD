@@ -39,6 +39,16 @@ cc_library(
 )
 
 cc_library(
+  name="filesystem",
+  hdrs=["include/filesystem.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=["-lstdc++fs"],
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="types",
   hdrs=["include/strong_alias.hpp"],
   strip_include_prefix="include",

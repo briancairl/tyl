@@ -82,4 +82,9 @@ protected:
   make_handle_from_this() = default;
 };
 
+template <typename... ComponentTs> inline auto ref(registry& registry, const entity resource_id)
+{
+  return Ref<ComponentTs...>{registry, resource_id};
+}
+
 }  // namespace tyl::ecs

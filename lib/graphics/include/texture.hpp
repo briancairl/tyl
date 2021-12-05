@@ -5,6 +5,9 @@
  */
 #pragma once
 
+// C++ Standard Library
+#include <string_view>
+
 // Tyl
 #include <tyl/ecs.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -50,14 +53,21 @@ private:
 };
 
 /**
- * @brief Creates a Texture from Image data
+ * @brief Loads image and creates a Texture resource
  */
-Texture to_texture(const Image& image, const Texture::Options& options = Texture::Options{});
+ecs::entity create_texture(
+  ecs::registry& registry,
+  const std::string_view filename,
+  const Texture::Options& options = Texture::Options{});
 
 /**
- * @brief Loads image and creates Texture
+ * @brief Loads image and attaches a Texture resource to an existing entity
  */
-Texture load_texture(const char* filename, const Texture::Options& options = Texture::Options{});
+void attach_texture(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const std::string_view filename,
+  const Texture::Options& options = Texture::Options{});
 
 namespace detail
 {

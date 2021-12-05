@@ -27,30 +27,32 @@ int main(int argc, char** argv)
   ecs::registry registry;
 
   {
-    const auto texture_id = registry.create();
-    const auto& texture =
-      registry.emplace<graphics::Texture>(texture_id, graphics::load_texture("resources/test/patrick-run.png"));
+    const auto texture_id = graphics::create_texture(registry, "resources/test/patrick-run.png");
 
     auto& uv_lookup = registry.emplace<graphics::TileUVLookup>(texture_id);
 
     uv_lookup.update(
-      *texture(registry, texture_id),
+      registry.get<graphics::Texture>(texture_id),
       graphics::UniformlyDividedRegion{.subdivisions = Vec2i{6, 1},
                                        .inner_padding_px = Vec2i{1, 0},
                                        .area_px = Rect2i{Vec2i{0, 0}, Vec2i{245, 50}},
                                        .reversed = false});
 
     uv_lookup.update(
-      *texture(registry, texture_id),
+      registry.get<graphics::Texture>(texture_id),
       graphics::UniformlyDividedRegion{.subdivisions = Vec2i{4, 1},
                                        .inner_padding_px = Vec2i{1, 0},
                                        .area_px = Rect2i{Vec2i{41, 0}, Vec2i{207, 50}},
                                        .reversed = true});
 
     const auto animated_sprite_id = graphics::create_sprite(
-      registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{0, 0}, RectSize2D{15, 16});
+      registry,
+      ecs::ref<graphics::Texture>(registry, texture_id),
+      ecs::ref<graphics::TileUVLookup>(registry, texture_id),
+      Position2D{0, 0},
+      RectSize2D{15, 16});
 
-    graphics::attach_sprite_sequence(registry, animated_sprite_id, 10.0f, true);
+    graphics::attach_sprite_sequence(registry, animated_sprite_id, 30.0f, true);
   }
 
   {

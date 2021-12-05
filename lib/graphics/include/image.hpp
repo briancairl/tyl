@@ -11,6 +11,7 @@
 #include <type_traits>
 
 // Tyl
+#include <tyl/ecs.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::graphics

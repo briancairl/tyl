@@ -75,6 +75,7 @@ cc_library(
   deps=[
     "//lib/common:assert",
     "//lib/common:ecs",
+    "//lib/common:filesystem",
     "//lib/common:components",
     "//lib/common:rect",
     "//lib/common:time",
