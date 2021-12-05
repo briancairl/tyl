@@ -11,6 +11,7 @@ namespace tyl::graphics
 class CameraTopDown;
 class Image;
 class Shader;
+class Target;
 class Texture;
 class TileUVLookup;
 class VertexBuffer;

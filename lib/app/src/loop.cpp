@@ -17,10 +17,11 @@
 
 // Art
 #include <tyl/app/loop.hpp>
+#include <tyl/graphics/target.hpp>
 #include <tyl/logging.hpp>
 #include <tyl/ui/style.hpp>
 
-namespace tyl::app
+namespace tyl
 {
 namespace  // anonymous
 {
@@ -36,10 +37,10 @@ void glfw_error_callback(int error, const char* description)
 /**
  * @brief Computes normalized cursor position
  */
-inline Vec2f get_cursor_position_normalized(const State& state)
+inline Vec2f to_cursor_position_normalized(const graphics::Target& render_target, const WindowState& window_state)
 {
-  const float xn = state.cursor_position_full_resolution.x() / state.viewport_size.x();
-  const float yn = state.cursor_position_full_resolution.y() / state.viewport_size.y();
+  const float xn = window_state.cursor_position_full_resolution.x() / render_target.viewport_size.x();
+  const float yn = window_state.cursor_position_full_resolution.y() / render_target.viewport_size.y();
   return Vec2f{2.f * xn - 1.0f, 1.0f - 2.f * yn};
 }
 
@@ -50,7 +51,7 @@ Loop::Loop(const char* name, const Vec2i& size) : window_name_{name}, window_ctx
 {
   logging::initialize();
 
-  window_state_.viewport_size = size;
+  window_render_target_.viewport_size = size;
 
   // Setup window
   glfwSetErrorCallback(glfw_error_callback);
@@ -126,11 +127,13 @@ Loop::~Loop()
   }
 }
 
-int Loop::run(const std::function<bool(const State&)>& loop_fn)
+int Loop::run(const std::function<bool(const graphics::Target&, const WindowState&)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 
   ImVec4 background_color{0.1f, 0.1f, 0.1f, 1.0f};
+
+  graphics::Target window_render_target;
 
   TYL_INFO("[{}] starting", window_name_);
   while (!glfwWindowShouldClose(window))
@@ -138,7 +141,7 @@ int Loop::run(const std::function<bool(const State&)>& loop_fn)
     glfwPollEvents();
     glfwGetCursorPos(
       window, &window_state_.cursor_position_full_resolution.x(), &window_state_.cursor_position_full_resolution.y());
-    window_state_.cursor_position_normalized = get_cursor_position_normalized(window_state_);
+    window_state_.cursor_position_normalized = to_cursor_position_normalized(window_render_target_, window_state_);
 
     glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -150,7 +153,7 @@ int Loop::run(const std::function<bool(const State&)>& loop_fn)
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
-    if (!loop_fn(window_state_))
+    if (!loop_fn(window_render_target_, window_state_))
     {
       break;
     }
@@ -159,12 +162,12 @@ int Loop::run(const std::function<bool(const State&)>& loop_fn)
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    glfwGetFramebufferSize(window, &window_state_.viewport_size.x(), &window_state_.viewport_size.y());
-    glViewport(0, 0, window_state_.viewport_size.x(), window_state_.viewport_size.y());
+    glfwGetFramebufferSize(window, &window_render_target_.viewport_size.x(), &window_render_target_.viewport_size.y());
+    glViewport(0, 0, window_render_target_.viewport_size.x(), window_render_target_.viewport_size.y());
     glfwSwapBuffers(window);
   }
   TYL_INFO("[{}] closing", window_name_);
   return 0;
 }
 
-}  // namespace tyl::app
+}  // namespace tyl

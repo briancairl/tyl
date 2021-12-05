@@ -5,7 +5,8 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/app",
   deps = [
-    "//lib/engine/common",
+    "//lib/common:vec",
+    "//lib/graphics",
     "//lib/logging",
     "//lib/ui",
   ],

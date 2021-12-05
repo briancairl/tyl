@@ -56,6 +56,7 @@ cc_library(
     "include/image.hpp",
     "include/shader.hpp",
     "include/sprite.hpp",
+    "include/target.hpp",
     "include/texture.hpp",
     "include/tile_uv_lookup.hpp",
     "include/vertex_buffer.hpp"

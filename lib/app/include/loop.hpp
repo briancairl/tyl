@@ -9,19 +9,17 @@
 #include <functional>
 
 // Tyl
-#include <tyl/matrix.hpp>
+#include <tyl/graphics/target.hpp>
+#include <tyl/vec.hpp>
 
-namespace tyl::app
+namespace tyl
 {
 
 /**
  * @brief Describes current application state
  */
-struct State
+struct WindowState
 {
-  /// Current size of the render viewport
-  Vec2i viewport_size;
-
   /// Current mouse pointer position (possible sub-pixel resolution)
   Vec2d cursor_position_full_resolution;
 
@@ -39,12 +37,13 @@ public:
 
   ~Loop();
 
-  int run(const std::function<bool(const State&)>& loop_fn);
+  int run(const std::function<bool(const graphics::Target&, const WindowState&)>& loop_fn);
 
 private:
   const char* window_name_;
   void* window_ctx_;
-  State window_state_;
+  WindowState window_state_;
+  graphics::Target window_render_target_;
 };
 
-}  // namespace tyl::app
+}  // namespace tyl

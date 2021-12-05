@@ -147,7 +147,7 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, const Vec2i& viewport_size)
+void render_sprites(ecs::registry& registry, const Target& render_target)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
@@ -156,7 +156,7 @@ void render_sprites(ecs::registry& registry, const Vec2i& viewport_size)
   std::optional<device::texture_id_t> active_texture_id{std::nullopt};
 
   registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
-    const auto view_projection = camera.get_view_projection_matrix(viewport_size);
+    const auto view_projection = camera.get_view_projection_matrix(render_target);
 
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
       [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {

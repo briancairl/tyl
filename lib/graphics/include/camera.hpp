@@ -6,6 +6,7 @@
 #pragma once
 
 // Tyl
+#include <tyl/graphics/fwd.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::graphics
@@ -29,7 +30,7 @@ struct CameraTopDown
    *
    * @return 3x3 view matrix
    */
-  Mat3f get_inverse_view_projection_matrix(const Vec2i& viewport_size) const;
+  Mat3f get_inverse_view_projection_matrix(const Target& render_target) const;
 
   /**
    * @brief Returns view matrix given a camera and viewport
@@ -38,9 +39,9 @@ struct CameraTopDown
    *
    * @return 3x3 view matrix
    */
-  inline Mat3f get_view_projection_matrix(const Vec2i& viewport_size) const
+  inline Mat3f get_view_projection_matrix(const Target& render_target) const
   {
-    return get_inverse_view_projection_matrix(viewport_size).inverse();
+    return get_inverse_view_projection_matrix(render_target).inverse();
   }
 
   CameraTopDown() = default;
