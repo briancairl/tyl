@@ -127,7 +127,7 @@ Loop::~Loop()
   }
 }
 
-int Loop::run(const std::function<bool(graphics::Target&, const WindowState&)>& loop_fn)
+int Loop::run(const std::function<bool(graphics::Target&, const WindowState&, const duration dt)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 
@@ -136,6 +136,8 @@ int Loop::run(const std::function<bool(graphics::Target&, const WindowState&)>& 
   graphics::Target window_render_target;
 
   TYL_INFO("[{}] starting", window_name_);
+
+  time_point prev_updater_stamp = clock::now();
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
@@ -153,10 +155,12 @@ int Loop::run(const std::function<bool(graphics::Target&, const WindowState&)>& 
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
-    if (!loop_fn(window_render_target_, window_state_))
+    time_point curr_updater_stamp = clock::now();
+    if (!loop_fn(window_render_target_, window_state_, curr_updater_stamp - prev_updater_stamp))
     {
       break;
     }
+    prev_updater_stamp = curr_updater_stamp;
 
     // Render dear imgui into screen
     ImGui::Render();

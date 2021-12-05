@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/graphics/target.hpp>
+#include <tyl/time.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::app
@@ -37,7 +38,7 @@ public:
 
   ~Loop();
 
-  int run(const std::function<bool(graphics::Target&, const WindowState&)>& loop_fn);
+  int run(const std::function<bool(graphics::Target&, const WindowState&, const duration dt)>& loop_fn);
 
 private:
   const char* window_name_;

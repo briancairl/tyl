@@ -60,8 +60,8 @@ int main(int argc, char** argv)
 
   graphics::create_sprite_batch_renderer(registry, 10);
 
-  return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state) -> bool {
-    graphics::render_sprites(registry, render_target, clock::now());
+  return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
+    graphics::render_sprites(registry, render_target, dt);
 
     return true;
   });

@@ -146,7 +146,7 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, Target& render_target, const time_point stamp)
+void render_sprites(ecs::registry& registry, Target& render_target, const duration dt)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
@@ -212,8 +212,9 @@ void render_sprites(ecs::registry& registry, Target& render_target, const time_p
 
     // Update looped dynamic sprite sequences
     registry.view<SpriteSequenceLooped, SpriteSequence, SpriteTileID, duration>().each(
-      [stamp](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
-        if (stamp - sequence.update_stamp < update_period)
+      [dt](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
+        sequence.period_since_last_update += dt;
+        if (sequence.period_since_last_update < update_period)
         {
           return;
         }
@@ -225,16 +226,17 @@ void render_sprites(ecs::registry& registry, Target& render_target, const time_p
         {
           ++tile.id;
         }
-        sequence.update_stamp = stamp;
+        sequence.period_since_last_update = duration::zero();
       });
 
     // Update one-shot dynamic sprite sequences
     registry.view<SpriteSequenceOneShot, SpriteSequence, SpriteTileID, duration>().each(
-      [stamp](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
-        if (stamp - sequence.update_stamp > update_period and tile.id < sequence.stop_id)
+      [dt](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
+        sequence.period_since_last_update += dt;
+        if (sequence.period_since_last_update > update_period and tile.id < sequence.stop_id)
         {
           ++tile.id;
-          sequence.update_stamp = stamp;
+          sequence.period_since_last_update = duration::zero();
         }
       });
   });
@@ -277,7 +279,7 @@ void attach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id
   {
     auto [tile, tile_uv] = registry.get<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id);
     tile.id = 0;
-    registry.emplace<SpriteSequence>(entity_id, tile.id, (*tile_uv).tile_count() - 1, clock::now());
+    registry.emplace<SpriteSequence>(entity_id, tile.id, (*tile_uv).tile_count() - 1, duration::zero());
   }
 
   registry.emplace<duration>(entity_id, make_duration(1.f / rate));
