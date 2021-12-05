@@ -72,10 +72,8 @@ cc_library(
   deps=[
     "//lib/common:assert",
     "//lib/common:ecs",
-    "//lib/common:strong_alias",
+    "//lib/common:components",
     "//lib/common:rect",
-    "//lib/common:vec",
-    "//lib/logging",
     ":device",
     ":device_debug",
     "@stb//:stb",

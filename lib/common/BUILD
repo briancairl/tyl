@@ -77,3 +77,13 @@ cc_library(
   deps=["@entt//:entt"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="components",
+  hdrs=["include/components.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=[":vec", ":strong_alias"],
+  visibility=["//visibility:public"]
+)

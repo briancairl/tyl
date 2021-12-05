@@ -9,6 +9,7 @@
 
 // Tyl
 #include <tyl/assert.hpp>
+#include <tyl/components.hpp>
 #include <tyl/graphics/camera.hpp>
 #include <tyl/graphics/device/typecode.hpp>
 #include <tyl/graphics/shader.hpp>
@@ -173,7 +174,7 @@ void render_sprites(ecs::registry& registry, const Vec2i& viewport_size)
         {
           auto position_data = vb_buffer_ptr.template as<Vec4f>();
           auto texcoord_data = position_data + render_props.max_sprite_count;
-          auto sprite_view = registry.template view<Position, RectSize, SpriteTileID, W_Texture, W_TileUVLookup>();
+          auto sprite_view = registry.template view<Position2D, RectSize2D, SpriteTileID, W_Texture, W_TileUVLookup>();
           for (const auto sprite_id : sprite_view)
           {
             // Stop buffering sprites if we hit the max sprite count
@@ -192,8 +193,8 @@ void render_sprites(ecs::registry& registry, const Vec2i& viewport_size)
 
             // Set sprite position info
             {
-              position_data->template head<2>() = sprite_view.template get<Position>(sprite_id);
-              position_data->template tail<2>() = sprite_view.template get<RectSize>(sprite_id);
+              position_data->template head<2>() = sprite_view.template get<Position2D>(sprite_id);
+              position_data->template tail<2>() = sprite_view.template get<RectSize2D>(sprite_id);
             }
 
             // Set sprite tile info
@@ -222,8 +223,8 @@ ecs::entity create_sprite(
   ecs::registry& registry,
   ecs::Ref<Texture> atlas_texture,
   ecs::Ref<TileUVLookup> uv_lookup,
-  const Position& sprite_position,
-  const RectSize& sprite_size)
+  const Position2D& sprite_position,
+  const RectSize2D& sprite_size)
 {
   const ecs::entity entity_id = registry.create();
   attach_sprite(registry, entity_id, std::move(atlas_texture), std::move(uv_lookup), sprite_position, sprite_size);
@@ -235,13 +236,13 @@ void attach_sprite(
   const ecs::entity entity_id,
   ecs::Ref<Texture> atlas_texture,
   ecs::Ref<TileUVLookup> uv_lookup,
-  const Position& sprite_position,
-  const RectSize& sprite_size)
+  const Position2D& sprite_position,
+  const RectSize2D& sprite_size)
 {
   registry.emplace<ecs::Ref<Texture>>(entity_id, std::move(atlas_texture));
   registry.emplace<ecs::Ref<TileUVLookup>>(entity_id, std::move(uv_lookup));
-  registry.emplace<Position>(entity_id, sprite_position);
-  registry.emplace<RectSize>(entity_id, sprite_size);
+  registry.emplace<Position2D>(entity_id, sprite_position);
+  registry.emplace<RectSize2D>(entity_id, sprite_size);
   registry.emplace<SpriteTileID>(entity_id, 0UL);
 }
 

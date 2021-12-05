@@ -4,6 +4,7 @@
 // Tyl
 #include <tyl/app/loop.hpp>
 #include <tyl/assert.hpp>
+#include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/graphics/camera.hpp>
 #include <tyl/graphics/device/debug.hpp>
@@ -31,11 +32,7 @@ int main(int argc, char** argv)
     const auto& uv_lookup =
       registry.emplace<graphics::TileUVLookup>(texture_id, Size2i{16, 16}, texture, Rect2i{Vec2i{0, 0}, Vec2i{64, 64}});
     const auto sprite_id = graphics::create_sprite(
-      registry,
-      texture(registry, texture_id),
-      uv_lookup(registry, texture_id),
-      graphics::Position{0, 0},
-      graphics::RectSize{16, 16});
+      registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{0, 0}, RectSize2D{16, 16});
     registry.get<graphics::SpriteTileID>(sprite_id).id = 2;
   }
 

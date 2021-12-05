@@ -6,16 +6,12 @@
 #pragma once
 
 // Tyl
+#include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/graphics/fwd.hpp>
-#include <tyl/strong_alias.hpp>
-#include <tyl/vec.hpp>
 
 namespace tyl::graphics
 {
-
-TYL_DEFINE_STRONG_ALIAS(Position, Vec2f);
-TYL_DEFINE_STRONG_ALIAS(RectSize, Vec2f);
 
 struct SpriteBatchRenderProperties
 {
@@ -40,15 +36,15 @@ ecs::entity create_sprite(
   ecs::registry& registry,
   ecs::Ref<Texture> atlas_texture,
   ecs::Ref<TileUVLookup> uv_lookup,
-  const Position& sprite_position,
-  const RectSize& sprite_size);
+  const Position2D& sprite_position,
+  const RectSize2D& sprite_size);
 
 void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
   ecs::Ref<Texture> atlas_texture,
   ecs::Ref<TileUVLookup> uv_lookup,
-  const Position& sprite_position,
-  const RectSize& sprite_size);
+  const Position2D& sprite_position,
+  const RectSize2D& sprite_size);
 
 }  // namespace tyl::graphics
