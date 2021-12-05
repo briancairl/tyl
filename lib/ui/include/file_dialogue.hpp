@@ -15,7 +15,7 @@
 #include <vector>
 
 // Tyl
-#include <tyl/platform/filesystem.hpp>
+#include <tyl/filesystem.hpp>
 
 namespace tyl::ui
 {
