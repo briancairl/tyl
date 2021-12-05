@@ -1,7 +1,7 @@
 /**
  * @copyright 2020-present Brian Cairl
  *
- * @file typecode.h
+ * @file typecode.hpp
  */
 #pragma once
 

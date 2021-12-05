@@ -4,7 +4,7 @@
  * @file texture.cpp
  */
 
-// Art
+// Tyl
 #include <tyl/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>

@@ -1,7 +1,7 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file typedef.h
+ * @file typedef.hpp
  */
 #pragma once
 

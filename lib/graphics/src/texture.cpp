@@ -38,4 +38,9 @@ Texture to_texture(const Image& image, const Texture::Options& options)
   return Texture{image.size(), image.data(), image_channel_count_to_mode(image.channels()), options};
 }
 
+Texture load_texture(const char* filename, const Texture::Options& options)
+{
+  return to_texture(Image::load_from_file(filename), options);
+}
+
 }  // namespace tyl::graphics

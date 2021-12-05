@@ -11,7 +11,7 @@
 #include <sstream>
 #include <string>
 
-// Art
+// Tyl
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>
 

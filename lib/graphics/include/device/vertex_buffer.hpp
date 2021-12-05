@@ -77,6 +77,10 @@ public:
 
   template <typename T> constexpr T* const as() { return reinterpret_cast<T* const>(ptr_); }
 
+  inline bool valid() const { return ptr_ != nullptr; }
+
+  inline operator bool() const { return this->valid(); }
+
 private:
   explicit MappedBufferPtr(const unsigned buffer_type, const unsigned buffer_mode, const std::size_t byte_offset);
 

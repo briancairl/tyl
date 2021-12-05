@@ -36,7 +36,7 @@ cc_binary(
 cc_binary(
     name="engine",
     srcs=["engine.cpp"],
-    deps=["//lib/engine/camera", "//lib/engine/tile_map", "//lib/engine/app"],
+    deps=["//lib/graphics", "//lib/engine/app"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,

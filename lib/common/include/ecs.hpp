@@ -20,7 +20,7 @@ using registry = entt::registry;
 
 using namespace entt::literals;
 
-template <typename T> class RefCounted;
+template <typename T> class make_ref_from_this;
 
 template <typename T> class Ref
 {
@@ -66,7 +66,7 @@ private:
   /// ID of this resource
   entity id_;
 
-  friend class RefCounted<T>;
+  friend class make_ref_from_this<T>;
 };
 
 template <typename LhsT, typename RhsT> constexpr bool operator==(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
@@ -91,6 +91,11 @@ public:
   {
     TYL_ASSERT_TRUE(registry.template has<ResourceT>(resource_id));
     return Ref<ResourceT>{registry, resource_id};
+  }
+
+  constexpr auto operator()(registry& registry, const entity resource_id) const
+  {
+    return make_ref_from_this::ref(registry, resource_id);
   }
 
 protected:

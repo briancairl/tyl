@@ -1,7 +1,7 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file fwd.h
+ * @file fwd.hpp
  */
 #pragma once
 

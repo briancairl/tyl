@@ -34,7 +34,7 @@ void attach_sprite_batch_renderer(
   const ecs::entity entity_id,
   const std::size_t max_sprite_count);
 
-void render_sprites(ecs::registry& registry, const Mat3f& view_projection);
+void render_sprites(ecs::registry& registry, const Vec2i& viewport_size);
 
 ecs::entity create_sprite(
   ecs::registry& registry,

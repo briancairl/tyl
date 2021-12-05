@@ -51,6 +51,11 @@ private:
  */
 Texture to_texture(const Image& image, const Texture::Options& options = Texture::Options{});
 
+/**
+ * @brief Loads image and creates Texture
+ */
+Texture load_texture(const char* filename, const Texture::Options& options = Texture::Options{});
+
 namespace detail
 {
 

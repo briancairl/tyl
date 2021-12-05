@@ -8,6 +8,7 @@
 namespace tyl::graphics
 {
 
+class CameraTopDown;
 class Image;
 class Shader;
 class Texture;

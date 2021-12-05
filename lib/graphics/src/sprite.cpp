@@ -9,6 +9,7 @@
 
 // Tyl
 #include <tyl/assert.hpp>
+#include <tyl/graphics/camera.hpp>
 #include <tyl/graphics/device/typecode.hpp>
 #include <tyl/graphics/shader.hpp>
 #include <tyl/graphics/sprite.hpp>
@@ -78,10 +79,10 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
   );
 }
 
-static constexpr std::size_t SPRITE_QUAD_POSITION_BUFFER_INDEX = 0;
-static constexpr std::size_t SPRITE_QUAD_TEXCOORD_BUFFER_INDEX = 1;
-static constexpr std::size_t SPRITE_OFFSET_POSITION_BUFFER_INDEX = 2;
-static constexpr std::size_t SPRITE_OFFSET_TEXCOORD_BUFFER_INDEX = 3;
+static constexpr std::size_t SPRITE_QUAD_POSITION_INDEX = 0;
+static constexpr std::size_t SPRITE_QUAD_TEXCOORD_INDEX = 1;
+static constexpr std::size_t SPRITE_OFFSET_POSITION_INDEX = 2;
+static constexpr std::size_t SPRITE_OFFSET_TEXCOORD_INDEX = 3;
 
 void attach_sprite_batch_renderer_vertex_buffer(ecs::registry& registry, const ecs::entity e, const std::size_t sprite_count)
 {
@@ -109,7 +110,7 @@ void attach_sprite_batch_renderer_vertex_buffer(ecs::registry& registry, const e
           Vec2f{1.f, 1.f},
           Vec2f{0.f, 1.f},
         };
-        vb.set_vertex_data(SPRITE_QUAD_POSITION_BUFFER_INDEX, reinterpret_cast<const float*>(quad));
+        vb.set_vertex_data(SPRITE_QUAD_POSITION_INDEX, reinterpret_cast<const float*>(quad));
       }
 
       {
@@ -119,16 +120,11 @@ void attach_sprite_batch_renderer_vertex_buffer(ecs::registry& registry, const e
           Vec2f{1.f, 0.f},
           Vec2f{0.f, 0.f},
         };
-        vb.set_vertex_data(SPRITE_QUAD_TEXCOORD_BUFFER_INDEX, reinterpret_cast<const float*>(quad));
+        vb.set_vertex_data(SPRITE_QUAD_TEXCOORD_INDEX, reinterpret_cast<const float*>(quad));
       }
       return vb;
     }());
   // clang-format on
-}
-
-template <typename T> inline bool operator!=(const std::optional<T>& lhs, const T& rhs)
-{
-  return (lhs == std::nullopt) or (lhs.value() != rhs);
 }
 
 }  // namespace anonymous
@@ -150,7 +146,7 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, const Mat3f& view_projection)
+void render_sprites(ecs::registry& registry, const Vec2i& viewport_size)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
@@ -158,61 +154,68 @@ void render_sprites(ecs::registry& registry, const Mat3f& view_projection)
   std::optional<device::shader_id_t> active_shader_id{std::nullopt};
   std::optional<device::texture_id_t> active_texture_id{std::nullopt};
 
-  registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
-    [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
-      // Set shader program if its not already active
-      if (active_shader_id != shader.get_id())
-      {
-        shader.bind();
-        shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
-      }
+  registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
+    const auto view_projection = camera.get_view_projection_matrix(viewport_size);
 
-      // Buffer sprite data (position, uv)
-      auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_BUFFER_INDEX);
-      auto pos_ptr = vb_buffer_ptr.template as<Vec4f>();
-      auto tex_ptr = vb_buffer_ptr.template as<Vec4f>() + render_props.max_sprite_count;
-
-      std::size_t sprite_count = 0;
-      auto sprite_view = registry.template view<Position, RectSize, SpriteTileID, W_Texture, W_TileUVLookup>();
-      for (const auto sprite_id : sprite_view)
-      {
-        // Stop buffering sprites if we hit the max sprite count
-        if (sprite_count > render_props.max_sprite_count)
+    registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
+      [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
+        // Set shader program if its not already active
+        if (!active_shader_id or active_shader_id != shader.get_id())
         {
-          break;
-        }
-        // Set active texture unit if its not already active
-        else if (const Texture& texture = sprite_view.template get<W_Texture>(sprite_id);
-                 active_texture_id != texture.get_id())
-        {
-          texture.bind(0);
-          shader.setInt("u_TextureID", 0);
+          shader.bind();
+          shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
+          active_shader_id = shader.get_id();
         }
 
-        // Set sprite position info
+        // Buffer sprite data (position, uv)
+        std::size_t sprite_count = 0;
+        if (auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_INDEX); vb_buffer_ptr)
         {
-          pos_ptr->template head<2>() = sprite_view.template get<Position>(sprite_id);
-          pos_ptr->template tail<2>() = sprite_view.template get<RectSize>(sprite_id);
+          auto position_data = vb_buffer_ptr.template as<Vec4f>();
+          auto texcoord_data = position_data + render_props.max_sprite_count;
+          auto sprite_view = registry.template view<Position, RectSize, SpriteTileID, W_Texture, W_TileUVLookup>();
+          for (const auto sprite_id : sprite_view)
+          {
+            // Stop buffering sprites if we hit the max sprite count
+            if (sprite_count > render_props.max_sprite_count)
+            {
+              break;
+            }
+            // Set active texture unit if its not already active
+            else if (const Texture& texture = sprite_view.template get<W_Texture>(sprite_id);
+                     !active_texture_id or active_texture_id != texture.get_id())
+            {
+              texture.bind(0);
+              shader.setInt("u_TextureID", 0);
+              active_texture_id = texture.get_id();
+            }
+
+            // Set sprite position info
+            {
+              position_data->template head<2>() = sprite_view.template get<Position>(sprite_id);
+              position_data->template tail<2>() = sprite_view.template get<RectSize>(sprite_id);
+            }
+
+            // Set sprite tile info
+            {
+              const TileUVLookup& uv_lookup = sprite_view.template get<W_TileUVLookup>(sprite_id);
+              const SpriteTileID& tile = sprite_view.template get<SpriteTileID>(sprite_id);
+              TYL_ASSERT_LT(tile.id, uv_lookup.tile_count());
+              texcoord_data->template head<2>() = uv_lookup[tile.id];
+              texcoord_data->template tail<2>() = uv_lookup.tile_size_uv();
+            }
+
+            // Increment buffer pointers
+            ++sprite_count;
+            ++position_data;
+            ++texcoord_data;
+          }
         }
 
-        // Set sprite tile info
-        {
-          const TileUVLookup& uv_lookup = sprite_view.template get<W_TileUVLookup>(sprite_id);
-          const SpriteTileID& tile = sprite_view.template get<SpriteTileID>(sprite_id);
-          TYL_ASSERT_LT(tile.id, uv_lookup.tile_count());
-          tex_ptr->template head<2>() = uv_lookup[tile.id];
-          tex_ptr->template tail<2>() = uv_lookup.tile_size_uv();
-        }
-
-        // Increment buffer pointers
-        ++sprite_count;
-        ++pos_ptr;
-        ++tex_ptr;
-      }
-
-      // Draw all the sprites that we buffered
-      vertex_buffer.draw_instanced(sprite_count);
-    });
+        // Draw all the sprites that we buffered
+        vertex_buffer.draw_instanced(sprite_count);
+      });
+  });
 }
 
 ecs::entity create_sprite(

@@ -1,7 +1,7 @@
 /**
  * @copyright 2020-present Brian Cairl
  *
- * @file texture.h
+ * @file texture.hpp
  */
 #pragma once
 

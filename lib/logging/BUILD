@@ -4,7 +4,8 @@ cc_library(
   srcs=["src/logging.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
-  linkopts=[],
+  copts=["-DSPDLOG_COMPILED_LIB"],
+  linkopts=["-DSPDLOG_COMPILED_LIB"],
   deps=["@spdlog//:spdlog"],
   visibility=["//visibility:public"]
 )

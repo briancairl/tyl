@@ -19,6 +19,15 @@ cc_library(
   visibility=["//visibility:private"]
 )
 
+cc_library(
+  name="device_debug",
+  hdrs=["include/device/debug.hpp"],
+  srcs=["src/device/debug.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[":gl_internal", "//lib/logging"],
+  visibility=["//visibility:public"]
+)
 
 cc_library(
   name="device",
@@ -42,6 +51,7 @@ cc_library(
 cc_library(
   name="graphics",
   hdrs=[
+    "include/camera.hpp",
     "include/fwd.hpp",
     "include/image.hpp",
     "include/shader.hpp",
@@ -51,6 +61,7 @@ cc_library(
     "include/vertex_buffer.hpp"
   ],
   srcs=[
+    "src/camera.cpp",
     "src/image.cpp",
     "src/sprite.cpp",
     "src/texture.cpp",
@@ -64,7 +75,9 @@ cc_library(
     "//lib/common:strong_alias",
     "//lib/common:rect",
     "//lib/common:vec",
+    "//lib/logging",
     ":device",
+    ":device_debug",
     "@stb//:stb",
   ],
   visibility=["//visibility:public"]

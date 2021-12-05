@@ -1,7 +1,7 @@
 /**
  * @copyright 2020-present Brian Cairl
  *
- * @file shader.h
+ * @file shader.hpp
  */
 #pragma once
 

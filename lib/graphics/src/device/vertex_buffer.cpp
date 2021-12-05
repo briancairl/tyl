@@ -9,7 +9,7 @@
 #include <iterator>
 #include <numeric>
 
-// Art
+// Tyl
 #include <tyl/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/vertex_buffer.hpp>
@@ -49,6 +49,22 @@ inline static GLuint to_gl_draw_mode(const VertexBuffer::DrawMode mode)
     break;
   }
   return -1;
+}
+
+inline void* get_buffer_ptr(const unsigned buffer_type)
+{
+  void* p = nullptr;
+  glGetBufferPointerv(buffer_type, GL_BUFFER_MAP_POINTER, &p);
+  return p;
+}
+
+inline void* get_or_map_buffer_ptr(const unsigned buffer_type, const unsigned buffer_mode)
+{
+  if (void* p = get_buffer_ptr(buffer_type); p != nullptr)
+  {
+    return p;
+  }
+  return glMapBuffer(buffer_type, buffer_mode);
 }
 
 }  // namespace anonymous
