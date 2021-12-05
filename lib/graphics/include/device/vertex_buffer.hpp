@@ -8,10 +8,10 @@
 // C++ Standard Library
 #include <cstdint>
 #include <initializer_list>
-#include <optional>
 #include <vector>
 
-// Art
+// Tyl
+#include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/fwd.hpp>
 #include <tyl/graphics/device/typecode.hpp>
 #include <tyl/graphics/device/typedef.hpp>
@@ -153,7 +153,7 @@ private:
 
   vertex_buffer_id_t vao_;
   vertex_buffer_id_t vbo_;
-  std::optional<vertex_buffer_id_t> ebo_;
+  vertex_buffer_id_t ebo_;
   std::size_t index_count_;
   std::vector<VertexAttributeDescriptor> vertex_attributes_;
 

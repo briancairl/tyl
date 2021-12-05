@@ -8,10 +8,10 @@
 // C++ Standard Library
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <type_traits>
 
 // Tyl
+#include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/fwd.hpp>
 #include <tyl/graphics/device/typedef.hpp>
 
@@ -128,12 +128,12 @@ public:
   /**
    * @brief Returns unique ID associated with loaded texture
    */
-  inline texture_id_t get_id() const { return texture_id_.value(); };
+  inline texture_id_t get_id() const { return texture_id_; };
 
   /**
    * @brief Checks if texture is currently ready for use
    */
-  inline bool valid() const { return is_bound_ and texture_id_; }
+  inline bool valid() const { return texture_id_ != invalid_texture_id; }
 
   /**
    * @brief Checks if texture is currently ready for use
@@ -143,13 +143,10 @@ public:
 private:
   Texture(const Texture&) = default;
 
-  explicit Texture(const texture_id_t id) : texture_id_{id}, is_bound_{false} {};
+  explicit Texture(const texture_id_t id) : texture_id_{id} {};
 
   /// Device texture ID
-  std::optional<texture_id_t> texture_id_;
-
-  /// Tracks if texture is bound to device
-  mutable bool is_bound_;
+  texture_id_t texture_id_;
 };
 
 }  // namespace tyl::graphics::device

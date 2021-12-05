@@ -90,7 +90,7 @@ VertexBuffer::VertexBuffer(
     // clang-format off
     vao_{[]() -> vertex_buffer_id_t { GLuint id; glGenVertexArrays(1, &id); return id;}()},
     vbo_{[]() -> vertex_buffer_id_t { GLuint id; glGenBuffers(1, &id); return id; }()},
-    ebo_{[index_count]() -> std::optional<vertex_buffer_id_t>
+    ebo_{[index_count]() -> vertex_buffer_id_t
       {
         if (index_count)
         {
@@ -100,7 +100,7 @@ VertexBuffer::VertexBuffer(
         }
         else
         {
-          return std::nullopt;
+          return invalid_vertex_buffer_id;
         }
       }()
     },
@@ -124,11 +124,11 @@ VertexBuffer::VertexBuffer(
   }
 
   // Reserve index buffer
-  if (ebo_)
+  if (ebo_ != invalid_vertex_buffer_id)
   {
     static constexpr std::size_t bytes_per_index = sizeof(GLuint);
     const std::size_t total_bytes = index_count * bytes_per_index;
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_bytes, 0, to_gl_buffer_mode(buffer_mode));
   }
 
@@ -222,8 +222,8 @@ void VertexBuffer::set_vertex_data(const std::size_t attr_index, const std::uint
 void VertexBuffer::set_index_data(const std::uint32_t* const data) const
 {
   static_assert(std::is_same<std::uint32_t, GLuint>(), "'GUint != std::uint32_t integer type");
-  TYL_ASSERT_TRUE(ebo_);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
+  TYL_ASSERT_NE(ebo_, invalid_vertex_buffer_id);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * index_count_, data);
 }
 
@@ -265,10 +265,9 @@ VertexBuffer::~VertexBuffer()
     glDeleteBuffers(1, &delete_buffer);
   }
 
-  if (ebo_)
+  if (ebo_ != invalid_vertex_buffer_id)
   {
-    GLuint delete_buffer = *ebo_;
-    glDeleteBuffers(1, &delete_buffer);
+    glDeleteBuffers(1, &ebo_);
   }
 }
 
@@ -290,8 +289,8 @@ MappedBufferPtr VertexBuffer::get_vertex_ptr(const std::size_t attr_index) const
 
 MappedBufferPtr VertexBuffer::get_index_ptr() const
 {
-  TYL_ASSERT_TRUE(ebo_);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo_);
+  TYL_ASSERT_NE(ebo_, invalid_vertex_buffer_id);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
   return MappedBufferPtr{GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, 0};
 }
 

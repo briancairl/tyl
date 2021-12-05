@@ -37,7 +37,7 @@ public:
 
   ~Loop();
 
-  int run(const std::function<bool(const graphics::Target&, const WindowState&)>& loop_fn);
+  int run(const std::function<bool(graphics::Target&, const WindowState&)>& loop_fn);
 
 private:
   const char* window_name_;

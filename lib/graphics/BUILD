@@ -32,6 +32,7 @@ cc_library(
 cc_library(
   name="device",
   hdrs=[
+    "include/device/constants.hpp",
     "include/device/fwd.hpp",
     "include/device/shader.hpp",
     "include/device/texture.hpp",
@@ -65,6 +66,7 @@ cc_library(
     "src/camera.cpp",
     "src/image.cpp",
     "src/sprite.cpp",
+    "src/target.cpp",
     "src/texture.cpp",
     "src/tile_uv_lookup.cpp",
   ],

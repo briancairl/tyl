@@ -8,6 +8,7 @@
 // Tyl
 #include <tyl/ecs.hpp>
 #include <tyl/graphics/device/shader.hpp>
+#include <tyl/graphics/fwd.hpp>
 
 namespace tyl::graphics
 {
@@ -17,8 +18,9 @@ using ShaderSource = device::ShaderSource;
 /**
  * @brief Shader resource
  */
-struct Shader : ecs::make_handle_from_this<Shader>, device::Shader
+class Shader : public ecs::make_handle_from_this<Shader>, public device::Shader
 {
+public:
   Shader(Shader&& other) = default;
   Shader& operator=(Shader&&) = default;
 
@@ -33,6 +35,11 @@ struct Shader : ecs::make_handle_from_this<Shader>, device::Shader
   {}
 
   ~Shader() = default;
+
+private:
+  using device::Shader::bind;
+
+  friend class Target;
 };
 
 }  // namespace tyl::graphics

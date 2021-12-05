@@ -7,11 +7,11 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <optional>
 #include <string_view>
 #include <utility>
 
 // Tyl
+#include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/fwd.hpp>
 #include <tyl/graphics/device/typedef.hpp>
 
@@ -45,7 +45,7 @@ public:
   /**
    * @brief Shader source ID
    */
-  inline shader_id_t get_id() const { return shader_id_.value(); };
+  inline shader_id_t get_id() const { return shader_id_; };
 
   /**
    * @brief Shader type code
@@ -77,7 +77,7 @@ private:
   ShaderSource(const ShaderSource&) = default;
   inline explicit ShaderSource(const shader_id_t shader_id) : shader_id_{shader_id} {}
 
-  std::optional<shader_id_t> shader_id_;
+  shader_id_t shader_id_;
 
   ShaderType shader_type_;
 };
@@ -103,9 +103,9 @@ public:
   void bind() const;
   void unbind() const;
 
-  inline bool valid() const { return is_bound_ and shader_id_; }
+  inline bool valid() const { return shader_id_ != invalid_shader_id; }
   inline operator bool() const { return Shader::valid(); }
-  inline shader_id_t get_id() const { return shader_id_.value(); };
+  inline shader_id_t get_id() const { return shader_id_; };
 
   void setBool(const char* var_name, const bool value) const;
   void setInt(const char* var_name, const int value) const;
@@ -121,12 +121,12 @@ public:
   void setMat4(const char* var_name, const float* data) const;
 
 private:
-  inline explicit Shader(std::optional<shader_id_t> shader_id) : shader_id_{shader_id} {}
+  inline explicit Shader(const shader_id_t shader_id) : shader_id_{shader_id} {}
 
   Shader(const Shader&) = default;
 
   /// Device shader ID
-  std::optional<shader_id_t> shader_id_;
+  shader_id_t shader_id_;
 
   /// Tracks if texture is bound to device
   mutable bool is_bound_;

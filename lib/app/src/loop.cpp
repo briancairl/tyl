@@ -127,7 +127,7 @@ Loop::~Loop()
   }
 }
 
-int Loop::run(const std::function<bool(const graphics::Target&, const WindowState&)>& loop_fn)
+int Loop::run(const std::function<bool(graphics::Target&, const WindowState&)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 

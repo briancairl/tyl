@@ -12,6 +12,7 @@
 #include <string>
 
 // Tyl
+#include <tyl/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>
 
@@ -181,19 +182,24 @@ ShaderSource::ShaderSource(std::string_view code, const ShaderType type) :
     shader_id_{create_gl_shader_source(type)},
     shader_type_{type}
 {
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+
   // Transfer source code
   const char* c_code = code.data();
   const GLint c_len = code.size();
-  glShaderSource(*shader_id_, 1, &c_code, &c_len);
+  glShaderSource(shader_id_, 1, &c_code, &c_len);
 
   // Compile component shader code and check for errors
-  glCompileShader(*shader_id_);
+  glCompileShader(shader_id_);
 
   // Validate compilation
-  validate_gl_shader_compilation(*shader_id_, type);
+  validate_gl_shader_compilation(shader_id_, type);
 }
 
-ShaderSource::ShaderSource(ShaderSource&& other) : shader_id_{other.shader_id_} { other.shader_id_.reset(); }
+ShaderSource::ShaderSource(ShaderSource&& other) : shader_id_{other.shader_id_}
+{
+  other.shader_id_ = invalid_shader_id;
+}
 
 ShaderSource& ShaderSource::operator=(ShaderSource&& other)
 {
@@ -255,46 +261,46 @@ ShaderSource::~ShaderSource()
 {
   if (shader_id_)
   {
-    glDeleteShader(shader_id_.value());
+    glDeleteShader(shader_id_);
   }
 }
 
 Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : Shader{create_gl_shader()}
 {
-  glAttachShader(shader_id_.value(), vertex_source.get_id());
-  glAttachShader(shader_id_.value(), fragment_source.get_id());
+  glAttachShader(shader_id_, vertex_source.get_id());
+  glAttachShader(shader_id_, fragment_source.get_id());
 
   // Link shader program components
-  glLinkProgram(shader_id_.value());
+  glLinkProgram(shader_id_);
 
   // Validate program linkage
-  validate_gl_shader_linkage(shader_id_.value());
+  validate_gl_shader_linkage(shader_id_);
 
   // Detach all component shaders no longer in use
-  glDetachShader(shader_id_.value(), vertex_source.get_id());
-  glDetachShader(shader_id_.value(), fragment_source.get_id());
+  glDetachShader(shader_id_, vertex_source.get_id());
+  glDetachShader(shader_id_, fragment_source.get_id());
 }
 
 Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, ShaderSource&& geometry_source) :
     Shader{create_gl_shader()}
 {
-  glAttachShader(shader_id_.value(), vertex_source.get_id());
-  glAttachShader(shader_id_.value(), fragment_source.get_id());
-  glAttachShader(shader_id_.value(), geometry_source.get_id());
+  glAttachShader(shader_id_, vertex_source.get_id());
+  glAttachShader(shader_id_, fragment_source.get_id());
+  glAttachShader(shader_id_, geometry_source.get_id());
 
   // Link shader program components
-  glLinkProgram(shader_id_.value());
+  glLinkProgram(shader_id_);
 
   // Validate program linkage
-  validate_gl_shader_linkage(shader_id_.value());
+  validate_gl_shader_linkage(shader_id_);
 
   // Detach all component shaders no longer in use
-  glDetachShader(shader_id_.value(), vertex_source.get_id());
-  glDetachShader(shader_id_.value(), fragment_source.get_id());
-  glDetachShader(shader_id_.value(), geometry_source.get_id());
+  glDetachShader(shader_id_, vertex_source.get_id());
+  glDetachShader(shader_id_, fragment_source.get_id());
+  glDetachShader(shader_id_, geometry_source.get_id());
 }
 
-Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_.reset(); }
+Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_ = invalid_shader_id; }
 
 Shader& Shader::operator=(Shader&& other)
 {
@@ -304,73 +310,89 @@ Shader& Shader::operator=(Shader&& other)
 
 Shader::~Shader()
 {
-  if (shader_id_)
+  if (Shader::valid())
   {
-    glDeleteProgram(shader_id_.value());
+    glDeleteProgram(shader_id_);
   }
 }
 
-void Shader::bind() const { glUseProgram(shader_id_.value()); }
+void Shader::bind() const
+{
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUseProgram(shader_id_);
+}
 
-void Shader::unbind() const { glUseProgram(0); }
+void Shader::unbind() const { glUseProgram(invalid_shader_id); }
 
 void Shader::setBool(const char* var_name, const bool value) const
 {
-  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), static_cast<GLint>(value));
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform1i(glGetUniformLocation(shader_id_, var_name), static_cast<GLint>(value));
 }
 
 void Shader::setInt(const char* var_name, const int value) const
 {
-  glUniform1i(glGetUniformLocation(shader_id_.value(), var_name), value);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform1i(glGetUniformLocation(shader_id_, var_name), value);
 }
 
 void Shader::setFloat(const char* var_name, const float value) const
 {
-  glUniform1f(glGetUniformLocation(shader_id_.value(), var_name), value);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform1f(glGetUniformLocation(shader_id_, var_name), value);
 }
 
 void Shader::setVec2(const char* var_name, const float* data) const
 {
-  glUniform2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform2fv(glGetUniformLocation(shader_id_, var_name), 1, data);
 }
 
 void Shader::setVec2(const char* var_name, const float x, const float y) const
 {
-  glUniform2f(glGetUniformLocation(shader_id_.value(), var_name), x, y);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform2f(glGetUniformLocation(shader_id_, var_name), x, y);
 }
 
 void Shader::setVec3(const char* var_name, const float* data) const
 {
-  glUniform3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform3fv(glGetUniformLocation(shader_id_, var_name), 1, data);
 }
 void Shader::setVec3(const char* var_name, const float x, const float y, const float z) const
 {
-  glUniform3f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform3f(glGetUniformLocation(shader_id_, var_name), x, y, z);
 }
 
 void Shader::setVec4(const char* var_name, const float* data) const
 {
-  glUniform4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform4fv(glGetUniformLocation(shader_id_, var_name), 1, data);
 }
 
 void Shader::setVec4(const char* var_name, const float x, const float y, const float z, const float w) const
 {
-  glUniform4f(glGetUniformLocation(shader_id_.value(), var_name), x, y, z, w);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniform4f(glGetUniformLocation(shader_id_, var_name), x, y, z, w);
 }
 
 void Shader::setMat2(const char* var_name, const float* data) const
 {
-  glUniformMatrix2fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniformMatrix2fv(glGetUniformLocation(shader_id_, var_name), 1, GL_FALSE, data);
 }
 
 void Shader::setMat3(const char* var_name, const float* data) const
 {
-  glUniformMatrix3fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniformMatrix3fv(glGetUniformLocation(shader_id_, var_name), 1, GL_FALSE, data);
 }
 
 void Shader::setMat4(const char* var_name, const float* data) const
 {
-  glUniformMatrix4fv(glGetUniformLocation(shader_id_.value(), var_name), 1, GL_FALSE, data);
+  TYL_ASSERT_NE(shader_id_, invalid_shader_id);
+  glUniformMatrix4fv(glGetUniformLocation(shader_id_, var_name), 1, GL_FALSE, data);
 }
 
 

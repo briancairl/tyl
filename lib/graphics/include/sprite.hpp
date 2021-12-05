@@ -56,7 +56,7 @@ void attach_sprite_batch_renderer(
   const ecs::entity entity_id,
   const std::size_t max_sprite_count);
 
-void render_sprites(ecs::registry& registry, const Target& render_target, const time_point stamp);
+void render_sprites(ecs::registry& registry, Target& render_target, const time_point stamp);
 
 ecs::entity create_sprite(
   ecs::registry& registry,

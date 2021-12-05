@@ -44,6 +44,9 @@ public:
 
 private:
   Size2i size_;
+
+  using device::Texture::bind;
+  friend class Target;
 };
 
 /**

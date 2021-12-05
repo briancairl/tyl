@@ -6,6 +6,7 @@
 
 // Tyl
 #include <tyl/assert.hpp>
+#include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -91,11 +92,7 @@ texture_id_t create_gl_texture_2d(
 }
 }  // namespace anonymous
 
-Texture::Texture(Texture&& other) : texture_id_{other.texture_id_}, is_bound_{other.is_bound_}
-{
-  other.texture_id_.reset();
-  other.is_bound_ = false;
-}
+Texture::Texture(Texture&& other) : texture_id_{other.texture_id_} { other.texture_id_ = invalid_texture_id; }
 
 Texture::Texture(
   const int h,
@@ -171,9 +168,9 @@ Texture::Texture(
 
 Texture::~Texture()
 {
-  if (texture_id_)
+  if (Texture::valid())
   {
-    glDeleteTextures(1, &texture_id_.value());
+    glDeleteTextures(1, &texture_id_);
   }
 }
 
@@ -185,7 +182,7 @@ Texture& Texture::operator=(Texture&& other)
 
 void Texture::bind(const unsigned texture_index) const
 {
-  static constexpr unsigned S_texture_unit_lookup[16] = {
+  static constexpr unsigned S_texture_unit_lookup[texture_unit_count] = {
     GL_TEXTURE0,
     GL_TEXTURE1,
     GL_TEXTURE2,
@@ -204,19 +201,11 @@ void Texture::bind(const unsigned texture_index) const
     GL_TEXTURE15,
   };
 
-  if (!is_bound_)
-  {
-    TYL_ASSERT_TRUE(texture_id_);
-    glActiveTexture(S_texture_unit_lookup[texture_index]);
-    glBindTexture(GL_TEXTURE_2D, texture_id_.value());
-    is_bound_ = true;
-  }
+  TYL_ASSERT_NE(texture_id_, invalid_texture_id);
+  glActiveTexture(S_texture_unit_lookup[texture_index]);
+  glBindTexture(GL_TEXTURE_2D, texture_id_);
 }
 
-void Texture::unbind() const
-{
-  TYL_ASSERT_TRUE(texture_id_);
-  is_bound_ = false;
-}
+void Texture::unbind() const { TYL_ASSERT_NE(texture_id_, invalid_texture_id); }
 
 }  // namespace tyl::graphics::device

@@ -27,6 +27,7 @@ public:
   using handle_type::handle_type;
 
   constexpr decltype(auto) operator*() { return this->template get<ComponentTs...>(); }
+
   constexpr decltype(auto) operator*() const { return this->template get<ComponentTs...>(); }
 
 private:

@@ -12,6 +12,7 @@
 #include <tyl/graphics/camera.hpp>
 #include <tyl/graphics/shader.hpp>
 #include <tyl/graphics/sprite.hpp>
+#include <tyl/graphics/target.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/tile_uv_lookup.hpp>
 #include <tyl/graphics/vertex_buffer.hpp>
@@ -145,13 +146,10 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, const Target& render_target, const time_point stamp)
+void render_sprites(ecs::registry& registry, Target& render_target, const time_point stamp)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
-
-  std::optional<device::shader_id_t> active_shader_id{std::nullopt};
-  std::optional<device::texture_id_t> active_texture_id{std::nullopt};
 
   registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
     const auto view_projection = camera.get_view_projection_matrix(render_target);
@@ -160,11 +158,9 @@ void render_sprites(ecs::registry& registry, const Target& render_target, const 
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
       [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
         // Set shader program if its not already active
-        if (!active_shader_id or active_shader_id != shader.get_id())
+        if (render_target.bind(shader))
         {
-          shader.bind();
           shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
-          active_shader_id = shader.get_id();
         }
 
         // Buffer sprite data (position, uv)
@@ -176,18 +172,18 @@ void render_sprites(ecs::registry& registry, const Target& render_target, const 
           auto sprite_view = registry.template view<Position2D, RectSize2D, SpriteTileID, W_Texture, W_TileUVLookup>();
           for (const auto sprite_id : sprite_view)
           {
+            static constexpr std::size_t texture_unit = 0;
+
             // Stop buffering sprites if we hit the max sprite count
             if (sprite_count > render_props.max_sprite_count)
             {
               break;
             }
             // Set active texture unit if its not already active
-            else if (const Texture& texture = (*sprite_view.template get<W_Texture>(sprite_id));
-                     !active_texture_id or active_texture_id != texture.get_id())
+            else if (const auto& texture = (*sprite_view.template get<W_Texture>(sprite_id));
+                     render_target.bind(texture, texture_unit))
             {
-              texture.bind(0);
-              shader.setInt("u_TextureID", 0);
-              active_texture_id = texture.get_id();
+              shader.setInt("u_TextureID", texture_unit);
             }
 
             // Set sprite position info
