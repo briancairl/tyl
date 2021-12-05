@@ -6,9 +6,12 @@
 #pragma once
 
 // C++ Standard Library
+#include <initializer_list>
+#include <variant>
 #include <vector>
 
 // Tyl
+#include <tyl/ecs.hpp>
 #include <tyl/graphics/fwd.hpp>
 #include <tyl/rect.hpp>
 #include <tyl/vec.hpp>
@@ -29,7 +32,7 @@ struct UniformlyDividedRegion
 /**
  * @brief Lookup from ID to UV offset in an altas texture
  */
-class TileUVLookup : public ecs::make_handle_from_this<TileUVLookup>
+class TileUVLookup
 {
 public:
   TileUVLookup() = default;
@@ -59,5 +62,24 @@ private:
   /// Corner offsets of tiles
   std::vector<Vec4f> tile_uv_offsets_;
 };
+
+using TextureRegion = std::variant<Rect2i, UniformlyDividedRegion>;
+
+/**
+ * @brief Creates a tile UV lookup resource
+ */
+ecs::entity create_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::Ref<Texture> texture,
+  const std::initializer_list<TextureRegion>& regions);
+
+/**
+ * @brief Attaches a tile UV lookup resource components to an existing entity
+ */
+void attach_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const ecs::Ref<Texture> texture,
+  const std::initializer_list<TextureRegion>& regions);
 
 }  // namespace tyl::graphics

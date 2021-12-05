@@ -82,9 +82,28 @@ protected:
   make_handle_from_this() = default;
 };
 
+template <typename T> struct is_ref : std::false_type
+{};
+
+template <typename T> struct is_ref<Ref<T>> : std::true_type
+{};
+
 template <typename... ComponentTs> inline auto ref(registry& registry, const entity resource_id)
 {
   return Ref<ComponentTs...>{registry, resource_id};
+}
+
+template <typename ComponentT, typename... ParentComponentTs> inline auto ref(const Ref<ParentComponentTs...> parent)
+{
+  // TODO(enhancment) do some sort of compile-time consistency checking between (ComponentTs) and (ParentComponentTs)
+  if constexpr (is_ref<ComponentT>())
+  {
+    return parent.registry()->template get<ComponentT>(parent.entity());
+  }
+  else
+  {
+    return Ref<ComponentT>{*parent.registry(), parent.entity()};
+  }
 }
 
 }  // namespace tyl::ecs

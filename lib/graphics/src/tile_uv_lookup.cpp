@@ -15,6 +15,32 @@
 
 namespace tyl::graphics
 {
+namespace  // anonymous
+{
+
+template <class... Ts> struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+
+template <class... Ts> overloaded(Ts...)->overloaded<Ts...>;
+
+template <typename TextureRegionIteratorT>
+void add_uv_regions(
+  TileUVLookup& uv_lookup,
+  const Texture& texture,
+  const TextureRegionIteratorT first,
+  const TextureRegionIteratorT last)
+{
+  std::for_each(first, last, [&uv_lookup, &texture](const TextureRegion& varg) {
+    std::visit(
+      overloaded{[&uv_lookup, &texture](const Rect2i& rect) { uv_lookup.update(texture, rect); },
+                 [&uv_lookup, &texture](const UniformlyDividedRegion& region) { uv_lookup.update(texture, region); }},
+      varg);
+  });
+}
+
+}  // namespace anonymous
 
 Vec2f rectified_uv_extents(const Size2i tile_size_px, const Texture& atlas_texture)
 {
@@ -27,15 +53,13 @@ Vec2f rectified_uv_extents(const Size2i tile_size_px, const Texture& atlas_textu
   return (even.array().cast<float>() / atlas_texture.size().array().cast<float>());
 }
 
-TileUVLookup::TileUVLookup(const Texture& atlas_texture, const Rect2i& region) :
-    ecs::make_handle_from_this<TileUVLookup>{}
+TileUVLookup::TileUVLookup(const Texture& atlas_texture, const Rect2i& region)
 {
   TileUVLookup::update(atlas_texture, region);
   TYL_ASSERT_FALSE(tile_uv_offsets_.empty());
 }
 
-TileUVLookup::TileUVLookup(const Texture& atlas_texture, const UniformlyDividedRegion& region) :
-    ecs::make_handle_from_this<TileUVLookup>{}
+TileUVLookup::TileUVLookup(const Texture& atlas_texture, const UniformlyDividedRegion& region)
 {
   TileUVLookup::update(atlas_texture, region);
   TYL_ASSERT_FALSE(tile_uv_offsets_.empty());
@@ -136,5 +160,26 @@ void TileUVLookup::update(const Texture& atlas_texture, const UniformlyDividedRe
 }
 
 TileUVLookup::~TileUVLookup() = default;
+
+
+ecs::entity create_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::Ref<Texture> texture,
+  const std::initializer_list<TextureRegion>& regions)
+{
+  const ecs::entity e = registry.create();
+  attach_tile_uv_lookup(registry, e, texture, regions);
+  return e;
+}
+
+void attach_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const ecs::Ref<Texture> texture,
+  const std::initializer_list<TextureRegion>& regions)
+{
+  registry.emplace<ecs::Ref<Texture>>(entity_id, texture);
+  add_uv_regions(registry.emplace<TileUVLookup>(entity_id), (*texture), regions.begin(), regions.end());
+}
 
 }  // namespace tyl::graphics

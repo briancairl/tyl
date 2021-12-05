@@ -29,26 +29,21 @@ int main(int argc, char** argv)
   {
     const auto texture_id = graphics::create_texture(registry, "resources/test/patrick-run.png");
 
-    auto& uv_lookup = registry.emplace<graphics::TileUVLookup>(texture_id);
-
-    uv_lookup.update(
-      registry.get<graphics::Texture>(texture_id),
-      graphics::UniformlyDividedRegion{.subdivisions = Vec2i{6, 1},
-                                       .inner_padding_px = Vec2i{1, 0},
-                                       .area_px = Rect2i{Vec2i{0, 0}, Vec2i{245, 50}},
-                                       .reversed = false});
-
-    uv_lookup.update(
-      registry.get<graphics::Texture>(texture_id),
-      graphics::UniformlyDividedRegion{.subdivisions = Vec2i{4, 1},
-                                       .inner_padding_px = Vec2i{1, 0},
-                                       .area_px = Rect2i{Vec2i{41, 0}, Vec2i{207, 50}},
-                                       .reversed = true});
+    const auto tile_uv_lookup_id = graphics::create_tile_uv_lookup(
+      registry,
+      ecs::Ref<graphics::Texture>(registry, texture_id),
+      {graphics::UniformlyDividedRegion{.subdivisions = Vec2i{6, 1},
+                                        .inner_padding_px = Vec2i{1, 0},
+                                        .area_px = Rect2i{Vec2i{0, 0}, Vec2i{245, 50}},
+                                        .reversed = false},
+       graphics::UniformlyDividedRegion{.subdivisions = Vec2i{4, 1},
+                                        .inner_padding_px = Vec2i{1, 0},
+                                        .area_px = Rect2i{Vec2i{41, 0}, Vec2i{207, 50}},
+                                        .reversed = true}});
 
     const auto animated_sprite_id = graphics::create_sprite(
       registry,
-      ecs::ref<graphics::Texture>(registry, texture_id),
-      ecs::ref<graphics::TileUVLookup>(registry, texture_id),
+      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, tile_uv_lookup_id),
       Position2D{0, 0},
       RectSize2D{15, 16});
 

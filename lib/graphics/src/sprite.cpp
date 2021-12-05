@@ -245,27 +245,25 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
 
 ecs::entity create_sprite(
   ecs::registry& registry,
-  ecs::Ref<Texture> atlas_texture,
-  ecs::Ref<TileUVLookup> uv_lookup,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
   const Position2D& sprite_position,
   const RectSize2D& sprite_size)
 {
   const ecs::entity entity_id = registry.create();
-  attach_sprite(registry, entity_id, std::move(atlas_texture), std::move(uv_lookup), sprite_position, sprite_size);
+  attach_sprite(registry, entity_id, uv_lookup, sprite_position, sprite_size);
   return entity_id;
 }
 
 void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
-  ecs::Ref<Texture> atlas_texture,
-  ecs::Ref<TileUVLookup> uv_lookup,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
   const Position2D& sprite_position,
   const RectSize2D& sprite_size)
 {
   TYL_ASSERT_FALSE(registry.has<SpriteTileID>(entity_id));
-  registry.emplace<ecs::Ref<Texture>>(entity_id, std::move(atlas_texture));
-  registry.emplace<ecs::Ref<TileUVLookup>>(entity_id, std::move(uv_lookup));
+  registry.emplace<ecs::Ref<Texture>>(entity_id, ecs::ref<ecs::Ref<Texture>>(uv_lookup));
+  registry.emplace<ecs::Ref<TileUVLookup>>(entity_id, ecs::ref<TileUVLookup>(uv_lookup));
   registry.emplace<Position2D>(entity_id, sprite_position);
   registry.emplace<RectSize2D>(entity_id, sprite_size);
   registry.emplace<SpriteTileID>(entity_id, 0UL);

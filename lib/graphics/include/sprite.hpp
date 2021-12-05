@@ -60,16 +60,14 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
 
 ecs::entity create_sprite(
   ecs::registry& registry,
-  ecs::Ref<Texture> atlas_texture,
-  ecs::Ref<TileUVLookup> uv_lookup,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
   const Position2D& sprite_position,
   const RectSize2D& sprite_size);
 
 void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
-  ecs::Ref<Texture> atlas_texture,
-  ecs::Ref<TileUVLookup> uv_lookup,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
   const Position2D& sprite_position,
   const RectSize2D& sprite_size);
 
