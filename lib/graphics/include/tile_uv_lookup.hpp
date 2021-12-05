@@ -6,7 +6,6 @@
 #pragma once
 
 // C++ Standard Library
-#include <initializer_list>
 #include <vector>
 
 // Tyl
@@ -17,20 +16,31 @@
 namespace tyl::graphics
 {
 
+Vec2f rectified_uv_extents(const Size2i tile_size_px, const Texture& atlas_texture);
+
+struct UniformlyDividedRegion
+{
+  Vec2i subdivisions;
+  Vec2i inner_padding_px;
+  Rect2i area_px;
+  bool reversed;
+};
+
 /**
  * @brief Lookup from ID to UV offset in an altas texture
  */
 class TileUVLookup : public ecs::make_handle_from_this<TileUVLookup>
 {
 public:
+  TileUVLookup() = default;
+
   TileUVLookup(TileUVLookup&& other) = default;
+
   TileUVLookup& operator=(TileUVLookup&&) = default;
 
-  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture);
+  TileUVLookup(const Texture& atlas_texture, const Rect2i& region);
 
-  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture, const Rect2i& region);
-
-  TileUVLookup(const Size2i tile_size_px, const Texture& atlas_texture, std::initializer_list<Rect2i> regions);
+  TileUVLookup(const Texture& atlas_texture, const UniformlyDividedRegion& region);
 
   ~TileUVLookup();
 
@@ -40,6 +50,10 @@ public:
    * @brief Returns tile UV offset as <code>{lower corner [0, 1], upper corner [2, 3]}</code>
    */
   inline const Vec4f& operator[](const std::size_t id) const { return tile_uv_offsets_[id]; }
+
+  void update(const Texture& atlas_texture, const Rect2i& regions);
+
+  void update(const Texture& atlas_texture, const UniformlyDividedRegion& regions);
 
 private:
   /// Corner offsets of tiles
