@@ -38,8 +38,7 @@ int main(int argc, char** argv)
 
     const auto animated_sprite_id = graphics::create_sprite(
       registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{32, 32}, RectSize2D{16, 16});
-    registry.get<graphics::SpriteTileID>(animated_sprite_id).id = 0;
-    graphics::attach_sprite_sequence(registry, animated_sprite_id, 5, 10.0f, true);
+    graphics::attach_sprite_sequence(registry, animated_sprite_id, 10.0f, true);
   }
 
   {

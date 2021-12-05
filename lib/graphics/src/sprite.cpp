@@ -274,21 +274,16 @@ void attach_sprite(
   registry.emplace<SpriteTileID>(entity_id, 0UL);
 }
 
-void attach_sprite_sequence(
-  ecs::registry& registry,
-  const ecs::entity entity_id,
-  const std::size_t stop_id,
-  const float rate,
-  const bool looped)
+void attach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id, const float rate, const bool looped)
 {
   TYL_ASSERT_FALSE(registry.has<SpriteSequence>(entity_id));
-  TYL_ASSERT_TRUE(registry.has<SpriteTileID>(entity_id));
+  TYL_ASSERT_TRUE(registry.has<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id));
   TYL_ASSERT_GT(rate, 0.0f);
 
   {
-    const std::size_t start_id = registry.get<SpriteTileID>(entity_id).id;
-    TYL_ASSERT_LE(start_id, stop_id);
-    registry.emplace<SpriteSequence>(entity_id, start_id, stop_id, clock::now());
+    auto [tile, tile_uv] = registry.get<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id);
+    tile.id = 0;
+    registry.emplace<SpriteSequence>(entity_id, tile.id, tile_uv.value().tile_count() - 1, clock::now());
   }
 
   registry.emplace<duration>(entity_id, make_duration(1.f / rate));

@@ -76,7 +76,6 @@ void attach_sprite(
 void attach_sprite_sequence(
   ecs::registry& registry,
   const ecs::entity entity_id,
-  const std::size_t stop_id,
   const float rate,
   const bool looped = false);
 
