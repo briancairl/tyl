@@ -34,23 +34,16 @@ public:
 
   ~TileUVLookup();
 
-  inline Size2i tile_size_px() const { return tile_size_px_; }
-
-  inline Size2f tile_size_uv() const { return tile_size_uv_; }
-
   inline std::size_t tile_count() const { return tile_uv_offsets_.size(); }
 
-  inline const Vec2f& operator[](const std::size_t id) const { return tile_uv_offsets_[id]; }
+  /**
+   * @brief Returns tile UV offset as <code>{lower corner [0, 1], upper corner [2, 3]}</code>
+   */
+  inline const Vec4f& operator[](const std::size_t id) const { return tile_uv_offsets_[id]; }
 
 private:
-  /// Size of a tile in pixels
-  Size2i tile_size_px_;
-
-  /// Size of tile in UV space
-  Size2f tile_size_uv_;
-
   /// Corner offsets of tiles
-  std::vector<Vec2f> tile_uv_offsets_;
+  std::vector<Vec4f> tile_uv_offsets_;
 };
 
 }  // namespace tyl::graphics
