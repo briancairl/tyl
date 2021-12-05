@@ -35,7 +35,7 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
       layout (location = 0) in vec2 layout_UnitPosition;
       layout (location = 1) in vec2 layout_UnitTexCoord;
       layout (location = 2) in vec4 layout_PositionSpec;  // { offset[0, 1], size[2, 3] }
-      layout (location = 3) in vec4 layout_TexCoordSpec;  // { lower[0, 1], upper[2, 3] }
+      layout (location = 3) in vec4 layout_TexCoordSpec;  // { offset[0, 1], size[2, 3] }
 
       // Texture UV coordinate output
       out vec2 vshader_TexCoord;
@@ -48,8 +48,8 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
         vec2 pos = vec2(layout_PositionSpec[0] + layout_UnitPosition[0] * layout_PositionSpec[2],
                         layout_PositionSpec[1] + layout_UnitPosition[1] * layout_PositionSpec[3]);
 
-        vec2 puv = vec2(layout_TexCoordSpec[0] + layout_UnitTexCoord[0] * (layout_TexCoordSpec[2] - layout_TexCoordSpec[0]),
-                        layout_TexCoordSpec[1] + layout_UnitTexCoord[1] * (layout_TexCoordSpec[3] - layout_TexCoordSpec[1]));
+        vec2 puv = vec2(layout_TexCoordSpec[0] + layout_UnitTexCoord[0] * layout_TexCoordSpec[2],
+                        layout_TexCoordSpec[1] + layout_UnitTexCoord[1] * layout_TexCoordSpec[3]);
 
         gl_Position =  vec4(u_ViewProjection * vec3(pos, 1), 1);
         vshader_TexCoord = puv;
@@ -146,7 +146,7 @@ void attach_sprite_batch_renderer(
   registry.emplace<SpriteBatchRenderProperties>(entity_id, max_sprite_count);
 }
 
-void render_sprites(ecs::registry& registry, Target& render_target, const duration dt)
+void draw_sprites(ecs::registry& registry, Target& render_target, const duration dt)
 {
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
@@ -158,10 +158,10 @@ void render_sprites(ecs::registry& registry, Target& render_target, const durati
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
       [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
         // Set shader program if its not already active
-        if (render_target.bind(shader))
-        {
-          shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
-        }
+        render_target.bind(shader);
+
+        // Set view projection matrix
+        shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
 
         // Buffer sprite data (position, uv)
         std::size_t sprite_count = 0;
@@ -196,7 +196,8 @@ void render_sprites(ecs::registry& registry, Target& render_target, const durati
             {
               const TileUVLookup& uv_lookup = (*sprite_view.template get<W_TileUVLookup>(sprite_id));
               const SpriteTileID& tile = sprite_view.template get<SpriteTileID>(sprite_id);
-              (*texcoord_data) = uv_lookup[tile.id];
+              texcoord_data->template head<2>() = uv_lookup[tile.id].head<2>();
+              texcoord_data->template tail<2>() = uv_lookup[tile.id].tail<2>() - uv_lookup[tile.id].head<2>();
             }
 
             // Increment buffer pointers

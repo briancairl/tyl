@@ -48,7 +48,7 @@ int main(int argc, char** argv)
                                        .reversed = true});
 
     const auto animated_sprite_id = graphics::create_sprite(
-      registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{32, 32}, RectSize2D{16, 16});
+      registry, texture(registry, texture_id), uv_lookup(registry, texture_id), Position2D{0, 0}, RectSize2D{15, 16});
 
     graphics::attach_sprite_sequence(registry, animated_sprite_id, 10.0f, true);
   }
@@ -61,8 +61,7 @@ int main(int argc, char** argv)
   graphics::create_sprite_batch_renderer(registry, 10);
 
   return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
-    graphics::render_sprites(registry, render_target, dt);
-
+    graphics::draw_sprites(registry, render_target, dt);
     return true;
   });
 }
