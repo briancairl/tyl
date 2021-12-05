@@ -43,7 +43,7 @@ TileUVLookup::TileUVLookup(
   const Size2i tile_size_px,
   const Texture& atlas_texture,
   std::initializer_list<Rect2i> regions) :
-    ecs::make_ref_from_this<TileUVLookup>{},
+    ecs::make_handle_from_this<TileUVLookup>{},
     tile_size_px_{tile_size_px},
     tile_size_uv_{rectified_uv_extents(tile_size_px, atlas_texture).array() /
                   (atlas_texture.size().array() / tile_size_px.array()).cast<float>()}

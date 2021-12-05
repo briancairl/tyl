@@ -182,7 +182,7 @@ void render_sprites(ecs::registry& registry, const Target& render_target, const 
               break;
             }
             // Set active texture unit if its not already active
-            else if (const Texture& texture = sprite_view.template get<W_Texture>(sprite_id);
+            else if (const Texture& texture = (*sprite_view.template get<W_Texture>(sprite_id));
                      !active_texture_id or active_texture_id != texture.get_id())
             {
               texture.bind(0);
@@ -198,7 +198,7 @@ void render_sprites(ecs::registry& registry, const Target& render_target, const 
 
             // Set sprite tile info
             {
-              const TileUVLookup& uv_lookup = sprite_view.template get<W_TileUVLookup>(sprite_id);
+              const TileUVLookup& uv_lookup = (*sprite_view.template get<W_TileUVLookup>(sprite_id));
               const SpriteTileID& tile = sprite_view.template get<SpriteTileID>(sprite_id);
               TYL_ASSERT_LT(tile.id, uv_lookup.tile_count());
               texcoord_data->template head<2>() = uv_lookup[tile.id];
@@ -277,13 +277,13 @@ void attach_sprite(
 void attach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id, const float rate, const bool looped)
 {
   TYL_ASSERT_FALSE(registry.has<SpriteSequence>(entity_id));
-  TYL_ASSERT_TRUE(registry.has<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id));
+  TYL_ASSERT_TRUE((registry.has<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id)));
   TYL_ASSERT_GT(rate, 0.0f);
 
   {
     auto [tile, tile_uv] = registry.get<SpriteTileID, ecs::Ref<TileUVLookup>>(entity_id);
     tile.id = 0;
-    registry.emplace<SpriteSequence>(entity_id, tile.id, tile_uv.value().tile_count() - 1, clock::now());
+    registry.emplace<SpriteSequence>(entity_id, tile.id, (*tile_uv).tile_count() - 1, clock::now());
   }
 
   registry.emplace<duration>(entity_id, make_duration(1.f / rate));

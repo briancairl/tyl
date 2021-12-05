@@ -20,7 +20,7 @@ namespace tyl::graphics
 /**
  * @brief Lookup from ID to UV offset in an altas texture
  */
-class TileUVLookup : public ecs::make_ref_from_this<TileUVLookup>
+class TileUVLookup : public ecs::make_handle_from_this<TileUVLookup>
 {
 public:
   TileUVLookup(TileUVLookup&& other) = default;

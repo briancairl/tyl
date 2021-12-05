@@ -5,9 +5,6 @@
  */
 #pragma once
 
-// C++ Standard Library
-#include <type_traits>
-
 // Eigen
 #include <entt/entt.hpp>
 
@@ -20,84 +17,54 @@ using registry = entt::registry;
 
 using namespace entt::literals;
 
-template <typename T> class make_ref_from_this;
-
-template <typename T> class Ref
+/**
+ * @brief Wrapper around \c entt::handle with component type guarantees
+ */
+template <typename... ComponentTs> struct Ref : public entt::handle
 {
-  static_assert(!std::is_reference_v<T>, "Type <T> should not be a reference type");
-
 public:
-  using non_const_t = std::remove_const_t<T>;
+  using handle_type = entt::handle;
+  using handle_type::handle_type;
 
-  constexpr entity id() const { return id_; }
-
-  constexpr operator entity() const { return id(); }
-
-  constexpr non_const_t& value() { return registry_->get<T>(id_); }
-
-  constexpr const non_const_t& value() const { return registry_->get<T>(id_); }
-
-  constexpr operator non_const_t&() { return value(); }
-
-  constexpr operator const non_const_t&() const { return value(); }
-
-  constexpr bool valid() const { return registry_ != nullptr; }
-
-  constexpr operator bool() const { return Ref::valid(); }
-
-  Ref(const Ref& other) = default;
-
-  Ref& operator=(const Ref&) = default;
-
-  Ref(Ref&& other) : registry_{other.registry_}, id_{other.id_} { other.registry_ = nullptr; }
-
-  Ref& operator=(Ref&& other)
-  {
-    new (this) Ref{std::move(other)};
-    return *this;
-  }
+  constexpr decltype(auto) operator*() { return this->template get<ComponentTs...>(); }
+  constexpr decltype(auto) operator*() const { return this->template get<ComponentTs...>(); }
 
 private:
-  Ref(registry& registry, const entity resource_id) : registry_{std::addressof(registry)}, id_{resource_id} {}
-
-  /// Registry that this resource is from
-  registry* registry_;
-
-  /// ID of this resource
-  entity id_;
-
-  friend class make_ref_from_this<T>;
+  using handle_type::emplace;
+  using handle_type::get_or_emplace;
+  using handle_type::remove;
+  using handle_type::try_get;
 };
 
-template <typename LhsT, typename RhsT> constexpr bool operator<(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+template <typename... ComponentTs>
+constexpr bool operator<(const Ref<ComponentTs...>& lhs, const Ref<ComponentTs...>& rhs)
 {
-  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
-  return lhs.id() < rhs.id();
+  return lhs.entity() < rhs.entity();
 }
 
-template <typename LhsT, typename RhsT> constexpr bool operator>(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+template <typename... ComponentTs>
+constexpr bool operator>(const Ref<ComponentTs...>& lhs, const Ref<ComponentTs...>& rhs)
 {
-  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
-  return lhs.id() > rhs.id();
+  return lhs.entity() > rhs.entity();
 }
 
-template <typename LhsT, typename RhsT> constexpr bool operator==(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+template <typename... ComponentTs>
+constexpr bool operator==(const Ref<ComponentTs...>& lhs, const Ref<ComponentTs...>& rhs)
 {
-  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
-  return lhs.id() == rhs.id();
+  return lhs.entity() == rhs.entity();
 }
 
-template <typename LhsT, typename RhsT> constexpr bool operator!=(const Ref<LhsT>& lhs, const Ref<RhsT>& rhs)
+template <typename... ComponentTs>
+constexpr bool operator!=(const Ref<ComponentTs...>& lhs, const Ref<ComponentTs...>& rhs)
 {
-  static_assert(std::is_same<std::remove_const_t<LhsT>, std::remove_const_t<RhsT>>());
-  return lhs.id() != rhs.id();
+  return lhs.entity() != rhs.entity();
 }
 
-template <typename ResourceT> class make_ref_from_this
+template <typename ResourceT> class make_handle_from_this
 {
 public:
-  make_ref_from_this(make_ref_from_this&&) = default;
-  make_ref_from_this& operator=(make_ref_from_this&&) = default;
+  make_handle_from_this(make_handle_from_this&&) = default;
+  make_handle_from_this& operator=(make_handle_from_this&&) = default;
 
   constexpr auto ref(registry& registry, const entity resource_id) const
   {
@@ -107,11 +74,11 @@ public:
 
   constexpr auto operator()(registry& registry, const entity resource_id) const
   {
-    return make_ref_from_this::ref(registry, resource_id);
+    return make_handle_from_this::ref(registry, resource_id);
   }
 
 protected:
-  make_ref_from_this() = default;
+  make_handle_from_this() = default;
 };
 
 }  // namespace tyl::ecs
