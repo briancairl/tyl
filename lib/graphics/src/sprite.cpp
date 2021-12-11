@@ -157,16 +157,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
   using W_Texture = ecs::Ref<Texture>;
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
 
-  registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
-    const auto inv_view_projection = camera.get_inverse_view_projection_matrix(render_target);
-
-    const Rect2f view_bounds = Rect2f::corners(
-      inv_view_projection.block<2, 2>(0, 0) * Vec2f{-1.f, -1.f} + inv_view_projection.block<2, 1>(0, 2),
-      inv_view_projection.block<2, 2>(0, 0) * Vec2f{+1.f, +1.f} + inv_view_projection.block<2, 1>(0, 2));
-
-    const Mat3f view_projection{inv_view_projection.inverse()};
-
-    // Submit sprite draw data
+  registry.view<ViewProjection, ViewportRect>().each([&](const auto& view_projection, const auto& view_rect) {
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
       [&](const auto& render_props, const auto& vertex_buffer, const auto& shader) {
         // Set shader program if its not already active
@@ -180,7 +171,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
           auto sprite_view = registry.template view<SpriteRenderingEnabled, Rect2D>();
           for (const ecs::entity sprite_id : sprite_view)
           {
-            if (!view_bounds.intersects(sprite_view.get<Rect2D>(sprite_id)))
+            if (!view_rect.intersects(sprite_view.get<Rect2D>(sprite_id)))
             {
               registry.remove<SpriteRenderingEnabled>(sprite_id);
             }

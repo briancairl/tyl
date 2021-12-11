@@ -165,15 +165,15 @@ int main(int argc, char** argv)
       run_right_sprite_id,
     }});
 
-  {
-    const auto camera_id = registry.create();
-    registry.emplace<graphics::CameraTopDown>(camera_id);
-  }
+  const auto camera_id = graphics::create_top_down_camera(registry);
 
+  graphics::set_camera_boundary(
+    ecs::ref<graphics::TopDownCamera>(registry, camera_id), ecs::ref<Position2D>(registry, player_id), 10.0f, 0.5f);
 
   graphics::create_sprite_batch_renderer(registry, 10);
 
   return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
+    graphics::update_cameras(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
     actor::update(registry, dt);
 
