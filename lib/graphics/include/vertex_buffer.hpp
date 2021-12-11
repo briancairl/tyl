@@ -15,7 +15,7 @@ namespace tyl::graphics
 /**
  * @brief VertexBuffer resource
  */
-struct VertexBuffer : ecs::make_handle_from_this<VertexBuffer>, device::VertexBuffer
+struct VertexBuffer : device::VertexBuffer
 {
   using Mode = device::VertexBuffer::BufferMode;
 
@@ -28,12 +28,10 @@ struct VertexBuffer : ecs::make_handle_from_this<VertexBuffer>, device::VertexBu
     const std::size_t index_count,
     std::initializer_list<Attribute> vertex_attributes,
     const Mode draw_mode = Mode::STATIC) :
-      ecs::make_handle_from_this<VertexBuffer>{},
       device::VertexBuffer{index_count, std::move(vertex_attributes), draw_mode}
   {}
 
   VertexBuffer(std::initializer_list<Attribute> vertex_attributes, const Mode draw_mode = Mode::STATIC) :
-      ecs::make_handle_from_this<VertexBuffer>{},
       device::VertexBuffer{std::move(vertex_attributes), draw_mode}
   {}
 

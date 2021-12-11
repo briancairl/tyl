@@ -41,6 +41,8 @@ public:
 
   TileUVLookup& operator=(TileUVLookup&&) = default;
 
+  TileUVLookup(const TileUVLookup& reference, std::initializer_list<std::size_t> subset_indices);
+
   TileUVLookup(const Texture& atlas_texture, const Rect2i& region);
 
   TileUVLookup(const Texture& atlas_texture, const UniformlyDividedRegion& region);
@@ -81,5 +83,22 @@ void attach_tile_uv_lookup(
   const ecs::entity entity_id,
   const ecs::Ref<Texture> texture,
   const std::initializer_list<TextureRegion>& regions);
+
+/**
+ * @brief Creates a tile UV lookup resource
+ */
+ecs::entity create_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const std::initializer_list<std::size_t> subset_indices);
+
+/**
+ * @brief Attaches a tile UV lookup resource components to an existing entity
+ */
+void attach_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const std::initializer_list<std::size_t> subset_indices);
 
 }  // namespace tyl::graphics

@@ -34,8 +34,8 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
       // Vertex-buffer layout
       layout (location = 0) in vec2 layout_UnitPosition;
       layout (location = 1) in vec2 layout_UnitTexCoord;
-      layout (location = 2) in vec4 layout_PositionSpec;  // { offset[0, 1], size[2, 3] }
-      layout (location = 3) in vec4 layout_TexCoordSpec;  // { offset[0, 1], size[2, 3] }
+      layout (location = 2) in vec4 layout_PositionRect;  // { corner, extents }
+      layout (location = 3) in vec4 layout_TexCoordRect;  // { corner, extents }
 
       // Texture UV coordinate output
       out vec2 vshader_TexCoord;
@@ -45,14 +45,20 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
 
       void main()
       {
-        vec2 pos = vec2(layout_PositionSpec[0] + layout_UnitPosition[0] * layout_PositionSpec[2],
-                        layout_PositionSpec[1] + layout_UnitPosition[1] * layout_PositionSpec[3]);
+        gl_Position =
+          vec4(
+            u_ViewProjection *
+            vec3(layout_PositionRect[0] + layout_UnitPosition[0] * layout_PositionRect[2],
+                 layout_PositionRect[1] + layout_UnitPosition[1] * layout_PositionRect[3],
+                 1),
+            1
+          );
 
-        vec2 puv = vec2(layout_TexCoordSpec[0] + layout_UnitTexCoord[0] * layout_TexCoordSpec[2],
-                        layout_TexCoordSpec[1] + layout_UnitTexCoord[1] * layout_TexCoordSpec[3]);
-
-        gl_Position =  vec4(u_ViewProjection * vec3(pos, 1), 1);
-        vshader_TexCoord = puv;
+        vshader_TexCoord =
+          vec2(
+            layout_TexCoordRect[0] + layout_UnitTexCoord[0] * layout_TexCoordRect[2],
+            layout_TexCoordRect[1] + layout_UnitTexCoord[1] * layout_TexCoordRect[3]
+          );
       }
 
       )VertexShader"
@@ -94,8 +100,8 @@ void attach_sprite_batch_renderer_vertex_buffer(ecs::registry& registry, const e
                       {
                         VertexBuffer::Attribute{device::typecode<float>(), 2, 4, 0},             // position unit quad
                         VertexBuffer::Attribute{device::typecode<float>(), 2, 4, 0},             // texcoord unit quad
-                        VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // position [offset, quad size]
-                        VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // texcoord [offset, quad size]
+                        VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // position [corner, extents]
+                        VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // texcoord [corner, extents]
                       },
                       VertexBuffer::BufferMode::DYNAMIC};
       {
@@ -152,7 +158,13 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
   using W_TileUVLookup = ecs::Ref<TileUVLookup>;
 
   registry.view<CameraTopDown>().each([&](const CameraTopDown& camera) {
-    const auto view_projection = camera.get_view_projection_matrix(render_target);
+    const auto inv_view_projection = camera.get_inverse_view_projection_matrix(render_target);
+
+    const Rect2f view_bounds = Rect2f::corners(
+      inv_view_projection.block<2, 2>(0, 0) * Vec2f{-1.f, -1.f} + inv_view_projection.block<2, 1>(0, 2),
+      inv_view_projection.block<2, 2>(0, 0) * Vec2f{+1.f, +1.f} + inv_view_projection.block<2, 1>(0, 2));
+
+    const Mat3f view_projection{inv_view_projection.inverse()};
 
     // Submit sprite draw data
     registry.view<SpriteBatchRenderProperties, VertexBuffer, Shader>().each(
@@ -163,13 +175,26 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
         // Set view projection matrix
         shader.setMat3("u_ViewProjection", reinterpret_cast<const float*>(std::addressof(view_projection)));
 
+        // Eliminate renderables which aren't in view
+        {
+          auto sprite_view = registry.template view<SpriteRenderingEnabled, Rect2D>();
+          for (const ecs::entity sprite_id : sprite_view)
+          {
+            if (!view_bounds.intersects(sprite_view.get<Rect2D>(sprite_id)))
+            {
+              registry.remove<SpriteRenderingEnabled>(sprite_id);
+            }
+          }
+        }
+
         // Buffer sprite data (position, uv)
         std::size_t sprite_count = 0;
         if (auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_INDEX); vb_buffer_ptr)
         {
           auto position_data = vb_buffer_ptr.template as<Vec4f>();
           auto texcoord_data = position_data + render_props.max_sprite_count;
-          auto sprite_view = registry.template view<Position2D, RectSize2D, SpriteTileID, W_Texture, W_TileUVLookup>();
+          auto sprite_view =
+            registry.template view<SpriteRenderingEnabled, Rect2D, SpriteTileID, W_Texture, W_TileUVLookup>();
           for (const auto sprite_id : sprite_view)
           {
             static constexpr std::size_t texture_unit = 0;
@@ -188,16 +213,16 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
 
             // Set sprite position info
             {
-              position_data->template head<2>() = sprite_view.template get<Position2D>(sprite_id);
-              position_data->template tail<2>() = sprite_view.template get<RectSize2D>(sprite_id);
+              const auto& rect = sprite_view.template get<Rect2D>(sprite_id);
+              position_data->template head<2>() = rect.min();
+              position_data->template tail<2>() = rect.extents();
             }
 
             // Set sprite tile info
             {
               const TileUVLookup& uv_lookup = (*sprite_view.template get<W_TileUVLookup>(sprite_id));
               const SpriteTileID& tile = sprite_view.template get<SpriteTileID>(sprite_id);
-              texcoord_data->template head<2>() = uv_lookup[tile.id].head<2>();
-              texcoord_data->template tail<2>() = uv_lookup[tile.id].tail<2>() - uv_lookup[tile.id].head<2>();
+              (*texcoord_data) = uv_lookup[tile.id];
             }
 
             // Increment buffer pointers
@@ -212,7 +237,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
       });
 
     // Update looped dynamic sprite sequences
-    registry.view<SpriteSequenceLooped, SpriteSequence, SpriteTileID, duration>().each(
+    registry.view<SpriteRenderingEnabled, SpriteSequenceLooped, SpriteSequence, SpriteTileID, duration>().each(
       [dt](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
         sequence.period_since_last_update += dt;
         if (sequence.period_since_last_update < update_period)
@@ -231,7 +256,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
       });
 
     // Update one-shot dynamic sprite sequences
-    registry.view<SpriteSequenceOneShot, SpriteSequence, SpriteTileID, duration>().each(
+    registry.view<SpriteRenderingEnabled, SpriteSequenceOneShot, SpriteSequence, SpriteTileID, duration>().each(
       [dt](SpriteSequence& sequence, SpriteTileID& tile, const duration& update_period) {
         sequence.period_since_last_update += dt;
         if (sequence.period_since_last_update > update_period and tile.id < sequence.stop_id)
@@ -240,17 +265,21 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
           sequence.period_since_last_update = duration::zero();
         }
       });
+
+    for (const auto id : registry.view<SpriteRenderingEnabled>())
+    {
+      registry.remove<SpriteRenderingEnabled>(id);
+    }
   });
 }
 
 ecs::entity create_sprite(
   ecs::registry& registry,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Position2D& sprite_position,
-  const RectSize2D& sprite_size)
+  const Rect2D& sprite_rect)
 {
   const ecs::entity entity_id = registry.create();
-  attach_sprite(registry, entity_id, uv_lookup, sprite_position, sprite_size);
+  attach_sprite(registry, entity_id, uv_lookup, sprite_rect);
   return entity_id;
 }
 
@@ -258,14 +287,12 @@ void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Position2D& sprite_position,
-  const RectSize2D& sprite_size)
+  const Rect2D& sprite_rect)
 {
   TYL_ASSERT_FALSE(registry.has<SpriteTileID>(entity_id));
   registry.emplace<ecs::Ref<Texture>>(entity_id, ecs::ref<ecs::Ref<Texture>>(uv_lookup));
   registry.emplace<ecs::Ref<TileUVLookup>>(entity_id, ecs::ref<TileUVLookup>(uv_lookup));
-  registry.emplace<Position2D>(entity_id, sprite_position);
-  registry.emplace<RectSize2D>(entity_id, sprite_size);
+  registry.emplace<Rect2D>(entity_id, sprite_rect);
   registry.emplace<SpriteTileID>(entity_id, 0UL);
 }
 

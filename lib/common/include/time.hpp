@@ -17,6 +17,8 @@ using time_point = typename clock::time_point;
 
 using duration = typename clock::duration;
 
+using fseconds = std::chrono::duration<float>;
+
 constexpr duration make_duration(float seconds)
 {
   return std::chrono::duration_cast<duration>(std::chrono::duration<float>{seconds});

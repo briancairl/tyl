@@ -7,6 +7,7 @@
 #pragma once
 
 // Tyl
+#include <tyl/rect.hpp>
 #include <tyl/strong_alias.hpp>
 #include <tyl/vec.hpp>
 
@@ -14,7 +15,7 @@ namespace tyl
 {
 
 TYL_DEFINE_STRONG_ALIAS(Position2D, Vec2f);
-TYL_DEFINE_STRONG_ALIAS(RectSize2D, Vec2f);
-TYL_DEFINE_STRONG_ALIAS(Transform2D, Vec3f);
+TYL_DEFINE_STRONG_ALIAS(Rect2D, Rect2f);
+TYL_DEFINE_STRONG_ALIAS(Transform2D, Mat3f)
 
 }  // namespace tyl

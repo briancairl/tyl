@@ -9,6 +9,7 @@
 #include <functional>
 
 // Tyl
+#include <tyl/bitops.hpp>
 #include <tyl/graphics/target.hpp>
 #include <tyl/time.hpp>
 #include <tyl/vec.hpp>
@@ -26,6 +27,33 @@ struct WindowState
 
   /// Current mouse pointer position in the normalized device frame
   Vec2f cursor_position_normalized;
+
+  /// Toggles when bitmask is pressed
+  std::uint64_t previous_input_down_mask = 0;
+
+  /// Toggles when bitmask is released
+  std::uint64_t previous_input_up_mask = 0;
+
+  /// Toggles when bitmask is pressed
+  std::uint64_t input_down_mask = 0;
+
+  /// Toggles when bitmask is up
+  std::uint64_t input_up_mask = 0;
+
+  /// Toggles when bitmask is pressed
+  std::uint64_t input_pressed_mask = 0;
+
+  /// Toggles when bitmask is up
+  std::uint64_t input_released_mask = 0;
+
+  static constexpr std::uint64_t MoveUp = tyl::bitops::make_mask<std::uint64_t, 0>();
+  static constexpr std::uint64_t MoveDown = tyl::bitops::make_mask<std::uint64_t, 1>();
+  static constexpr std::uint64_t MoveRight = tyl::bitops::make_mask<std::uint64_t, 2>();
+  static constexpr std::uint64_t MoveLeft = tyl::bitops::make_mask<std::uint64_t, 3>();
+  static constexpr std::uint64_t Sprint = tyl::bitops::make_mask<std::uint64_t, 4>();
+  static constexpr std::uint64_t Jump = tyl::bitops::make_mask<std::uint64_t, 5>();
+
+  WindowState() = default;
 };
 
 /**

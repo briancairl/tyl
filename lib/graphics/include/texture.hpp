@@ -20,7 +20,7 @@ namespace tyl::graphics
 /**
  * @brief Texture resource
  */
-class Texture : public ecs::make_handle_from_this<Texture>, public device::Texture
+class Texture : public device::Texture
 {
 public:
   using ChannelMode = device::TextureChannelMode;
@@ -36,7 +36,6 @@ public:
     const DataPtrT* const data,
     const ChannelMode mode = ChannelMode::R,
     const Options& options = Options{}) :
-      ecs::make_handle_from_this<Texture>{},
       device::Texture{size.x(), size.y(), data, mode, options},
       size_{size}
   {}

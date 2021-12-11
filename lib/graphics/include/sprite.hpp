@@ -14,6 +14,9 @@
 namespace tyl::graphics
 {
 
+struct SpriteRenderingEnabled
+{};
+
 struct SpriteBatchRenderProperties
 {
   // Maximum number of sprites to be rendered
@@ -61,15 +64,13 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
 ecs::entity create_sprite(
   ecs::registry& registry,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Position2D& sprite_position,
-  const RectSize2D& sprite_size);
+  const Rect2D& sprite_rect);
 
 void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Position2D& sprite_position,
-  const RectSize2D& sprite_size);
+  const Rect2D& sprite_rect);
 
 void attach_sprite_sequence(
   ecs::registry& registry,

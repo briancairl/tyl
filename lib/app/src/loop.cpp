@@ -87,6 +87,7 @@ Loop::Loop(const char* name, const Vec2i& size) : window_name_{name}, window_ctx
 
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
+  glfwSetInputMode(window, GLFW_STICKY_KEYS, GLFW_TRUE);
 
   if (gl3wInit() != 0)
   {
@@ -154,6 +155,34 @@ int Loop::run(const std::function<bool(graphics::Target&, const WindowState&, co
 
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
+
+    static constexpr std::array<std::pair<int, std::uint64_t>, 6UL> key_scan{
+      {{GLFW_KEY_W, WindowState::MoveUp},
+       {GLFW_KEY_S, WindowState::MoveDown},
+       {GLFW_KEY_D, WindowState::MoveRight},
+       {GLFW_KEY_A, WindowState::MoveLeft},
+       {GLFW_KEY_LEFT_SHIFT, WindowState::Sprint},
+       {GLFW_KEY_SPACE, WindowState::Jump}}};
+
+    window_state_.input_down_mask = 0;
+    window_state_.input_up_mask = 0;
+    for (const auto& [code, mask] : key_scan)
+    {
+      if (int state = glfwGetKey(window, code); state == GLFW_PRESS)
+      {
+        window_state_.input_down_mask |= mask;
+      }
+      else if (state == GLFW_RELEASE)
+      {
+        window_state_.input_up_mask |= mask;
+      }
+    }
+    window_state_.input_pressed_mask =
+      (window_state_.input_down_mask) & (window_state_.input_down_mask ^ window_state_.previous_input_down_mask);
+    window_state_.input_released_mask =
+      (window_state_.input_up_mask) & (window_state_.input_up_mask ^ window_state_.previous_input_up_mask);
+    window_state_.previous_input_down_mask = window_state_.input_down_mask;
+    window_state_.previous_input_up_mask = window_state_.input_up_mask;
 
     time_point curr_updater_stamp = clock::now();
     if (!loop_fn(window_render_target_, window_state_, curr_updater_stamp - prev_updater_stamp))

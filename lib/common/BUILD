@@ -94,7 +94,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
-  deps=[":vec", ":strong_alias"],
+  deps=[":vec", ":strong_alias", ":rect"],
   visibility=["//visibility:public"]
 )
 

@@ -61,27 +61,6 @@ constexpr bool operator!=(const Ref<ComponentTs...>& lhs, const Ref<ComponentTs.
   return lhs.entity() != rhs.entity();
 }
 
-template <typename ResourceT> class make_handle_from_this
-{
-public:
-  make_handle_from_this(make_handle_from_this&&) = default;
-  make_handle_from_this& operator=(make_handle_from_this&&) = default;
-
-  constexpr auto ref(registry& registry, const entity resource_id) const
-  {
-    TYL_ASSERT_TRUE(registry.template has<ResourceT>(resource_id));
-    return Ref<ResourceT>{registry, resource_id};
-  }
-
-  constexpr auto operator()(registry& registry, const entity resource_id) const
-  {
-    return make_handle_from_this::ref(registry, resource_id);
-  }
-
-protected:
-  make_handle_from_this() = default;
-};
-
 template <typename T> struct is_ref : std::false_type
 {};
 

@@ -53,6 +53,16 @@ Vec2f rectified_uv_extents(const Size2i tile_size_px, const Texture& atlas_textu
   return (even.array().cast<float>() / atlas_texture.size().array().cast<float>());
 }
 
+TileUVLookup::TileUVLookup(const TileUVLookup& reference, std::initializer_list<std::size_t> subset_indices)
+{
+  tile_uv_offsets_.reserve(std::distance(subset_indices.begin(), subset_indices.end()));
+  std::transform(
+    subset_indices.begin(),
+    subset_indices.end(),
+    std::back_inserter(tile_uv_offsets_),
+    [&reference](const std::size_t index) { return reference.tile_uv_offsets_[index]; });
+}
+
 TileUVLookup::TileUVLookup(const Texture& atlas_texture, const Rect2i& region)
 {
   TileUVLookup::update(atlas_texture, region);
@@ -67,7 +77,7 @@ TileUVLookup::TileUVLookup(const Texture& atlas_texture, const UniformlyDividedR
 
 void TileUVLookup::update(const Texture& atlas_texture, const Rect2i& region)
 {
-  const Vec2i tile_size_px{region.size()};
+  const Vec2i tile_size_px{region.extents()};
   const Vec2f tile_size_uv{rectified_uv_extents(tile_size_px, atlas_texture).array() /
                            (atlas_texture.size().array() / tile_size_px.array()).cast<float>()};
 
@@ -75,11 +85,7 @@ void TileUVLookup::update(const Texture& atlas_texture, const Rect2i& region)
   const Vec2f region_tile_origin = tile_size_uv.array() * region.min().array().cast<float>();
 
   // Compute tile offset
-  tile_uv_offsets_.emplace_back(
-    region_tile_origin.x(),
-    region_tile_origin.y(),
-    region_tile_origin.x() + tile_size_uv.x(),
-    region_tile_origin.y() + tile_size_uv.y());
+  tile_uv_offsets_.emplace_back(region_tile_origin.x(), region_tile_origin.y(), tile_size_uv.x(), tile_size_uv.y());
 }
 
 void TileUVLookup::update(const Texture& atlas_texture, const UniformlyDividedRegion& region)
@@ -90,7 +96,7 @@ void TileUVLookup::update(const Texture& atlas_texture, const UniformlyDividedRe
     (region.inner_padding_px.y() == 0) ? 0 : region.inner_padding_px.y() * (region.subdivisions.y() - 1)};
 
   // The size of a subdivided tile, minus padding
-  const Vec2i tile_size_px{(region.area_px.size() - total_inner_padding_px).array() / region.subdivisions.array()};
+  const Vec2i tile_size_px{(region.area_px.extents() - total_inner_padding_px).array() / region.subdivisions.array()};
   TYL_ASSERT_GT(tile_size_px.x(), 0);
   TYL_ASSERT_GT(tile_size_px.y(), 0);
 
@@ -134,12 +140,10 @@ void TileUVLookup::update(const Texture& atlas_texture, const UniformlyDividedRe
     for (int x = (region.subdivisions.x() - 1); x >= 0; --x)
     {
       const float lower_corner_x = region_tile_origin.x() + x * block_size_uv.x();
-      const float upper_corner_x = lower_corner_x + tile_size_uv.x();
       for (int y = (region.subdivisions.y() - 1); y >= 0; --y)
       {
         const float lower_corner_y = region_tile_origin.y() + y * block_size_uv.y();
-        const float upper_corner_y = lower_corner_y + tile_size_uv.y();
-        tile_uv_offsets_.emplace_back(lower_corner_x, lower_corner_y, upper_corner_x, upper_corner_y);
+        tile_uv_offsets_.emplace_back(lower_corner_x, lower_corner_y, tile_size_uv.x(), tile_size_uv.y());
       }
     }
   }
@@ -148,12 +152,10 @@ void TileUVLookup::update(const Texture& atlas_texture, const UniformlyDividedRe
     for (int x = 0; x < region.subdivisions.x(); ++x)
     {
       const float lower_corner_x = region_tile_origin.x() + x * block_size_uv.x();
-      const float upper_corner_x = lower_corner_x + tile_size_uv.x();
       for (int y = 0; y < region.subdivisions.y(); ++y)
       {
         const float lower_corner_y = region_tile_origin.y() + y * block_size_uv.y();
-        const float upper_corner_y = lower_corner_y + tile_size_uv.y();
-        tile_uv_offsets_.emplace_back(lower_corner_x, lower_corner_y, upper_corner_x, upper_corner_y);
+        tile_uv_offsets_.emplace_back(lower_corner_x, lower_corner_y, tile_size_uv.x(), tile_size_uv.y());
       }
     }
   }
@@ -180,6 +182,26 @@ void attach_tile_uv_lookup(
 {
   registry.emplace<ecs::Ref<Texture>>(entity_id, texture);
   add_uv_regions(registry.emplace<TileUVLookup>(entity_id), (*texture), regions.begin(), regions.end());
+}
+
+ecs::entity create_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const std::initializer_list<std::size_t> subset_indices)
+{
+  const ecs::entity e = registry.create();
+  attach_tile_uv_lookup(registry, e, reference, subset_indices);
+  return e;
+}
+
+void attach_tile_uv_lookup(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const std::initializer_list<std::size_t> subset_indices)
+{
+  registry.emplace<ecs::Ref<Texture>>(entity_id, ecs::ref<ecs::Ref<Texture>>(reference));
+  registry.emplace<TileUVLookup>(entity_id, reference.get<TileUVLookup>(), subset_indices);
 }
 
 }  // namespace tyl::graphics
