@@ -29,12 +29,6 @@ public:
   constexpr decltype(auto) operator*() { return this->template get<ComponentTs...>(); }
 
   constexpr decltype(auto) operator*() const { return this->template get<ComponentTs...>(); }
-
-private:
-  using handle_type::emplace;
-  using handle_type::get_or_emplace;
-  using handle_type::remove;
-  using handle_type::try_get;
 };
 
 template <typename... ComponentTs>
