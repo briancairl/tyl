@@ -1,0 +1,11 @@
+cc_library(
+  name="logging",
+  hdrs=["include/logging.hpp"],
+  srcs=["src/logging.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  copts=["-DSPDLOG_COMPILED_LIB"],
+  linkopts=["-DSPDLOG_COMPILED_LIB"],
+  deps=["@spdlog//:spdlog"],
+  visibility=["//visibility:public"]
+)

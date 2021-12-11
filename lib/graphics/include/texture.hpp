@@ -1,172 +1,74 @@
 /**
- * @copyright 2020-present Brian Cairl
+ * @copyright 2021-present Brian Cairl
  *
- * @file texture.h
+ * @file texture.hpp
  */
-#ifndef TYL_GRAPHICS_TEXTURE_H
-#define TYL_GRAPHICS_TEXTURE_H
+#pragma once
 
 // C++ Standard Library
-#include <cstdint>
-#include <memory>
-#include <optional>
-#include <type_traits>
+#include <string_view>
 
+// Tyl
+#include <tyl/ecs.hpp>
+#include <tyl/graphics/device/texture.hpp>
+#include <tyl/graphics/fwd.hpp>
+#include <tyl/vec.hpp>
 
 namespace tyl::graphics
 {
 
-class Texture;
-class Image;
-class ShaderHandle;
-
-
-/// ID type used for textures, ideally identical to the graphics API ID
-using texture_id_t = unsigned;
-
-
 /**
- * @brief Lightweight texture interface, used to refer to a texture
+ * @brief Texture resource
  */
-class TextureHandle
+class Texture : public device::Texture
 {
 public:
-  TextureHandle(TextureHandle&&) = default;
-  TextureHandle(const TextureHandle&) = default;
-  ~TextureHandle() = default;
+  using ChannelMode = device::TextureChannelMode;
 
-  TextureHandle& operator=(TextureHandle&&) = default;
+  using Options = device::TextureOptions;
 
-  /**
-   * @brrief Binds texture to a working texture unit
-   */
-  void bind(const unsigned texture_index) const;
+  Texture(Texture&& other) = default;
+  Texture& operator=(Texture&&) = default;
 
-  /**
-   * @brrief Returns unique ID associated with loaded texture
-   */
-  inline texture_id_t get_id() const { return *texture_id_; };
-
-  template <typename ID_T>
-  inline explicit TextureHandle(ID_T&& texture_id) : texture_id_{std::forward<ID_T>(texture_id)}
+  template <typename DataPtrT>
+  Texture(
+    const Size2i size,
+    const DataPtrT* const data,
+    const ChannelMode mode = ChannelMode::R,
+    const Options& options = Options{}) :
+      device::Texture{size.x(), size.y(), data, mode, options},
+      size_{size}
   {}
 
-protected:
-  std::optional<texture_id_t> texture_id_;
-};
+  ~Texture() = default;
 
-
-/**
- * @brief RAII wrapper around a texture resource
- *
- *        Creates and destroys texture through graphics API
- *
- * @warning Do not pass around Texture, use TextureHandle
- */
-class Texture : public TextureHandle
-{
-public:
-  struct Options
-  {
-    enum class ChannelMode
-    {
-      R,  //< Red (1-channel)
-      RG,  //< Red-green (2-channel)
-      RGB,  //< Red-green-blue (3-channel)
-      RGBA,  //< Red-green-blue-alpha (4-channel)
-    };
-
-    enum class Wrapping
-    {
-      CLAMP_TO_BORDER,
-      REPEAT
-    };
-
-    enum class Sampling
-    {
-      LINEAR,
-      NEAREST
-    };
-
-    ChannelMode channel_mode;
-
-    Wrapping u_wrapping;
-
-    Wrapping v_wrapping;
-
-    Sampling min_sampling;
-
-    Sampling mag_sampling;
-
-    inline Options(
-      const ChannelMode _channel_mode,
-      const Wrapping _u_wrapping = Wrapping::CLAMP_TO_BORDER,
-      const Wrapping _v_wrapping = Wrapping::CLAMP_TO_BORDER,
-      const Sampling _min_sampling = Sampling::NEAREST,
-      const Sampling _mag_sampling = Sampling::NEAREST) :
-        channel_mode{_channel_mode},
-        u_wrapping{_u_wrapping},
-        v_wrapping{_v_wrapping},
-        min_sampling{_min_sampling},
-        mag_sampling{_mag_sampling}
-    {}
-  };
-
-  Texture(Texture&& other);
-  Texture(
-    const long int h,
-    const long int w,
-    const float* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const double* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::int8_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::uint8_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::int16_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::uint16_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::int32_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(
-    const long int h,
-    const long int w,
-    const std::uint32_t* const data,
-    const Options& options = Options::ChannelMode::R);
-  Texture(const Image& image);
-  // TODO : others?
-
-  ~Texture();
-
-  Texture& operator=(Texture&&);
-
-  inline TextureHandle get_handle() const { return TextureHandle{texture_id_}; };
+  inline const Size2i& size() const { return size_; }
 
 private:
-  Texture(const Texture&) = default;
+  Size2i size_;
+
+  using device::Texture::bind;
+  friend class Target;
 };
 
-namespace texture_from_merged_detail
+/**
+ * @brief Loads image and creates a Texture resource
+ */
+ecs::entity create_texture(
+  ecs::registry& registry,
+  const std::string_view filename,
+  const Texture::Options& options = Texture::Options{});
+
+/**
+ * @brief Loads image and attaches a Texture resource to an existing entity
+ */
+void attach_texture(
+  ecs::registry& registry,
+  const ecs::entity entity_id,
+  const std::string_view filename,
+  const Texture::Options& options = Texture::Options{});
+
+namespace detail
 {
 
 /**
@@ -215,51 +117,46 @@ static inline ValueT get_value_at([[maybe_unused]] PtrT data, [[maybe_unused]] c
   }
 }
 
-}  // namespace texture_from_merged_detail
+}  // namespace detail
 
 
 /**
  * @brief Creates a multi-channel texture from a single channel texture
  */
 template <typename R_PtrT, typename G_PtrT>
-inline Texture create_texture_from_merged(
-  const int h,
-  const int w,
-  R_PtrT r,
-  G_PtrT g,
-  Texture::Options options = Texture::Options::ChannelMode::RG)
+inline Texture
+merge_to_texture(const int h, const int w, R_PtrT r, G_PtrT g, const Texture::Options options = Texture::Options{})
 {
   static_assert(
     std::is_pointer<R_PtrT>() or std::is_same<R_PtrT, std::nullptr_t>(), "R_PtrT must be a pointer type (or nullptr_t");
   static_assert(
     std::is_pointer<G_PtrT>() or std::is_same<G_PtrT, std::nullptr_t>(), "G_PtrT must be a pointer type (or nullptr_t");
 
-  using ValueT = std::remove_const_t<typename texture_from_merged_detail::common_value_type<R_PtrT, G_PtrT>::type>;
+  using ValueT = std::remove_const_t<typename detail::common_value_type<R_PtrT, G_PtrT>::type>;
 
   std::unique_ptr<ValueT[]> data{new ValueT[h * w * 2]};
   const int last_i = h * w;
   for (int i = 0; i < last_i; ++i)
   {
-    data.get()[2 * i + 0] = texture_from_merged_detail::get_value_at<ValueT>(r, i);
-    data.get()[2 * i + 1] = texture_from_merged_detail::get_value_at<ValueT>(g, i);
+    data.get()[2 * i + 0] = detail::get_value_at<ValueT>(r, i);
+    data.get()[2 * i + 1] = detail::get_value_at<ValueT>(g, i);
   }
 
-  options.channel_mode = Texture::Options::ChannelMode::RG;
-  return Texture{h, w, data.get(), options};
+  return Texture{h, w, data.get(), Texture::ChannelMode::RG, options};
 }
 
 
 /**
- * @copydoc create_texture_from_merged
+ * @copydoc merge_to_texture
  */
 template <typename R_PtrT, typename G_PtrT, typename B_PtrT>
-inline Texture create_texture_from_merged(
+inline Texture merge_to_texture(
   const int h,
   const int w,
   R_PtrT r,
   G_PtrT g,
   B_PtrT b,
-  Texture::Options options = Texture::Options::ChannelMode::RGB)
+  const Texture::Options options = Texture::Options{})
 {
   static_assert(
     std::is_pointer<R_PtrT>() or std::is_same<R_PtrT, std::nullptr_t>(), "R_PtrT must be a pointer type (or nullptr_t");
@@ -268,35 +165,33 @@ inline Texture create_texture_from_merged(
   static_assert(
     std::is_pointer<B_PtrT>() or std::is_same<B_PtrT, std::nullptr_t>(), "B_PtrT must be a pointer type (or nullptr_t");
 
-  using ValueT =
-    std::remove_const_t<typename texture_from_merged_detail::common_value_type<R_PtrT, G_PtrT, B_PtrT>::type>;
+  using ValueT = std::remove_const_t<typename detail::common_value_type<R_PtrT, G_PtrT, B_PtrT>::type>;
 
   std::unique_ptr<ValueT[]> data{new ValueT[h * w * 3]};
   const int last_i = h * w;
   for (int i = 0; i < last_i; ++i)
   {
-    data.get()[3 * i + 0] = texture_from_merged_detail::get_value_at<ValueT>(r, i);
-    data.get()[3 * i + 1] = texture_from_merged_detail::get_value_at<ValueT>(g, i);
-    data.get()[3 * i + 2] = texture_from_merged_detail::get_value_at<ValueT>(b, i);
+    data.get()[3 * i + 0] = detail::get_value_at<ValueT>(r, i);
+    data.get()[3 * i + 1] = detail::get_value_at<ValueT>(g, i);
+    data.get()[3 * i + 2] = detail::get_value_at<ValueT>(b, i);
   }
 
-  options.channel_mode = Texture::Options::ChannelMode::RGB;
-  return Texture{h, w, data.get(), options};
+  return Texture{h, w, data.get(), Texture::ChannelMode::RGB, options};
 }
 
 
 /**
- * @copydoc create_texture_from_merged
+ * @copydoc merge_to_texture
  */
 template <typename R_PtrT, typename G_PtrT, typename B_PtrT, typename A_PtrT>
-inline Texture create_texture_from_merged(
+inline Texture merge_to_texture(
   const int h,
   const int w,
   R_PtrT r,
   G_PtrT g,
   B_PtrT b,
   A_PtrT a,
-  Texture::Options options = Texture::Options::ChannelMode::RGBA)
+  const Texture::Options options = Texture::Options{})
 {
   static_assert(
     std::is_pointer<R_PtrT>() or std::is_same<R_PtrT, std::nullptr_t>(), "R_PtrT must be a pointer type (or nullptr_t");
@@ -307,23 +202,19 @@ inline Texture create_texture_from_merged(
   static_assert(
     std::is_pointer<A_PtrT>() or std::is_same<A_PtrT, std::nullptr_t>(), "A_PtrT must be a pointer type (or nullptr_t");
 
-  using ValueT =
-    std::remove_const_t<typename texture_from_merged_detail::common_value_type<R_PtrT, G_PtrT, B_PtrT, A_PtrT>::type>;
+  using ValueT = std::remove_const_t<typename detail::common_value_type<R_PtrT, G_PtrT, B_PtrT, A_PtrT>::type>;
 
   std::unique_ptr<ValueT[]> data{new ValueT[h * w * 4]};
   const int last_i = h * w;
   for (int i = 0; i < last_i; ++i)
   {
-    data.get()[4 * i + 0] = texture_from_merged_detail::get_value_at<ValueT>(r, i);
-    data.get()[4 * i + 1] = texture_from_merged_detail::get_value_at<ValueT>(g, i);
-    data.get()[4 * i + 2] = texture_from_merged_detail::get_value_at<ValueT>(b, i);
-    data.get()[4 * i + 3] = texture_from_merged_detail::get_value_at<ValueT>(a, i);
+    data.get()[4 * i + 0] = detail::get_value_at<ValueT>(r, i);
+    data.get()[4 * i + 1] = detail::get_value_at<ValueT>(g, i);
+    data.get()[4 * i + 2] = detail::get_value_at<ValueT>(b, i);
+    data.get()[4 * i + 3] = detail::get_value_at<ValueT>(a, i);
   }
 
-  options.channel_mode = Texture::Options::ChannelMode::RGBA;
-  return Texture{h, w, data.get(), options};
+  return Texture{h, w, data.get(), Texture::ChannelMode::RGBA, options};
 }
 
 }  // namespace tyl::graphics
-
-#endif  // TYL_GRAPHICS_TEXTURE_H

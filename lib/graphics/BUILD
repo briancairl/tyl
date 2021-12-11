@@ -1,11 +1,96 @@
 cc_library(
-  name="graphics",
-  hdrs=glob(["include/*.hpp"]),
-  srcs=glob(["src/*.cpp"]),
+  name="gl_user_types",
+  hdrs=["include/device/typecode.hpp",
+        "include/device/typedef.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
   deps=[
     "@imgui//:gl3w",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="gl_internal",
+  hdrs=glob(["src/device/gl.inl"]),
+  strip_include_prefix="src",
+  include_prefix="tyl/graphics",
+  deps=[":gl_user_types",],
+  visibility=["//visibility:private"]
+)
+
+config_setting(
+    name = "debug",
+    values = {"compilation_mode": "dbg"},
+)
+
+DEVICE_DEBUG_SOURCES = select({
+    ":debug": ["src/device/debug.cpp"],
+    "//conditions:default": ["src/device/debug_null.cpp"],
+})
+
+cc_library(
+  name="device_debug",
+  hdrs=["include/device/debug.hpp"],
+  srcs=DEVICE_DEBUG_SOURCES,
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[":gl_internal", "//lib/logging"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="device",
+  hdrs=[
+    "include/device/constants.hpp",
+    "include/device/fwd.hpp",
+    "include/device/shader.hpp",
+    "include/device/texture.hpp",
+    "include/device/vertex_buffer.hpp",
+  ],
+  srcs=[
+    "src/device/shader.cpp",
+    "src/device/texture.cpp",
+    "src/device/vertex_buffer.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[":gl_internal", "//lib/common:assert"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="graphics",
+  hdrs=[
+    "include/camera.hpp",
+    "include/fwd.hpp",
+    "include/image.hpp",
+    "include/shader.hpp",
+    "include/sprite.hpp",
+    "include/target.hpp",
+    "include/texture.hpp",
+    "include/tile_uv_lookup.hpp",
+    "include/vertex_buffer.hpp"
+  ],
+  srcs=[
+    "src/camera.cpp",
+    "src/image.cpp",
+    "src/sprite.cpp",
+    "src/target.cpp",
+    "src/texture.cpp",
+    "src/tile_uv_lookup.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[
+    "//lib/common:assert",
+    "//lib/common:ecs",
+    "//lib/common:filesystem",
+    "//lib/common:components",
+    "//lib/common:rect",
+    "//lib/common:time",
+    ":device",
+    ":device_debug",
     "@stb//:stb",
   ],
   visibility=["//visibility:public"]

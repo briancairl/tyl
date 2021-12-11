@@ -3,13 +3,16 @@
  *
  * @file image.h
  */
-#ifndef TYL_GRAPHICS_IMAGE_H
-#define TYL_GRAPHICS_IMAGE_H
+#pragma once
 
 // C++ Standard Library
 #include <cstdint>
 #include <memory>
 #include <type_traits>
+
+// Tyl
+#include <tyl/ecs.hpp>
+#include <tyl/vec.hpp>
 
 namespace tyl::graphics
 {
@@ -26,25 +29,21 @@ public:
 
   Image& operator=(Image&& other) = default;
 
-  static Image load_from_file(const char* filename, const int force_channel_count = 0);
+  static Image
+  load_from_file(const char* filename, const int force_channel_count = 0, const bool flip_vertically = false);
 
-  inline int rows() const { return rows_; }
+  constexpr const Size2i& size() const { return size_; }
 
-  inline int cols() const { return cols_; }
+  constexpr int channels() const { return channels_; }
 
-  inline int channels() const { return channels_; }
+  constexpr std::uint8_t* data() { return data_; }
 
-  inline std::uint8_t* data() { return data_; }
-
-  inline std::uint8_t* const data() const { return data_; }
+  constexpr std::uint8_t* const data() const { return data_; }
 
 private:
   std::uint8_t* data_ = nullptr;
-  int rows_ = 0;
-  int cols_ = 0;
+  Size2i size_ = Size2i{0, 0};
   int channels_ = 0;
 };
 
 }  // namespace tyl::graphics
-
-#endif  // TYL_GRAPHICS_IMAGE_H
