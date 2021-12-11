@@ -78,8 +78,9 @@ void update(ecs::registry& registry, const duration dt)
     const auto curr_sprite_id = actions.get_active();
     if (prev_sprite_id != curr_sprite_id and registry.has<graphics::SpriteSequence>(curr_sprite_id))
     {
-      auto& seq = registry.get<graphics::SpriteSequence>(curr_sprite_id);
+      auto [seq, tile] = registry.get<graphics::SpriteSequence, graphics::SpriteTileID>(curr_sprite_id);
       seq.period_since_last_update = duration::zero();
+      tile.id = 0;
     }
 
     // Enable rendering
