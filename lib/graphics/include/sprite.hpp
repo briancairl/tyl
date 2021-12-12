@@ -80,6 +80,6 @@ void attach_sprite_sequence(
 
 void detach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id);
 
-void retrigger_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id);
+void retrigger_sprite_sequence(const ecs::Ref<SpriteSequence, SpriteTileID> sprite);
 
 }  // namespace tyl::graphics

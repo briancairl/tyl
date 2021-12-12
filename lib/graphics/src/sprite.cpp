@@ -320,11 +320,11 @@ void detach_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id
 }
 
 
-void retrigger_sprite_sequence(ecs::registry& registry, const ecs::entity entity_id)
+void retrigger_sprite_sequence(const ecs::Ref<SpriteSequence, SpriteTileID> sprite)
 {
-  TYL_ASSERT_TRUE((registry.has<SpriteSequence, SpriteTileID>(entity_id)));
-  auto [sequence, tile] = registry.get<SpriteSequence, SpriteTileID>(entity_id);
+  auto [sequence, tile] = sprite.get<SpriteSequence, SpriteTileID>();
   tile.id = sequence.start_id;
+  sequence.period_since_last_update = duration::zero();
 }
 
 }  // namespace tyl::graphics
