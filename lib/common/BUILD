@@ -79,12 +79,22 @@ cc_library(
 )
 
 cc_library(
-  name="ecs",
-  hdrs=["include/ecs.hpp"],
+  name="serialization",
+  hdrs=glob(["include/serialization/**/**"]) + ["include/serialization.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
-  deps=["@entt//:entt"],
+  deps=["@boost//:serialization"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="ecs",
+  hdrs=glob(["include/ecs/**/**"]) + ["include/ecs.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=["@entt//:entt", ":serialization"],
   visibility=["//visibility:public"]
 )
 

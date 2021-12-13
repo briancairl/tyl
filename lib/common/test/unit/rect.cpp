@@ -62,3 +62,9 @@ TEST(RectIntersects, Disjoint)
   ASSERT_FALSE(lower.intersects(upper));
   ASSERT_FALSE(upper.intersects(lower));
 }
+
+int main(int argc, char** argv)
+{
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

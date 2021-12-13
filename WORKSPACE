@@ -3,6 +3,16 @@ workspace(name="tyl")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Boost
+git_repository(
+    name="com_github_nelhage_rules_boost",
+    commit="d104cb7beba996d67ae5826be07aab2d9ca0ee38",
+    remote="https://github.com/nelhage/rules_boost",
+    shallow_since="1637888414 -0800",
+)
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
+
 # Entt
 git_repository(
   name="entt",
