@@ -69,7 +69,7 @@ void update(ecs::registry& registry, const duration dt)
     {
       actions.active += (direction.y() > 0.f) ? Actions::ToUp : Actions::ToDown;
     }
-    else if (std::abs(direction.y()) < std::abs(direction.x()))
+    else if (std::abs(direction.y()) <= std::abs(direction.x()))
     {
       actions.active += (direction.x() > 0.f) ? Actions::ToLeft : Actions::ToRight;
     }

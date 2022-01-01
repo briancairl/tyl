@@ -189,7 +189,8 @@ int main(int argc, char** argv)
     {
       motion.y() = -speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveRight)
+
+    if (win_state.input_down_mask & app::WindowState::MoveRight)
     {
       motion.x() = speed;
     }
