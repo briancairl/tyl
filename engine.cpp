@@ -181,20 +181,20 @@ int main(int argc, char** argv)
 
     const float speed = (win_state.input_down_mask & app::WindowState::Sprint) ? 50.0f : 25.0f;
 
-    if (win_state.input_down_mask & app::WindowState::MoveUp)
+    if (win_state.is_down(app::WindowState::MoveUp))
     {
       motion.y() = speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveDown)
+    else if (win_state.is_down(app::WindowState::MoveDown))
     {
       motion.y() = -speed;
     }
 
-    if (win_state.input_down_mask & app::WindowState::MoveRight)
+    if (win_state.is_down(app::WindowState::MoveRight))
     {
       motion.x() = speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveLeft)
+    else if (win_state.is_down(app::WindowState::MoveLeft))
     {
       motion.x() = -speed;
     }

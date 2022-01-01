@@ -53,6 +53,11 @@ struct WindowState
   static constexpr std::uint64_t Sprint = tyl::bitops::make_mask<std::uint64_t, 4>();
   static constexpr std::uint64_t Jump = tyl::bitops::make_mask<std::uint64_t, 5>();
 
+  constexpr bool is_down(const std::uint64_t mask_query) const { return mask_query & input_down_mask; }
+  constexpr bool is_up(const std::uint64_t mask_query) const { return mask_query & input_up_mask; }
+  constexpr bool is_pressed(const std::uint64_t mask_query) const { return mask_query & input_pressed_mask; }
+  constexpr bool released_up(const std::uint64_t mask_query) const { return mask_query & input_released_mask; }
+
   WindowState() = default;
 };
 
