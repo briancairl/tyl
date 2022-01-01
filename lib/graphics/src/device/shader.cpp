@@ -265,7 +265,7 @@ ShaderSource::~ShaderSource()
   }
 }
 
-Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : Shader{create_gl_shader()}
+Shader::Shader(const ShaderSource vertex_source, const ShaderSource fragment_source) : Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_, vertex_source.get_id());
   glAttachShader(shader_id_, fragment_source.get_id());
@@ -281,7 +281,10 @@ Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source) : S
   glDetachShader(shader_id_, fragment_source.get_id());
 }
 
-Shader::Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, ShaderSource&& geometry_source) :
+Shader::Shader(
+  const ShaderSource vertex_source,
+  const ShaderSource fragment_source,
+  const ShaderSource geometry_source) :
     Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_, vertex_source.get_id());

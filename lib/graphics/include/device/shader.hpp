@@ -93,8 +93,8 @@ class Shader
 {
 public:
   Shader(Shader&& other);
-  Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source);
-  Shader(ShaderSource&& vertex_source, ShaderSource&& fragment_source, ShaderSource&& geometry_source);
+  Shader(const ShaderSource vertex_source, const ShaderSource fragment_source);
+  Shader(const ShaderSource vertex_source, const ShaderSource fragment_source, const ShaderSource geometry_source);
 
   ~Shader();
 
