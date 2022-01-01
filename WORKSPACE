@@ -47,6 +47,13 @@ http_archive(
   strip_prefix="imgui-1.80"
 )
 
+# OpenAL
+new_local_repository(
+  name="openal",
+  path="/usr/",
+  build_file="@//external:openal.BUILD",
+)
+
 # GLFW
 new_local_repository(
   name="glfw",

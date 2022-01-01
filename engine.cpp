@@ -15,6 +15,12 @@
 #include <tyl/graphics/tile_uv_lookup.hpp>
 #include <tyl/time.hpp>
 
+// WIP audio
+#include <tyl/audio/device/device.hpp>
+#include <tyl/audio/device/listener.hpp>
+#include <tyl/audio/device/sound.hpp>
+#include <tyl/audio/device/source.hpp>
+
 // ImGui
 #include <imgui.h>
 
@@ -172,10 +178,39 @@ int main(int argc, char** argv)
 
   graphics::create_sprite_batch_renderer(registry, 10);
 
+
+  audio::device::Device audio_playback_device;
+  audio::device::Listener audio_listener{audio_playback_device};
+  audio::device::Source background_music_source;
+  audio::device::Sound background_music_track{
+    audio::device::load_sound_from_file("resources/test/background_mono.wav")};
+
+  background_music_source.set_looped(true);
+  const auto playback = background_music_source.play(background_music_track);
+
+  duration t_accum = duration::zero();
+
   return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
     graphics::update_cameras(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
     actor::update(registry, dt);
+
+    t_accum += dt;
+    background_music_source.set_position(
+      10.f * std::cos(0.75f * to_fseconds(t_accum).count()),
+      10.f * std::sin(0.75f * to_fseconds(t_accum).count()),
+      0.f);
+    background_music_source.set_pitch_scaling(0.5f * std::cos(0.75f * to_fseconds(t_accum).count()) + 1.f);
+
+    if (t_accum > std::chrono::seconds{10})
+    {
+      t_accum = duration::zero();
+      playback.resume();
+    }
+    else if (t_accum > std::chrono::seconds{5})
+    {
+      playback.pause();
+    }
 
     auto& motion = registry.get<actor::Motion2D>(player_id);
 
