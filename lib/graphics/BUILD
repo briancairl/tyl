@@ -63,6 +63,7 @@ cc_library(
   name="graphics",
   hdrs=[
     "include/camera.hpp",
+    "include/debug.hpp",
     "include/fwd.hpp",
     "include/image.hpp",
     "include/shader.hpp",
@@ -74,6 +75,7 @@ cc_library(
   ],
   srcs=[
     "src/camera.cpp",
+    "src/debug.cpp",
     "src/image.cpp",
     "src/sprite.cpp",
     "src/target.cpp",
@@ -84,6 +86,7 @@ cc_library(
   include_prefix="tyl/graphics",
   deps=[
     "//lib/common:assert",
+    "//lib/common:debug",
     "//lib/common:ecs",
     "//lib/common:filesystem",
     "//lib/common:components",
