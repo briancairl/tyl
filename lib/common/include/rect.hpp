@@ -89,7 +89,12 @@ public:
   inline bool within(const corner_type& query) const { return within_impl(query, corner_, corner_ + extents_); }
 
   /**
-   * @brief Checks if rectngle intersects (overlaps) with another rectangular region
+   * @brief Checks if rectangle within another rectangular region
+   */
+  inline bool within(const Rect& other) const { return within(other.min()) and within(other.max()); }
+
+  /**
+   * @brief Checks if rectangle intersects (overlaps) with another rectangular region
    */
   inline bool intersects(const Rect& other) const
   {
