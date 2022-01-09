@@ -227,19 +227,22 @@ void VertexBuffer::set_index_data(const std::uint32_t* const data) const
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * index_count_, data);
 }
 
-void VertexBuffer::draw(const DrawMode mode) const
+void VertexBuffer::draw(const std::size_t count, const DrawMode mode) const
 {
   glBindVertexArray(vao_);
-  if (ebo_)
-  {
-    glDrawElements(to_gl_draw_mode(mode), index_count_, GL_UNSIGNED_INT, 0);
-  }
-  else
-  {
-    glDrawArrays(to_gl_draw_mode(mode), 0, vertex_attributes_[0].count);
-  }
+  glDrawArrays(to_gl_draw_mode(mode), 0, count);
   glBindVertexArray(0);
 }
+
+void VertexBuffer::draw_elements(const std::size_t element_count, const DrawMode mode) const
+{
+  glBindVertexArray(vao_);
+  TYL_ASSERT_TRUE(ebo_);
+  glDrawElements(to_gl_draw_mode(mode), element_count, GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
+}
+
+void VertexBuffer::draw_elements(const DrawMode mode) const { VertexBuffer::draw_elements(index_count_, mode); }
 
 void VertexBuffer::draw_instanced(const std::size_t instance_count, const DrawMode mode) const
 {
