@@ -18,9 +18,9 @@ namespace tyl::app
 {
 
 /**
- * @brief Describes current application state
+ * @brief Describes user input for a specific application Loop
  */
-struct WindowState
+struct UserInput
 {
   /// Current mouse pointer position (possible sub-pixel resolution)
   Vec2d cursor_position_full_resolution;
@@ -58,7 +58,7 @@ struct WindowState
   constexpr bool is_pressed(const std::uint64_t mask_query) const { return mask_query & input_pressed_mask; }
   constexpr bool released_up(const std::uint64_t mask_query) const { return mask_query & input_released_mask; }
 
-  WindowState() = default;
+  UserInput() = default;
 };
 
 /**
@@ -71,12 +71,12 @@ public:
 
   ~Loop();
 
-  int run(const std::function<bool(graphics::Target&, const WindowState&, const duration dt)>& loop_fn);
+  int run(const std::function<bool(graphics::Target&, const UserInput&, const duration dt)>& loop_fn);
 
 private:
   const char* window_name_;
   void* window_ctx_;
-  WindowState window_state_;
+  UserInput user_input_;
   graphics::Target window_render_target_;
 };
 

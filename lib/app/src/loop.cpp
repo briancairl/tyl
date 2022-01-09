@@ -37,10 +37,10 @@ void glfw_error_callback(int error, const char* description)
 /**
  * @brief Computes normalized cursor position
  */
-inline Vec2f to_cursor_position_normalized(const graphics::Target& render_target, const WindowState& window_state)
+inline Vec2f to_cursor_position_normalized(const graphics::Target& render_target, const UserInput& user_input)
 {
-  const float xn = window_state.cursor_position_full_resolution.x() / render_target.viewport_size.x();
-  const float yn = window_state.cursor_position_full_resolution.y() / render_target.viewport_size.y();
+  const float xn = user_input.cursor_position_full_resolution.x() / render_target.viewport_size.x();
+  const float yn = user_input.cursor_position_full_resolution.y() / render_target.viewport_size.y();
   return Vec2f{2.f * xn - 1.0f, 1.0f - 2.f * yn};
 }
 
@@ -128,7 +128,7 @@ Loop::~Loop()
   }
 }
 
-int Loop::run(const std::function<bool(graphics::Target&, const WindowState&, const duration dt)>& loop_fn)
+int Loop::run(const std::function<bool(graphics::Target&, const UserInput&, const duration dt)>& loop_fn)
 {
   GLFWwindow* window = reinterpret_cast<GLFWwindow*>(window_ctx_);
 
@@ -143,8 +143,8 @@ int Loop::run(const std::function<bool(graphics::Target&, const WindowState&, co
   {
     glfwPollEvents();
     glfwGetCursorPos(
-      window, &window_state_.cursor_position_full_resolution.x(), &window_state_.cursor_position_full_resolution.y());
-    window_state_.cursor_position_normalized = to_cursor_position_normalized(window_render_target_, window_state_);
+      window, &user_input_.cursor_position_full_resolution.x(), &user_input_.cursor_position_full_resolution.y());
+    user_input_.cursor_position_normalized = to_cursor_position_normalized(window_render_target_, user_input_);
 
     glClearColor(background_color.x, background_color.y, background_color.z, background_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -156,36 +156,35 @@ int Loop::run(const std::function<bool(graphics::Target&, const WindowState&, co
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
-    static constexpr std::array<std::pair<int, std::uint64_t>, 6UL> key_scan{
-      {{GLFW_KEY_W, WindowState::MoveUp},
-       {GLFW_KEY_S, WindowState::MoveDown},
-       {GLFW_KEY_D, WindowState::MoveRight},
-       {GLFW_KEY_A, WindowState::MoveLeft},
-       {GLFW_KEY_LEFT_SHIFT, WindowState::Sprint},
-       {GLFW_KEY_SPACE, WindowState::Jump}}};
+    static constexpr std::array<std::pair<int, std::uint64_t>, 6UL> key_scan{{{GLFW_KEY_W, UserInput::MoveUp},
+                                                                              {GLFW_KEY_S, UserInput::MoveDown},
+                                                                              {GLFW_KEY_D, UserInput::MoveRight},
+                                                                              {GLFW_KEY_A, UserInput::MoveLeft},
+                                                                              {GLFW_KEY_LEFT_SHIFT, UserInput::Sprint},
+                                                                              {GLFW_KEY_SPACE, UserInput::Jump}}};
 
-    window_state_.input_down_mask = 0;
-    window_state_.input_up_mask = 0;
+    user_input_.input_down_mask = 0;
+    user_input_.input_up_mask = 0;
     for (const auto& [code, mask] : key_scan)
     {
       if (int state = glfwGetKey(window, code); state == GLFW_PRESS)
       {
-        window_state_.input_down_mask |= mask;
+        user_input_.input_down_mask |= mask;
       }
       else if (state == GLFW_RELEASE)
       {
-        window_state_.input_up_mask |= mask;
+        user_input_.input_up_mask |= mask;
       }
     }
-    window_state_.input_pressed_mask =
-      (window_state_.input_down_mask) & (window_state_.input_down_mask ^ window_state_.previous_input_down_mask);
-    window_state_.input_released_mask =
-      (window_state_.input_up_mask) & (window_state_.input_up_mask ^ window_state_.previous_input_up_mask);
-    window_state_.previous_input_down_mask = window_state_.input_down_mask;
-    window_state_.previous_input_up_mask = window_state_.input_up_mask;
+    user_input_.input_pressed_mask =
+      (user_input_.input_down_mask) & (user_input_.input_down_mask ^ user_input_.previous_input_down_mask);
+    user_input_.input_released_mask =
+      (user_input_.input_up_mask) & (user_input_.input_up_mask ^ user_input_.previous_input_up_mask);
+    user_input_.previous_input_down_mask = user_input_.input_down_mask;
+    user_input_.previous_input_up_mask = user_input_.input_up_mask;
 
     time_point curr_updater_stamp = clock::now();
-    if (!loop_fn(window_render_target_, window_state_, curr_updater_stamp - prev_updater_stamp))
+    if (!loop_fn(window_render_target_, user_input_, curr_updater_stamp - prev_updater_stamp))
     {
       break;
     }

@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
   duration t_accum = duration::zero();
 
-  return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
+  return loop.run([&](graphics::Target& render_target, const app::UserInput& user_input, const duration dt) -> bool {
     graphics::update_cameras(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
     actor::update(registry, dt);
@@ -214,22 +214,22 @@ int main(int argc, char** argv)
 
     auto& motion = registry.get<actor::Motion2D>(player_id);
 
-    const float speed = (win_state.input_down_mask & app::WindowState::Sprint) ? 50.0f : 25.0f;
+    const float speed = user_input.is_down(app::UserInput::Sprint) ? 50.0f : 25.0f;
 
-    if (win_state.is_down(app::WindowState::MoveUp))
+    if (user_input.is_down(app::UserInput::MoveUp))
     {
       motion.y() = speed;
     }
-    else if (win_state.is_down(app::WindowState::MoveDown))
+    else if (user_input.is_down(app::UserInput::MoveDown))
     {
       motion.y() = -speed;
     }
 
-    if (win_state.is_down(app::WindowState::MoveRight))
+    if (user_input.is_down(app::UserInput::MoveRight))
     {
       motion.x() = speed;
     }
-    else if (win_state.is_down(app::WindowState::MoveLeft))
+    else if (user_input.is_down(app::UserInput::MoveLeft))
     {
       motion.x() = -speed;
     }
