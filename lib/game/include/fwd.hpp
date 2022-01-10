@@ -5,9 +5,9 @@
  */
 #pragma once
 
-namespace tyl::actor
+namespace tyl::game
 {
 
 class Actions;
 
-}  // namespace tyl::actor
+}  // namespace tyl::game

@@ -1,19 +1,18 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file components.hpp
+ * @file actor.hpp
  */
 #pragma once
 
-// C++ Standard Library
-#include <array>
-
 // Tyl
 #include <tyl/ecs.hpp>
+#include <tyl/game/fwd.hpp>
 #include <tyl/strong_alias.hpp>
+#include <tyl/time.hpp>
 #include <tyl/vec.hpp>
 
-namespace tyl::actor
+namespace tyl::game
 {
 
 TYL_DEFINE_STRONG_ALIAS(Direction2D, Vec2f);
@@ -55,4 +54,10 @@ struct Actions
   explicit Actions(std::array<ecs::entity, Count> _sprites) : sprites{_sprites}, active{RestDown} {}
 };
 
-}  // namespace tyl::actor
+ecs::entity create_actor(ecs::registry& registry, const Vec2f& position, const Actions& actions);
+
+void attach_actor(ecs::registry& registry, const ecs::entity actor_id, const Vec2f& position, const Actions& actions);
+
+void update_actors(ecs::registry& registry, const duration dt);
+
+}  // namespace tyl::game

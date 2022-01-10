@@ -2,13 +2,14 @@
 #include <string>
 
 // Tyl
-#include <tyl/actor/actor.hpp>
-#include <tyl/actor/components.hpp>
 #include <tyl/app/loop.hpp>
 #include <tyl/assert.hpp>
 #include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
+#include <tyl/game/actor.hpp>
+#include <tyl/game/tiled_region.hpp>
 #include <tyl/graphics/camera.hpp>
+#include <tyl/graphics/debug.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/sprite.hpp>
 #include <tyl/graphics/texture.hpp>
@@ -153,10 +154,13 @@ int main(int argc, char** argv)
     Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
-  const auto player_id = actor::create_actor(
+  const auto region_id = game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
+  registry.emplace<graphics::BoundingBoxColor>(region_id, 1, 1, 0, 1);
+
+  const auto player_id = game::create_actor(
     registry,
     Vec2f{0.f, 0.f},
-    actor::Actions{{
+    game::Actions{{
       rest_down_sprite_id,
       rest_up_sprite_id,
       rest_left_sprite_id,
@@ -176,7 +180,9 @@ int main(int argc, char** argv)
   graphics::set_camera_boundary(
     ecs::ref<graphics::TopDownCamera>(registry, camera_id), ecs::ref<Position2D>(registry, player_id), 10.0f, 0.5f);
 
-  graphics::create_sprite_batch_renderer(registry, 10);
+  graphics::create_sprite_batch_renderer(registry, 100);
+
+  graphics::create_bounding_box_batch_renderer(registry, 100);
 
 
   audio::device::Device audio_playback_device;
@@ -193,7 +199,8 @@ int main(int argc, char** argv)
   return loop.run([&](graphics::Target& render_target, const app::UserInput& user_input, const duration dt) -> bool {
     graphics::update_cameras(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
-    actor::update(registry, dt);
+    graphics::draw_bounding_boxes(registry, render_target, dt);
+    game::update_actors(registry, dt);
 
     t_accum += dt;
     background_music_source.set_position(
@@ -212,7 +219,7 @@ int main(int argc, char** argv)
       playback.pause();
     }
 
-    auto& motion = registry.get<actor::Motion2D>(player_id);
+    auto& motion = registry.get<game::Motion2D>(player_id);
 
     const float speed = user_input.is_down(app::UserInput::Sprint) ? 50.0f : 25.0f;
 

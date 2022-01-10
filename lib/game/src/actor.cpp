@@ -1,16 +1,16 @@
 /**
- * @copyright 2021-present Brian Cairl
+ * @copyright 2022-present Brian Cairl
  *
- * @file actor.cpp
+ * @file game.cpp
  */
 
 // Tyl
-#include <tyl/actor/actor.hpp>
-#include <tyl/actor/components.hpp>
 #include <tyl/components.hpp>
+#include <tyl/debug.hpp>
+#include <tyl/game/actor.hpp>
 #include <tyl/graphics/sprite.hpp>
 
-namespace tyl::actor
+namespace tyl::game
 {
 
 void attach_actor(ecs::registry& registry, const ecs::entity actor_id, const Vec2f& position, const Actions& actions)
@@ -33,7 +33,7 @@ static constexpr float RUNNING_VELOCITY = 40.f;
 static constexpr float WALKING_VELOCITY_SQ = WALKING_VELOCITY * WALKING_VELOCITY;
 static constexpr float RUNNING_VELOCITY_SQ = RUNNING_VELOCITY * RUNNING_VELOCITY;
 
-void update(ecs::registry& registry, const duration dt)
+void update_actors(ecs::registry& registry, const duration dt)
 {
   const float dt_sec = std::chrono::duration_cast<fseconds>(dt).count();
   const auto view = registry.view<Actions, Position2D, Direction2D, Motion2D>();
@@ -91,4 +91,4 @@ void update(ecs::registry& registry, const duration dt)
   });
 }
 
-}  // namespace tyl::actor
+}  // namespace tyl::game

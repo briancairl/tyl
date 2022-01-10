@@ -1,9 +1,29 @@
+config_setting(
+    name = "debug_build",
+    values = {"compilation_mode": "dbg"},
+)
+
 cc_library(
   name="assert",
   hdrs=["include/assert.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+DEBUG_COPTS = select({
+    ":debug_build": [],
+    "//conditions:default": ["-DNDEBUG"],
+})
+
+cc_library(
+  name="debug",
+  hdrs=["include/debug.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  copts=DEBUG_COPTS,
   deps=[],
   visibility=["//visibility:public"]
 )

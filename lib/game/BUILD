@@ -1,18 +1,20 @@
 cc_library(
-  name="actor",
+  name="game",
   hdrs=[
     "include/actor.hpp",
     "include/fwd.hpp",
-    "include/components.hpp",
+    "include/tiled_region.hpp",
   ],
   srcs=[
     "src/actor.cpp",
+    "src/tiled_region.cpp",
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/actor",
+  include_prefix="tyl/game",
   linkopts=[],
   deps=[
     "//lib/common:components",
+    "//lib/common:debug",
     "//lib/common:ecs",
     "//lib/common:strong_alias",
     "//lib/common:time",

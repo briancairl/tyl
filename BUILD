@@ -37,7 +37,7 @@ cc_binary(
 cc_binary(
     name="engine",
     srcs=["engine.cpp"],
-    deps=["//lib/actor", "//lib/app", "//lib/audio:device"],
+    deps=["//lib/game", "//lib/app", "//lib/audio:device"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,
