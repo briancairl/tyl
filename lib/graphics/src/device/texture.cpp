@@ -92,6 +92,18 @@ texture_id_t create_gl_texture_2d(
 }
 }  // namespace anonymous
 
+Texture::Texture(const texture_id_t id) : texture_id_{id}
+{
+  // Debug mode check to ensure that our texture unit limit is compatible OpenGL
+  TYL_ASSERT_GE(
+    []() -> std::size_t {
+      GLint texture_units;
+      glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &texture_units);
+      return texture_units;
+    }(),
+    texture_unit_count);
+}
+
 Texture::Texture(Texture&& other) : texture_id_{other.texture_id_} { other.texture_id_ = invalid_texture_id; }
 
 Texture::Texture(

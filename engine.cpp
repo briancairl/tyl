@@ -2,18 +2,25 @@
 #include <string>
 
 // Tyl
-#include <tyl/actor/actor.hpp>
-#include <tyl/actor/components.hpp>
 #include <tyl/app/loop.hpp>
 #include <tyl/assert.hpp>
 #include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
+#include <tyl/game/actor.hpp>
+#include <tyl/game/tiled_region.hpp>
 #include <tyl/graphics/camera.hpp>
+#include <tyl/graphics/debug.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/sprite.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/tile_uv_lookup.hpp>
 #include <tyl/time.hpp>
+
+// WIP audio
+#include <tyl/audio/device/device.hpp>
+#include <tyl/audio/device/listener.hpp>
+#include <tyl/audio/device/sound.hpp>
+#include <tyl/audio/device/source.hpp>
 
 // ImGui
 #include <imgui.h>
@@ -147,10 +154,13 @@ int main(int argc, char** argv)
     Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
-  const auto player_id = actor::create_actor(
+  const auto region_id = game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
+  registry.emplace<graphics::BoundingBoxColor>(region_id, 1, 1, 0, 1);
+
+  const auto player_id = game::create_actor(
     registry,
     Vec2f{0.f, 0.f},
-    actor::Actions{{
+    game::Actions{{
       rest_down_sprite_id,
       rest_up_sprite_id,
       rest_left_sprite_id,
@@ -165,35 +175,68 @@ int main(int argc, char** argv)
       run_right_sprite_id,
     }});
 
-  {
-    const auto camera_id = registry.create();
-    registry.emplace<graphics::CameraTopDown>(camera_id);
-  }
+  const auto camera_id = graphics::create_top_down_camera(registry);
+
+  graphics::set_camera_boundary(
+    ecs::ref<graphics::TopDownCamera>(registry, camera_id), ecs::ref<Position2D>(registry, player_id), 10.0f, 0.5f);
+
+  graphics::create_sprite_batch_renderer(registry, 100);
+
+  graphics::create_bounding_box_batch_renderer(registry, 100);
 
 
-  graphics::create_sprite_batch_renderer(registry, 10);
+  audio::device::Device audio_playback_device;
+  audio::device::Listener audio_listener{audio_playback_device};
+  audio::device::Source background_music_source;
+  audio::device::Sound background_music_track{
+    audio::device::load_sound_from_file("resources/test/background_mono.wav")};
 
-  return loop.run([&](graphics::Target& render_target, const app::WindowState& win_state, const duration dt) -> bool {
+  background_music_source.set_looped(true);
+  const auto playback = background_music_source.play(background_music_track);
+
+  duration t_accum = duration::zero();
+
+  return loop.run([&](graphics::Target& render_target, const app::UserInput& user_input, const duration dt) -> bool {
+    graphics::update_cameras(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
-    actor::update(registry, dt);
+    graphics::draw_bounding_boxes(registry, render_target, dt);
+    game::update_actors(registry, dt);
 
-    auto& motion = registry.get<actor::Motion2D>(player_id);
+    t_accum += dt;
+    background_music_source.set_position(
+      10.f * std::cos(0.75f * to_fseconds(t_accum).count()),
+      10.f * std::sin(0.75f * to_fseconds(t_accum).count()),
+      0.f);
+    background_music_source.set_pitch_scaling(0.5f * std::cos(0.75f * to_fseconds(t_accum).count()) + 1.f);
 
-    const float speed = (win_state.input_down_mask & app::WindowState::Sprint) ? 50.0f : 25.0f;
+    if (t_accum > std::chrono::seconds{10})
+    {
+      t_accum = duration::zero();
+      playback.resume();
+    }
+    else if (t_accum > std::chrono::seconds{5})
+    {
+      playback.pause();
+    }
 
-    if (win_state.input_down_mask & app::WindowState::MoveUp)
+    auto& motion = registry.get<game::Motion2D>(player_id);
+
+    const float speed = user_input.is_down(app::UserInput::Sprint) ? 50.0f : 25.0f;
+
+    if (user_input.is_down(app::UserInput::MoveUp))
     {
       motion.y() = speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveDown)
+    else if (user_input.is_down(app::UserInput::MoveDown))
     {
       motion.y() = -speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveRight)
+
+    if (user_input.is_down(app::UserInput::MoveRight))
     {
       motion.x() = speed;
     }
-    else if (win_state.input_down_mask & app::WindowState::MoveLeft)
+    else if (user_input.is_down(app::UserInput::MoveLeft))
     {
       motion.x() = -speed;
     }

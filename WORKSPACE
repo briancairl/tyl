@@ -3,6 +3,16 @@ workspace(name="tyl")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# Boost
+git_repository(
+    name="com_github_nelhage_rules_boost",
+    commit="d104cb7beba996d67ae5826be07aab2d9ca0ee38",
+    remote="https://github.com/nelhage/rules_boost",
+    shallow_since="1637888414 -0800",
+)
+load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
+boost_deps()
+
 # Entt
 git_repository(
   name="entt",
@@ -35,6 +45,13 @@ http_archive(
   sha256="9da756d65d18a34cbb4f30ae64e6d6c42f94907b070ad3abaf553cb99e4ad403",
   build_file="@//external:imgui.BUILD",
   strip_prefix="imgui-1.80"
+)
+
+# OpenAL
+new_local_repository(
+  name="openal",
+  path="/usr/",
+  build_file="@//external:openal.BUILD",
 )
 
 # GLFW

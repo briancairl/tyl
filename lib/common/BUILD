@@ -1,9 +1,29 @@
+config_setting(
+    name = "debug_build",
+    values = {"compilation_mode": "dbg"},
+)
+
 cc_library(
   name="assert",
   hdrs=["include/assert.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+DEBUG_COPTS = select({
+    ":debug_build": [],
+    "//conditions:default": ["-DNDEBUG"],
+})
+
+cc_library(
+  name="debug",
+  hdrs=["include/debug.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  copts=DEBUG_COPTS,
   deps=[],
   visibility=["//visibility:public"]
 )
@@ -79,12 +99,22 @@ cc_library(
 )
 
 cc_library(
-  name="ecs",
-  hdrs=["include/ecs.hpp"],
+  name="serialization",
+  hdrs=glob(["include/serialization/**/**"]) + ["include/serialization.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl",
   linkopts=[],
-  deps=["@entt//:entt"],
+  deps=["@boost//:serialization"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="ecs",
+  hdrs=glob(["include/ecs/**/**"]) + ["include/ecs.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  linkopts=[],
+  deps=["@entt//:entt", ":serialization"],
   visibility=["//visibility:public"]
 )
 

@@ -128,7 +128,11 @@ public:
 
   VertexBuffer& operator=(VertexBuffer&& other);
 
-  void draw(const DrawMode mode = DrawMode::TRIANGLES) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::TRIANGLES) const;
+
+  void draw_elements(const DrawMode mode = DrawMode::TRIANGLES) const;
+
+  void draw_elements(const std::size_t element_count, const DrawMode mode = DrawMode::TRIANGLES) const;
 
   void draw_instanced(const std::size_t instance_count, const DrawMode mode = DrawMode::TRIANGLES) const;
 

@@ -143,7 +143,7 @@ public:
 private:
   Texture(const Texture&) = default;
 
-  explicit Texture(const texture_id_t id) : texture_id_{id} {};
+  explicit Texture(const texture_id_t id);
 
   /// Device texture ID
   texture_id_t texture_id_;

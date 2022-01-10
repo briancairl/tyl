@@ -1,4 +1,5 @@
-COMMON_LINKOPTS = ["-lstdc++fs"]
+COMMON_COPTS = []
+COMMON_LINKOPTS = ["-lstdc++fs", "-lopenal", "-laudio"]
 
 config_setting(
     name = "debug",
@@ -11,9 +12,9 @@ config_setting(
 )
 
 MODE_COPTS = select({
-    ":debug": ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-DADDRESS_SANITIZER", "-g", "-fno-omit-frame-pointer", "-O0"],
-    ":sanitize_only": ["-fsanitize=address", "-DADDRESS_SANITIZER", "-g", "-fno-omit-frame-pointer", "-O1", "-DNDEBUG"],
-    "//conditions:default": ["-O3", "-DNDEBUG"],
+    ":debug": COMMON_COPTS + ["-fsanitize=address", "-fsanitize-address-use-after-scope", "-DADDRESS_SANITIZER", "-g", "-fno-omit-frame-pointer", "-O0"],
+    ":sanitize_only": COMMON_COPTS + ["-fsanitize=address", "-DADDRESS_SANITIZER", "-g", "-fno-omit-frame-pointer", "-O1", "-DNDEBUG"],
+    "//conditions:default": COMMON_COPTS + ["-O3", "-DNDEBUG"],
 })
 
 MODE_LINKOPTS = select({
@@ -36,9 +37,9 @@ cc_binary(
 cc_binary(
     name="engine",
     srcs=["engine.cpp"],
-    deps=["//lib/actor", "//lib/app"],
+    deps=["//lib/game", "//lib/app", "//lib/audio:device"],
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,
-    data=["resources/test/poke-npc-walk.png"]
+    data=["resources/test/poke-npc-walk.png", "resources/test/background_mono.wav"]
 )
