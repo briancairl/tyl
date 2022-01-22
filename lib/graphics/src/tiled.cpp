@@ -116,12 +116,16 @@ void attach_tiled_batch_renderer_shader(ecs::registry& registry, const ecs::enti
       )GeometryShader"
     )
   );
+  // clang-format on
 }
 
-static constexpr std::size_t TILED_OFFSET_POSITION_INDEX = 0;
-static constexpr std::size_t TILED_OFFSET_TEXCOORD_INDEX = 1;
+static constexpr std::size_t TILED_RECT_INDEX = 0;
+static constexpr std::size_t TILED_RECT_UV_INDEX = 1;
 
-void attach_tiled_batch_renderer_vertex_buffer(ecs::registry& registry, const ecs::entity e, const std::size_t tile_count)
+void attach_tiled_batch_renderer_vertex_buffer(
+  ecs::registry& registry,
+  const ecs::entity e,
+  const std::size_t tile_count)
 {
   // clang-format off
   registry.emplace<VertexBuffer>(
@@ -183,7 +187,7 @@ void draw_tiles(ecs::registry& registry, Target& render_target, const duration d
         std::size_t tile_count = 0;
 
         {
-          auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(TILED_OFFSET_POSITION_INDEX);
+          auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(TILED_RECT_INDEX);
           auto position_data = vb_buffer_ptr.template as<Vec4f>();
           auto texcoord_data = position_data + render_props.max_tile_count;
           auto tile_view =

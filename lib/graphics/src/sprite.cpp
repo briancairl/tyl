@@ -20,42 +20,25 @@ namespace tyl::graphics
 namespace  // anonymous
 {
 
-void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::entity e)
+void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::entity id)
 {
   // clang-format off
   registry.emplace<Shader>(
-    e,
+    id,
     ShaderSource::vertex(
       R"VertexShader(
 
       // Vertex-buffer layout
-      layout (location = 0) in vec2 layout_UnitPosition;
-      layout (location = 1) in vec2 layout_UnitTexCoord;
-      layout (location = 2) in vec4 layout_PositionRect;  // { corner, extents }
-      layout (location = 3) in vec4 layout_TexCoordRect;  // { corner, extents }
+      layout (location = 0) in vec4 layout_PositionRect;  // { corner, extents }
+      layout (location = 1) in vec4 layout_TexCoordRect;  // { corner, extents }
 
       // Texture UV coordinate output
-      out vec2 vshader_TexCoord;
-
-      // View-projection matrix uniform
-      uniform mat3 u_ViewProjection;
+      out vec4 vshader_TexCoordRect;
 
       void main()
       {
-        gl_Position =
-          vec4(
-            u_ViewProjection *
-            vec3(layout_PositionRect[0] + layout_UnitPosition[0] * layout_PositionRect[2],
-                 layout_PositionRect[1] + layout_UnitPosition[1] * layout_PositionRect[3],
-                 1),
-            1
-          );
-
-        vshader_TexCoord =
-          vec2(
-            layout_TexCoordRect[0] + layout_UnitTexCoord[0] * layout_TexCoordRect[2],
-            layout_TexCoordRect[1] + layout_UnitTexCoord[1] * layout_TexCoordRect[3]
-          );
+        gl_Position = layout_PositionRect;
+        vshader_TexCoordRect = layout_TexCoordRect;
       }
 
       )VertexShader"
@@ -67,64 +50,92 @@ void attach_sprite_batch_renderer_shader(ecs::registry& registry, const ecs::ent
       out vec4 FragColor;
 
       // Texture UV coordinate from vertex shader
-      in vec2 vshader_TexCoord;
+      in vec2 gshader_TexCoord;
 
       // Texture sampling unit uniform
       uniform sampler2D u_TextureID;
 
       void main()
       {
-        FragColor = texture(u_TextureID, vshader_TexCoord);
+        FragColor = texture(u_TextureID, gshader_TexCoord);
       }
 
       )FragmentShader"
+    ),
+    ShaderSource::geometry(
+      R"GeometryShader(
+      layout(points) in;
+      layout(triangle_strip, max_vertices = 4) out;
+
+      // View-projection matrix uniform
+      uniform mat3 u_ViewProjection;
+
+      // Texture UV coordinate from vertex shader
+      in vec4[] vshader_TexCoordRect;
+
+      // Texture UV coordinates to fragement shader
+      out vec2 gshader_TexCoord;
+
+      void main()
+      {
+        // Left corner of the tile
+        vec2 corner = vec2(gl_in[0].gl_Position[0], gl_in[0].gl_Position[1]);
+
+        // Size of the tile along x/y
+        vec2 extents = vec2(gl_in[0].gl_Position[2], gl_in[0].gl_Position[3]);
+
+        // Left corner of the tile
+        vec2 uv_corner = vec2(vshader_TexCoordRect[0][0], vshader_TexCoordRect[0][1]);
+
+        // Size of the tile along x/y
+        vec2 uv_extents = vec2(vshader_TexCoordRect[0][2], vshader_TexCoordRect[0][3]);
+
+        // 1:bottom-left
+        gl_Position = vec4(u_ViewProjection * vec3(corner, 1), 1);
+        gshader_TexCoord = vec2(uv_corner[0], uv_corner[1] + uv_extents[1]);
+        EmitVertex();
+
+        // 2:bottom-right
+        gl_Position = vec4(u_ViewProjection * vec3(corner + vec2(extents[0],  0.0), 1), 1);
+        gshader_TexCoord = vec2(uv_corner[0] + uv_extents[0], uv_corner[1] + uv_extents[1]);
+        EmitVertex();
+
+        // 3:top-left
+        gl_Position = vec4(u_ViewProjection * vec3(corner + vec2(0.0, extents[1]), 1), 1);
+        gshader_TexCoord = vec2(uv_corner[0], uv_corner[1]);
+        EmitVertex();
+
+        // 4:top-right
+        gl_Position = vec4(u_ViewProjection * vec3(corner + vec2(extents[0],  extents[1]), 1), 1);
+        gshader_TexCoord = vec2(uv_corner[0] + uv_extents[0], uv_corner[1]);
+        EmitVertex();
+
+        EndPrimitive();
+      }
+
+      )GeometryShader"
     )
   );
+  // clang-format on
 }
 
-static constexpr std::size_t SPRITE_QUAD_POSITION_INDEX = 0;
-static constexpr std::size_t SPRITE_QUAD_TEXCOORD_INDEX = 1;
-static constexpr std::size_t SPRITE_OFFSET_POSITION_INDEX = 2;
-static constexpr std::size_t SPRITE_OFFSET_TEXCOORD_INDEX = 3;
+static constexpr std::size_t SPRITE_RECT_INDEX = 0;
+static constexpr std::size_t SPRITE_RECT_UV_INDEX = 1;
 
-void attach_sprite_batch_renderer_vertex_buffer(ecs::registry& registry, const ecs::entity e, const std::size_t sprite_count)
+void attach_sprite_batch_renderer_vertex_buffer(
+  ecs::registry& registry,
+  const ecs::entity e,
+  const std::size_t sprite_count)
 {
   // clang-format off
   registry.emplace<VertexBuffer>(
     e,
     [sprite_count] {
-      VertexBuffer vb{6UL,
-                      {
-                        VertexBuffer::Attribute{device::typecode<float>(), 2, 4, 0},             // position unit quad
-                        VertexBuffer::Attribute{device::typecode<float>(), 2, 4, 0},             // texcoord unit quad
+      VertexBuffer vb{{
                         VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // position [corner, extents]
                         VertexBuffer::Attribute{device::typecode<float>(), 4, sprite_count, 1},  // texcoord [corner, extents]
                       },
                       VertexBuffer::BufferMode::DYNAMIC};
-      {
-        const unsigned indices[6UL] = {0, 1, 2, 2, 3, 0};
-        vb.set_index_data(indices);
-      }
-
-      {
-        const Vec2f quad[4UL] = {
-          Vec2f{0.f, 0.f},
-          Vec2f{1.f, 0.f},
-          Vec2f{1.f, 1.f},
-          Vec2f{0.f, 1.f},
-        };
-        vb.set_vertex_data(SPRITE_QUAD_POSITION_INDEX, reinterpret_cast<const float*>(quad));
-      }
-
-      {
-        const Vec2f quad[4UL] = {
-          Vec2f{0.f, 1.f},
-          Vec2f{1.f, 1.f},
-          Vec2f{1.f, 0.f},
-          Vec2f{0.f, 0.f},
-        };
-        vb.set_vertex_data(SPRITE_QUAD_TEXCOORD_INDEX, reinterpret_cast<const float*>(quad));
-      }
       return vb;
     }());
   // clang-format on
@@ -178,7 +189,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
         // Buffer sprite data (position, uv)
         std::size_t sprite_count = 0;
         {
-          auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_INDEX);
+          auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_RECT_INDEX);
           auto position_data = vb_buffer_ptr.template as<Vec4f>();
           auto texcoord_data = position_data + render_props.max_sprite_count;
           auto sprite_view =
@@ -221,7 +232,7 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
         }
 
         // Draw all the sprites that we buffered
-        vertex_buffer.draw_instanced(sprite_count);
+        vertex_buffer.draw(sprite_count, graphics::VertexBuffer::DrawMode::POINTS);
       });
 
     // Update looped dynamic sprite sequences
