@@ -38,8 +38,18 @@ int main(int argc, char** argv)
 
   ecs::registry registry;
 
-  const auto texture_id = graphics::create_texture(registry, "resources/test/poke-npc-walk.png");
+  const auto bg_texture_id = graphics::create_texture(registry, "resources/test/poke-gba.png");
 
+  const auto bg_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
+    registry,
+    ecs::ref<graphics::Texture>(registry, bg_texture_id),
+    {graphics::UniformlyDividedRegion{.subdivisions = Vec2i{2, 2},
+                                      .inner_padding_px = Vec2i{0, 0},
+                                      .area_px = Rect2i::corners(Vec2i{16, 16}, Vec2i{48, 48}),
+                                      .reversed = false}});
+
+
+  const auto texture_id = graphics::create_texture(registry, "resources/test/poke-npc-walk.png");
 
   const auto walk_down_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
     registry,
@@ -190,16 +200,16 @@ int main(int argc, char** argv)
   {
     const auto t_id = graphics::create_tiled(
       registry,
-      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_left_tile_uv_lookup_id),
-      Rect2D{Vec2f{0, 0}, Vec2f{64, 64}});
-    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
+      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
+      Rect2D{Vec2f{0, 0}, Vec2f{96, 96}});
+    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 0, 1, 1);
   }
 
   {
     const auto t_id = graphics::create_tiled(
       registry,
-      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_right_tile_uv_lookup_id),
-      Rect2D{Vec2f{64, 0}, Vec2f{64, 64}});
+      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
+      Rect2D{Vec2f{96, 0}, Vec2f{96, 96}});
     registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
   }
 

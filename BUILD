@@ -41,5 +41,5 @@ cc_binary(
     visibility=["//visibility:public"],
     linkopts=MODE_LINKOPTS,
     copts=MODE_COPTS,
-    data=["resources/test/poke-npc-walk.png", "resources/test/background_mono.wav"]
+    data=["resources/test/poke-npc-walk.png", "resources/test/poke-gba.png", "resources/test/background_mono.wav"]
 )
