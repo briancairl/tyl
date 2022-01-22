@@ -4,9 +4,6 @@
  * @file sprite_sequence.cpp
  */
 
-// C++ Standard Library
-#include <optional>
-
 // Tyl
 #include <tyl/assert.hpp>
 #include <tyl/graphics/camera.hpp>
@@ -180,8 +177,8 @@ void draw_sprites(ecs::registry& registry, Target& render_target, const duration
 
         // Buffer sprite data (position, uv)
         std::size_t sprite_count = 0;
-        if (auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_INDEX); vb_buffer_ptr)
         {
+          auto vb_buffer_ptr = vertex_buffer.get_vertex_ptr(SPRITE_OFFSET_POSITION_INDEX);
           auto position_data = vb_buffer_ptr.template as<Vec4f>();
           auto texcoord_data = position_data + render_props.max_sprite_count;
           auto sprite_view =

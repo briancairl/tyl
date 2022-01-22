@@ -54,11 +54,6 @@ void attach_sprite_batch_renderer(
   const ecs::entity entity_id,
   const std::size_t max_sprite_count);
 
-void attach_sprite_batch_renderer(
-  ecs::registry& registry,
-  const ecs::entity entity_id,
-  const std::size_t max_sprite_count);
-
 void draw_sprites(ecs::registry& registry, Target& render_target, const duration dt);
 
 ecs::entity create_sprite(

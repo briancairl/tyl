@@ -14,6 +14,7 @@
 #include <tyl/graphics/sprite.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/tile_uv_lookup.hpp>
+#include <tyl/graphics/tiled.hpp>
 #include <tyl/time.hpp>
 
 // WIP audio
@@ -154,8 +155,7 @@ int main(int argc, char** argv)
     Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
-  const auto region_id = game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
-  registry.emplace<graphics::BoundingBoxColor>(region_id, 1, 1, 0, 1);
+  game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
 
   const auto player_id = game::create_actor(
     registry,
@@ -185,6 +185,25 @@ int main(int argc, char** argv)
   graphics::create_bounding_box_batch_renderer(registry, 100);
 
 
+  graphics::create_tiled_batch_renderer(registry, 1000);
+
+  {
+    const auto t_id = graphics::create_tiled(
+      registry,
+      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_left_tile_uv_lookup_id),
+      Rect2D{Vec2f{0, 0}, Vec2f{64, 64}});
+    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
+  }
+
+  {
+    const auto t_id = graphics::create_tiled(
+      registry,
+      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_right_tile_uv_lookup_id),
+      Rect2D{Vec2f{64, 0}, Vec2f{64, 64}});
+    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
+  }
+
+
   audio::device::Device audio_playback_device;
   audio::device::Listener audio_listener{audio_playback_device};
   audio::device::Source background_music_source;
@@ -198,6 +217,7 @@ int main(int argc, char** argv)
 
   return loop.run([&](graphics::Target& render_target, const app::UserInput& user_input, const duration dt) -> bool {
     graphics::update_cameras(registry, render_target, dt);
+    graphics::draw_tiles(registry, render_target, dt);
     graphics::draw_sprites(registry, render_target, dt);
     graphics::draw_bounding_boxes(registry, render_target, dt);
     game::update_actors(registry, dt);

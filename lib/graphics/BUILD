@@ -71,6 +71,7 @@ cc_library(
     "include/target.hpp",
     "include/texture.hpp",
     "include/tile_uv_lookup.hpp",
+    "include/tiled.hpp",
     "include/vertex_buffer.hpp"
   ],
   srcs=[
@@ -81,6 +82,7 @@ cc_library(
     "src/target.cpp",
     "src/texture.cpp",
     "src/tile_uv_lookup.cpp",
+    "src/tiled.cpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
