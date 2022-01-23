@@ -52,6 +52,9 @@ struct UserInput
   static constexpr std::uint64_t MoveLeft = tyl::bitops::make_mask<std::uint64_t, 3>();
   static constexpr std::uint64_t Sprint = tyl::bitops::make_mask<std::uint64_t, 4>();
   static constexpr std::uint64_t Jump = tyl::bitops::make_mask<std::uint64_t, 5>();
+  static constexpr std::uint64_t LMB = tyl::bitops::make_mask<std::uint64_t, 61>();
+  static constexpr std::uint64_t RMB = tyl::bitops::make_mask<std::uint64_t, 62>();
+  static constexpr std::uint64_t MMB = tyl::bitops::make_mask<std::uint64_t, 63>();
 
   constexpr bool is_down(const std::uint64_t mask_query) const { return mask_query & input_down_mask; }
   constexpr bool is_up(const std::uint64_t mask_query) const { return mask_query & input_up_mask; }

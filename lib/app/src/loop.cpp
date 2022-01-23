@@ -156,18 +156,19 @@ int Loop::run(const std::function<bool(graphics::Target&, const UserInput&, cons
     // ImGui::ShowStyleEditor(&imgui_style);
     // ImGui::ShowDemoWindow();
 
+    user_input_.input_down_mask = 0;
+    user_input_.input_up_mask = 0;
+
+    // Scan for key presses
     static constexpr std::array<std::pair<int, std::uint64_t>, 6UL> key_scan{{{GLFW_KEY_W, UserInput::MoveUp},
                                                                               {GLFW_KEY_S, UserInput::MoveDown},
                                                                               {GLFW_KEY_D, UserInput::MoveRight},
                                                                               {GLFW_KEY_A, UserInput::MoveLeft},
                                                                               {GLFW_KEY_LEFT_SHIFT, UserInput::Sprint},
                                                                               {GLFW_KEY_SPACE, UserInput::Jump}}};
-
-    user_input_.input_down_mask = 0;
-    user_input_.input_up_mask = 0;
     for (const auto& [code, mask] : key_scan)
     {
-      if (int state = glfwGetKey(window, code); state == GLFW_PRESS)
+      if (const int state = glfwGetKey(window, code); state == GLFW_PRESS)
       {
         user_input_.input_down_mask |= mask;
       }
@@ -176,6 +177,25 @@ int Loop::run(const std::function<bool(graphics::Target&, const UserInput&, cons
         user_input_.input_up_mask |= mask;
       }
     }
+
+    // Scan for mouse button presses
+    static constexpr std::array<std::pair<int, std::uint64_t>, 3UL> mb_scan{
+      {{GLFW_MOUSE_BUTTON_LEFT, UserInput::LMB},
+       {GLFW_MOUSE_BUTTON_RIGHT, UserInput::RMB},
+       {GLFW_MOUSE_BUTTON_MIDDLE, UserInput::MMB}}};
+    for (const auto& [code, mask] : mb_scan)
+    {
+      if (const int state = glfwGetMouseButton(window, code); state == GLFW_PRESS)
+      {
+        user_input_.input_down_mask |= mask;
+      }
+      else if (state == GLFW_RELEASE)
+      {
+        user_input_.input_up_mask |= mask;
+      }
+    }
+
+    // Compute input state changes
     user_input_.input_pressed_mask =
       (user_input_.input_down_mask) & (user_input_.input_down_mask ^ user_input_.previous_input_down_mask);
     user_input_.input_released_mask =
