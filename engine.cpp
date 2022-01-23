@@ -201,16 +201,16 @@ int main(int argc, char** argv)
     const auto t_id = graphics::create_tiled(
       registry,
       ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
-      Rect2D{Vec2f{0, 0}, Vec2f{96, 96}});
-    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 0, 1, 1);
+      Rect2D{Vec2f{0, 0}, Vec2f{192, 192}});
+    // registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 0, 1, 1);
   }
 
   {
     const auto t_id = graphics::create_tiled(
       registry,
       ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
-      Rect2D{Vec2f{96, 0}, Vec2f{96, 96}});
-    registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
+      Rect2D{Vec2f{192, 0}, Vec2f{192, 192}});
+    // registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
   }
 
 
@@ -270,6 +270,27 @@ int main(int argc, char** argv)
     {
       motion.x() = -speed;
     }
+
+    {
+      using namespace graphics;
+      registry.view<InverseViewProjection, ViewportRect>().each(
+        [&registry, &user_input](const InverseViewProjection& inv_view_projection, const ViewportRect& view_rect) {
+          const Vec2f cursor_world = inv_view_projection.block<2, 2>(0, 0) * user_input.cursor_position_normalized +
+            inv_view_projection.block<2, 1>(0, 2);
+          registry.view<Rect2D>().each(
+            [&registry, &user_input, &cursor_world](const entt::entity id, const Rect2D& rect) {
+              if (rect.within(cursor_world))
+              {
+                registry.emplace_or_replace<graphics::BoundingBoxColor>(id, 1.f, 0.f, 0.f, 1.f);
+              }
+              else
+              {
+                registry.remove_if_exists<graphics::BoundingBoxColor>(id);
+              }
+            });
+        });
+    }
+
     return true;
   });
 }
