@@ -60,6 +60,10 @@ public:
 
   void update(const Texture& atlas_texture, const UniformlyDividedRegion& regions);
 
+  auto begin() const { return tile_uv_offsets_.begin(); }
+
+  auto end() const { return tile_uv_offsets_.end(); }
+
 private:
   /// Corner offsets of tiles
   std::vector<Vec4f> tile_uv_offsets_;
