@@ -67,6 +67,16 @@ private:
 
 using TextureRegion = std::variant<Rect2i, UniformlyDividedRegion>;
 
+using TileUVLookupAssetsRef = ecs::Ref<TileUVLookup, ecs::Ref<Texture>>;
+
+/**
+ * @brief Gets reference to TileUVLookup and associated assets
+ */
+inline TileUVLookupAssetsRef ref_tile_uv_lookup(ecs::registry& registry, const ecs::entity entity_id)
+{
+  return ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, entity_id);
+}
+
 /**
  * @brief Creates a tile UV lookup resource
  */
@@ -89,7 +99,7 @@ void attach_tile_uv_lookup(
  */
 ecs::entity create_tile_uv_lookup(
   ecs::registry& registry,
-  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const TileUVLookupAssetsRef reference,
   const std::initializer_list<std::size_t> subset_indices);
 
 /**
@@ -98,7 +108,7 @@ ecs::entity create_tile_uv_lookup(
 void attach_tile_uv_lookup(
   ecs::registry& registry,
   const ecs::entity entity_id,
-  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const TileUVLookupAssetsRef reference,
   const std::initializer_list<std::size_t> subset_indices);
 
 }  // namespace tyl::graphics

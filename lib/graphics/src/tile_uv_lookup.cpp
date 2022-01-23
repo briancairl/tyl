@@ -186,7 +186,7 @@ void attach_tile_uv_lookup(
 
 ecs::entity create_tile_uv_lookup(
   ecs::registry& registry,
-  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const TileUVLookupAssetsRef reference,
   const std::initializer_list<std::size_t> subset_indices)
 {
   const ecs::entity e = registry.create();
@@ -197,7 +197,7 @@ ecs::entity create_tile_uv_lookup(
 void attach_tile_uv_lookup(
   ecs::registry& registry,
   const ecs::entity entity_id,
-  const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> reference,
+  const TileUVLookupAssetsRef reference,
   const std::initializer_list<std::size_t> subset_indices)
 {
   registry.emplace<ecs::Ref<Texture>>(entity_id, ecs::ref<ecs::Ref<Texture>>(reference));

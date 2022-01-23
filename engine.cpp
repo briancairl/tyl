@@ -59,14 +59,10 @@ int main(int argc, char** argv)
                                       .area_px = Rect2i::corners(Vec2i{112, 0}, Vec2i{240, 48}),
                                       .reversed = false}});
   const auto walk_down_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_down_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_down_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, walk_down_sprite_id, 5.0f, true);
   const auto run_down_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_down_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_down_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, run_down_sprite_id, 10.0f, true);
 
 
@@ -78,14 +74,10 @@ int main(int argc, char** argv)
                                       .area_px = Rect2i::corners(Vec2i{112, 144}, Vec2i{240, 192}),
                                       .reversed = false}});
   const auto walk_up_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_up_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_up_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, walk_up_sprite_id, 5.0f, true);
   const auto run_up_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_up_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_up_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, run_up_sprite_id, 10.0f, true);
 
 
@@ -97,14 +89,10 @@ int main(int argc, char** argv)
                                       .area_px = Rect2i::corners(Vec2i{112, 96}, Vec2i{240, 144}),
                                       .reversed = false}});
   const auto walk_left_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_left_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_left_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, walk_left_sprite_id, 5.0f, true);
   const auto run_left_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_left_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_left_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, run_left_sprite_id, 10.0f, true);
 
 
@@ -116,53 +104,35 @@ int main(int argc, char** argv)
                                       .area_px = Rect2i::corners(Vec2i{112, 48}, Vec2i{240, 96}),
                                       .reversed = false}});
   const auto walk_right_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_right_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_right_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, walk_right_sprite_id, 5.0f, true);
   const auto run_right_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_right_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_right_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
   graphics::attach_sprite_sequence(registry, run_right_sprite_id, 10.0f, true);
 
 
-  const auto rest_down_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_down_tile_uv_lookup_id),
-    {0});
+  const auto rest_down_tile_uv_lookup_id =
+    graphics::create_tile_uv_lookup(registry, graphics::ref_tile_uv_lookup(registry, walk_down_tile_uv_lookup_id), {0});
   const auto rest_down_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_down_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, rest_down_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
-  const auto rest_up_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
-    registry, ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_up_tile_uv_lookup_id), {0});
+  const auto rest_up_tile_uv_lookup_id =
+    graphics::create_tile_uv_lookup(registry, graphics::ref_tile_uv_lookup(registry, walk_up_tile_uv_lookup_id), {0});
   const auto rest_up_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_up_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, rest_up_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
-  const auto rest_left_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_left_tile_uv_lookup_id),
-    {0});
+  const auto rest_left_tile_uv_lookup_id =
+    graphics::create_tile_uv_lookup(registry, graphics::ref_tile_uv_lookup(registry, walk_left_tile_uv_lookup_id), {0});
   const auto rest_left_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_left_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, rest_left_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
   const auto rest_right_tile_uv_lookup_id = graphics::create_tile_uv_lookup(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, walk_right_tile_uv_lookup_id),
-    {0});
+    registry, graphics::ref_tile_uv_lookup(registry, walk_right_tile_uv_lookup_id), {0});
   const auto rest_right_sprite_id = graphics::create_sprite(
-    registry,
-    ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, rest_right_tile_uv_lookup_id),
-    Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
+    registry, graphics::ref_tile_uv_lookup(registry, rest_right_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
 
   game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
@@ -198,18 +168,16 @@ int main(int argc, char** argv)
   graphics::create_tiled_batch_renderer(registry, 1000);
 
   {
-    const auto t_id = graphics::create_tiled(
-      registry,
-      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
-      Rect2D{Vec2f{0, 0}, Vec2f{192, 192}});
+    // const auto t_id =
+    graphics::create_tiled(
+      registry, graphics::ref_tile_uv_lookup(registry, bg_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{192, 192}});
     // registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 0, 1, 1);
   }
 
   {
-    const auto t_id = graphics::create_tiled(
-      registry,
-      ecs::ref<graphics::TileUVLookup, ecs::Ref<graphics::Texture>>(registry, bg_tile_uv_lookup_id),
-      Rect2D{Vec2f{192, 0}, Vec2f{192, 192}});
+    // const auto t_id =
+    graphics::create_tiled(
+      registry, graphics::ref_tile_uv_lookup(registry, bg_tile_uv_lookup_id), Rect2D{Vec2f{192, 0}, Vec2f{192, 192}});
     // registry.emplace<graphics::BoundingBoxColor>(t_id, 1, 1, 0, 1);
   }
 
