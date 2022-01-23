@@ -6,6 +6,7 @@
 #include <tyl/assert.hpp>
 #include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
+#include <tyl/filesystem.hpp>
 #include <tyl/game/actor.hpp>
 #include <tyl/game/tiled_region.hpp>
 #include <tyl/graphics/camera.hpp>
@@ -134,9 +135,6 @@ int main(int argc, char** argv)
   const auto rest_right_sprite_id = graphics::create_sprite(
     registry, graphics::ref_tile_uv_lookup(registry, rest_right_tile_uv_lookup_id), Rect2D{Vec2f{0, 0}, Vec2f{30, 32}});
 
-
-  game::create_tiled_region(registry, Vec2f{0, 0}, Vec2f{16, 16}, Vec2i{100, 100});
-
   const auto player_id = game::create_actor(
     registry,
     Vec2f{0.f, 0.f},
@@ -239,6 +237,7 @@ int main(int argc, char** argv)
       motion.x() = -speed;
     }
 
+    static std::optional<ecs::entity> selected_entity{std::nullopt};
     {
       using namespace graphics;
       registry.view<InverseViewProjection, ViewportRect>().each(
@@ -249,6 +248,10 @@ int main(int argc, char** argv)
             [&registry, &user_input, &cursor_world](const entt::entity id, const Rect2D& rect) {
               if (rect.within(cursor_world))
               {
+                if (user_input.is_pressed(app::UserInput::LMB))
+                {
+                  selected_entity.emplace(id);
+                }
                 registry.emplace_or_replace<graphics::BoundingBoxColor>(id, 1.f, 0.f, 0.f, 1.f);
               }
               else
@@ -257,6 +260,94 @@ int main(int argc, char** argv)
               }
             });
         });
+    }
+
+
+    {
+      using namespace graphics;
+
+      if (selected_entity and registry.has<TiledRegion>(selected_entity.value()))
+      {
+        auto& region = registry.get<TiledRegion>(selected_entity.value());
+        ImGui::Begin("tile-editor");
+        ImGui::PushItemWidth(100);
+        for (int i = 0; i < TiledRegion::S; ++i)
+        {
+          for (int j = 0; j < TiledRegion::S; ++j)
+          {
+            const std::size_t lidx = i * TiledRegion::S + j;
+            ImGui::PushID(lidx);
+            int id_int = region.ids[lidx];
+            ImGui::InputInt("##id", &id_int);
+            region.ids[lidx] = std::max(0, id_int);
+            ImGui::PopID();
+
+            if (j + 1 < TiledRegion::S)
+            {
+              ImGui::SameLine();
+            }
+          }
+        }
+        ImGui::PopItemWidth();
+        ImGui::End();
+      }
+
+      ImGui::Begin("active-textures");
+      {
+        static float texture_scaling = 0.1f;
+        ImGui::SliderFloat("texture scaling", &texture_scaling, 0.1f, 2.0f);
+        ImGui::BeginChild("##active-textures-table", ImVec2{0, 200});
+        if (ImGui::BeginTable("##active-textures-listing", 3, ImGuiTableFlags_Resizable))
+        {
+          registry.view<Texture, tyl::filesystem::path>().each(
+            [](const entt::entity id, const Texture& texture, const tyl::filesystem::path& path) {
+              ImGui::TableNextColumn();
+              ImGui::Text("%d", static_cast<int>(id));
+              ImGui::TableNextColumn();
+              ImGui::Text("%s", path.c_str());
+              ImGui::TableNextColumn();
+              ImGui::Image(
+                reinterpret_cast<void*>(texture.get_id()),
+                ImVec2{texture.size().x() * texture_scaling, texture.size().y() * texture_scaling});
+            });
+          ImGui::EndTable();
+        }
+        ImGui::EndChild();
+      }
+
+      {
+        static float texture_tile_size = 100.f;
+        ImGui::SliderFloat("tile scaling", &texture_tile_size, 50, 500);
+        ImGui::BeginChild("##active-texture-lookups-table", ImVec2{0, 400});
+        if (ImGui::BeginTable("##active-texture-lookups-listing", 2, ImGuiTableFlags_Resizable))
+        {
+          registry.view<TileUVLookup, ecs::Ref<Texture>>().each(
+            [](const entt::entity id, const TileUVLookup& tile_uv_lookup, const ecs::Ref<Texture>& r_texture) {
+              ImGui::TableNextColumn();
+              ImGui::Text("%d", static_cast<int>(id));
+              ImGui::TableNextColumn();
+              ImGui::PushID((*r_texture).get_id());
+              int index_counter = 0;
+              for (const auto& bounds : tile_uv_lookup)
+              {
+                ImGui::Text("[%d]", index_counter++);
+                ImGui::SameLine();
+                ImGui::Image(
+                  reinterpret_cast<void*>((*r_texture).get_id()),
+                  ImVec2{texture_tile_size, texture_tile_size},
+                  ImVec2{bounds[0], bounds[1]},
+                  ImVec2{bounds[0] + bounds[2], bounds[1] + bounds[3]},
+                  ImVec4{1, 1, 1, 1},
+                  ImVec4{1, 1, 1, 1});
+                ImGui::SameLine();
+              }
+              ImGui::PopID();
+            });
+          ImGui::EndTable();
+        }
+        ImGui::EndChild();
+      }
+      ImGui::End();
     }
 
     return true;
