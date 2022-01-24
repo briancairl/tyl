@@ -12,19 +12,9 @@
 #include <tyl/components.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/graphics/fwd.hpp>
-#include <tyl/time.hpp>
 
 namespace tyl::graphics
 {
-
-struct TiledRenderingEnabled
-{};
-
-struct TiledBatchRenderProperties
-{
-  // Maximum number of tiles to be rendered
-  std::size_t max_tile_count;
-};
 
 struct TiledRegion
 {
@@ -32,15 +22,6 @@ struct TiledRegion
   static constexpr std::size_t N = S * S;
   std::array<std::size_t, N> ids;
 };
-
-ecs::entity create_tiled_batch_renderer(ecs::registry& registry, const std::size_t max_tile_count);
-
-void attach_tiled_batch_renderer(
-  ecs::registry& registry,
-  const ecs::entity entity_id,
-  const std::size_t max_tile_count);
-
-void draw_tiles(ecs::registry& registry, Target& render_target, const duration dt);
 
 ecs::entity create_tiled(
   ecs::registry& registry,

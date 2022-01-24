@@ -1,13 +1,14 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file game.cpp
+ * @file actor.cpp
  */
 
 // Tyl
 #include <tyl/components.hpp>
 #include <tyl/debug.hpp>
 #include <tyl/game/actor.hpp>
+#include <tyl/graphics/common.hpp>
 #include <tyl/graphics/sprite.hpp>
 
 namespace tyl::game
@@ -84,7 +85,7 @@ void update_actors(ecs::registry& registry, const duration dt)
     }
 
     // Enable rendering
-    registry.emplace_or_replace<graphics::SpriteRenderingEnabled>(curr_sprite_id);
+    registry.emplace_or_replace<graphics::RenderingEnabled>(curr_sprite_id);
 
     // Set sprite position
     registry.get<Rect2D>(curr_sprite_id).snap(position);

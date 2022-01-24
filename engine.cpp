@@ -13,6 +13,7 @@
 #include <tyl/graphics/debug.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/sprite.hpp>
+#include <tyl/graphics/sprite_renderer.hpp>
 #include <tyl/graphics/texture.hpp>
 #include <tyl/graphics/tile_uv_lookup.hpp>
 #include <tyl/graphics/tiled.hpp>
@@ -158,12 +159,9 @@ int main(int argc, char** argv)
   graphics::set_camera_boundary(
     ecs::ref<graphics::TopDownCamera>(registry, camera_id), ecs::ref<Position2D>(registry, player_id), 10.0f, 0.5f);
 
-  graphics::create_sprite_batch_renderer(registry, 100);
-
   graphics::create_bounding_box_batch_renderer(registry, 100);
 
-
-  graphics::create_tiled_batch_renderer(registry, 1000);
+  graphics::create_sprite_renderer(registry, 1000);
 
   {
     // const auto t_id =
@@ -193,7 +191,7 @@ int main(int argc, char** argv)
 
   return loop.run([&](graphics::Target& render_target, const app::UserInput& user_input, const duration dt) -> bool {
     graphics::update_cameras(registry, render_target, dt);
-    graphics::draw_tiles(registry, render_target, dt);
+    graphics::update_sprites(registry, dt);
     graphics::draw_sprites(registry, render_target, dt);
     graphics::draw_bounding_boxes(registry, render_target, dt);
     game::update_actors(registry, dt);
@@ -261,7 +259,6 @@ int main(int argc, char** argv)
             });
         });
     }
-
 
     {
       using namespace graphics;

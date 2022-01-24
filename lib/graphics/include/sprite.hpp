@@ -14,15 +14,6 @@
 namespace tyl::graphics
 {
 
-struct SpriteRenderingEnabled
-{};
-
-struct SpriteBatchRenderProperties
-{
-  // Maximum number of sprites to be rendered
-  std::size_t max_sprite_count;
-};
-
 struct SpriteTileID
 {
   // Current UV-tile lookup ID
@@ -47,25 +38,20 @@ struct SpriteSequenceLooped
 struct SpriteSequenceOneShot
 {};
 
-ecs::entity create_sprite_batch_renderer(ecs::registry& registry, const std::size_t max_sprite_count);
-
-void attach_sprite_batch_renderer(
-  ecs::registry& registry,
-  const ecs::entity entity_id,
-  const std::size_t max_sprite_count);
-
-void draw_sprites(ecs::registry& registry, Target& render_target, const duration dt);
+void update_sprites(ecs::registry& registry, const duration dt);
 
 ecs::entity create_sprite(
   ecs::registry& registry,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Rect2D& sprite_rect);
+  const Rect2D& sprite_rect,
+  const std::size_t z_order = 0UL);
 
 void attach_sprite(
   ecs::registry& registry,
   const ecs::entity entity_id,
   const ecs::Ref<TileUVLookup, ecs::Ref<Texture>> uv_lookup,
-  const Rect2D& sprite_rect);
+  const Rect2D& sprite_rect,
+  const std::size_t z_order = 0UL);
 
 void attach_sprite_sequence(
   ecs::registry& registry,
