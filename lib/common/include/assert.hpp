@@ -1,11 +1,17 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file filesystem.hpp
+ * @file assert.hpp
  */
-#pragma once
+#ifdef TYL_COMMON_ASSERT
+#error("Detected double include of assert.hpp")
+#else
+#define TYL_COMMON_ASSERT
+#endif  // TYL_COMMON_ASSERT
 
 // C++ Standard Library
+#include <cstdio>
+#include <cstdlib>
 #include <type_traits>
 
 #ifdef NDEBUG

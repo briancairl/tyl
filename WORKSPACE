@@ -21,23 +21,6 @@ git_repository(
   shallow_since="1610207127 +0100"
 )
 
-# MultiFieldArray
-git_repository(
-  name="multi_field_array",
-  remote="git@github.com:briancairl/multi_field_array.git",
-  commit="f65a42d8eb9f0ee5bc691b994e36f49de338a2d7",
-  shallow_since="1633584653 -0400"
-)
-
-# Eigen
-http_archive(
-    name="eigen",
-    url="https://github.com/eigenteam/eigen-git-mirror/archive/3.3.4.zip",
-    sha256="f5580adc34ea45a4c30200e4100f8a55c55af22b77d4ed05985118fd0b15b77e",
-    build_file="eigen.BUILD",
-    strip_prefix="eigen-git-mirror-3.3.4",
-)
-
 # ImGui
 http_archive(
   name="imgui",
@@ -70,15 +53,6 @@ new_git_repository(
   build_file="@//external:stb.BUILD",
 )
 
-# SPDLOG
-new_git_repository(
-  name="spdlog",
-  remote="git@github.com:gabime/spdlog.git",
-  commit="5b4c4f3f770acbd25400d866f3fc2fdf669d5b7e",
-  shallow_since="1627377994 +0300",
-  build_file="@//external:spdlog.BUILD",
-)
-
 # GTest/GMock
 http_archive(
     name="googletest",
@@ -86,4 +60,29 @@ http_archive(
     sha256="f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
     strip_prefix="googletest-release-1.8.0",
     build_file="@//external:googletest.BUILD",
+)
+
+
+## Python ##
+
+git_repository(
+    name = "rules_python",
+    remote = "https://github.com/bazelbuild/rules_python.git",
+    commit = "f40068284cb1074b0205ff6267385a5c987325e2",
+    shallow_since = "1658124956 +1000"
+)
+
+load("@rules_python//python:repositories.bzl", "python_register_toolchains")
+
+python_register_toolchains(
+    name = "python310",
+    python_version = "3.10",
+)
+
+load("@python310//:defs.bzl", "interpreter")
+load("@rules_python//python:pip.bzl", "pip_install")
+
+pip_install(
+    python_interpreter_target = interpreter,
+    requirements = "//:requirements.txt",
 )
