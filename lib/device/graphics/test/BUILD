@@ -1,0 +1,9 @@
+cc_binary(
+	name="vertex_buffer",
+	srcs=["vertex_buffer.cpp"],
+	deps=[
+		"//lib/device/graphics",
+		"//lib/device/graphics/glad:glad",
+		"@glfw//:glfw",
+	]
+)
