@@ -6,9 +6,9 @@
 
 // C++ Standard Library
 #include <algorithm>
-#include <exception>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 // Tyl
@@ -20,54 +20,6 @@ namespace tyl::device::graphics
 {
 namespace  // anonymous
 {
-
-/**
- * @brief Exception thrown when a Shader program fails to compile
- */
-class GLShaderCompilationFailure final : public std::exception
-{
-public:
-  template <typename DetailsT>
-  explicit GLShaderCompilationFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-  {}
-
-  const char* what() const noexcept override { return details_.c_str(); }
-
-private:
-  std::string details_;
-};
-
-/**
- * @brief Exception thrown when a Shader program fails to link
- */
-class GLShaderLinkageFailure final : public std::exception
-{
-public:
-  template <typename DetailsT>
-  explicit GLShaderLinkageFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-  {}
-
-  const char* what() const noexcept override { return details_.c_str(); }
-
-private:
-  std::string details_;
-};
-
-/**
- * @brief Exception thrown when a Shader program source cannot be loaded from disk
- */
-class ShaderFileReadFailure final : public std::exception
-{
-public:
-  template <typename DetailsT>
-  explicit ShaderFileReadFailure(DetailsT&& details) : details_{std::forward<DetailsT>(details)}
-  {}
-
-  const char* what() const noexcept override { return details_.c_str(); }
-
-private:
-  std::string details_;
-};
 
 inline GLuint to_gl_shader_code(const ShaderType shader_type)
 {
@@ -136,7 +88,7 @@ void validate_gl_shader_compilation(const GLuint shader_id, const ShaderType sha
     oss << "glCompileShader [" << to_gl_shader_str(shader_type) << ':' << shader_id << "]\n\n(" << written
         << " char)\n\n"
         << info_log_contents;
-    throw GLShaderCompilationFailure{oss.str()};
+    throw std::runtime_error{oss.str()};
   }
 }
 
@@ -164,7 +116,7 @@ void validate_gl_shader_linkage(const GLuint program_id)
 
     std::ostringstream oss;
     oss << "glLinkProgram [" << program_id << "]\n\n(" << written << " char)\n\n" << info_log_contents;
-    throw GLShaderLinkageFailure{oss.str()};
+    throw std::runtime_error{oss.str()};
   }
 }
 
@@ -252,7 +204,7 @@ ShaderSource ShaderSource::load_from_file(const char* filename, const ShaderType
   {
     std::ostringstream oss;
     oss << "Could not open shader source file " << filename;
-    throw ShaderFileReadFailure{oss.str()};
+    throw std::runtime_error{oss.str()};
   }
 }
 
