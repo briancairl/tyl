@@ -10,6 +10,7 @@ cc_library(
     "include/fwd.hpp",
     "include/shader.hpp",
     "include/texture.hpp",
+    "include/texture_options.hpp",
     "include/vertex_buffer.hpp",
   ],
   strip_include_prefix="include",
