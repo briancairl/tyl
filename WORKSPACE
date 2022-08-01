@@ -13,6 +13,15 @@ git_repository(
 load("@com_github_nelhage_rules_boost//:boost/boost.bzl", "boost_deps")
 boost_deps()
 
+# Eigen
+http_archive(
+    name="eigen",
+    url="https://github.com/eigenteam/eigen-git-mirror/archive/3.3.4.zip",
+    sha256="f5580adc34ea45a4c30200e4100f8a55c55af22b77d4ed05985118fd0b15b77e",
+    build_file="eigen.BUILD",
+    strip_prefix="eigen-git-mirror-3.3.4",
+)
+
 # Entt
 git_repository(
   name="entt",
