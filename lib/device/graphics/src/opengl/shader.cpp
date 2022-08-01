@@ -216,6 +216,10 @@ ShaderSource::~ShaderSource()
   }
 }
 
+ShaderBinary::ShaderBinary(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format) :
+    data_{std::move(data)}, size_{len}, format_{format}
+{}
+
 Shader::Shader(const ShaderSource vertex_source, const ShaderSource fragment_source) : Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_, vertex_source.get_id());
@@ -256,6 +260,15 @@ Shader::Shader(
 
 Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_ = invalid_shader_id; }
 
+Shader::Shader(const ShaderBinary& binary) : Shader{create_gl_shader()}
+{
+  // Load program as binary
+  glProgramBinary(shader_id_, binary.format_, binary.data(), binary.size());
+
+  // Validate program linkage
+  validate_gl_shader_linkage(shader_id_);
+}
+
 Shader& Shader::operator=(Shader&& other)
 {
   new (this) Shader{std::move(other)};
@@ -268,6 +281,26 @@ Shader::~Shader()
   {
     glDeleteProgram(shader_id_);
   }
+}
+
+ShaderBinary Shader::download() const
+{
+  Shader::bind();
+
+  GLint length = 0;
+  glGetProgramiv(shader_id_, GL_PROGRAM_BINARY_LENGTH, &length);
+
+  ShaderBinary prog;
+  prog.size_ = length;
+  prog.data_ = std::unique_ptr<std::uint8_t>{new std::uint8_t[length]};
+
+  GLenum format = 0;
+  glGetProgramBinary(shader_id_, length, NULL, &format, prog.data());
+  prog.format_ = format;
+
+  Shader::unbind();
+
+  return prog;
 }
 
 void Shader::bind() const

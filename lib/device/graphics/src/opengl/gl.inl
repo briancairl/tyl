@@ -46,6 +46,8 @@ static constexpr GLboolean to_gl_bool(const bool value) { return value ? GL_TRUE
 
 static_assert(std::is_same<GLint, int>());
 
+static_assert(std::is_same<GLenum, enum_t>());
+
 static_assert(std::is_same<GLuint, shader_id_t>());
 
 static_assert(std::is_same<GLuint, texture_id_t>());

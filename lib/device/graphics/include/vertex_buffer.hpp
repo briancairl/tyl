@@ -124,13 +124,13 @@ public:
 
   MappedBuffer(MappedBuffer&& other);
 
-  MappedBuffer(const unsigned target, void* const data);
+  MappedBuffer(const enum_t target, void* const data);
 
 private:
   MappedBuffer(const MappedBuffer&) = delete;
 
   /// Type of buffer being mapped
-  unsigned target_;
+  enum_t target_;
 
   /// Pointer to buffer (offset)
   void* data_;

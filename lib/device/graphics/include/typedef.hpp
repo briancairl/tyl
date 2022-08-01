@@ -8,6 +8,9 @@
 namespace tyl::device::graphics
 {
 
+/// ID type used for enumerations
+using enum_t = unsigned;
+
 /// ID type used for shaders, ideally identical to the graphics API ID
 using shader_id_t = unsigned;
 

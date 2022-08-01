@@ -7,6 +7,7 @@
 
 // C++ Standard Library
 #include <cstdint>
+#include <memory>
 #include <string_view>
 #include <utility>
 
@@ -83,6 +84,31 @@ private:
 };
 
 /**
+ * @brief Compiled shared program
+ */
+struct ShaderBinary
+{
+public:
+  inline auto* data() { return data_.get(); }
+  inline const auto* data() const { return data_.get(); }
+  constexpr std::size_t size() const { return size_; }
+  constexpr enum_t format() const { return format_; }
+
+  inline bool valid() const { return static_cast<bool>(data_); }
+
+  ShaderBinary(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format);
+
+private:
+  ShaderBinary() = default;
+
+  std::unique_ptr<std::uint8_t> data_ = nullptr;
+  std::size_t size_ = 0;
+  enum_t format_ = 0;
+
+  friend class Shader;
+};
+
+/**
  * @brief RAII wrapper around a shader resource
  *
  *        Creates and destroys shader through graphics API
@@ -95,17 +121,20 @@ public:
   Shader(Shader&& other);
   Shader(const ShaderSource vertex_source, const ShaderSource fragment_source);
   Shader(const ShaderSource vertex_source, const ShaderSource fragment_source, const ShaderSource geometry_source);
+  Shader(const ShaderBinary& binary);
 
   ~Shader();
 
   Shader& operator=(Shader&& other);
 
+  [[nodiscard]] ShaderBinary download() const;
+
   void bind() const;
   void unbind() const;
 
-  inline bool valid() const { return shader_id_ != invalid_shader_id; }
-  inline operator bool() const { return Shader::valid(); }
-  inline shader_id_t get_id() const { return shader_id_; };
+  [[nodiscard]] inline bool valid() const { return shader_id_ != invalid_shader_id; }
+  [[nodiscard]] inline operator bool() const { return Shader::valid(); }
+  [[nodiscard]] inline shader_id_t get_id() const { return shader_id_; };
 
   void setBool(const char* var_name, const bool value) const;
   void setInt(const char* var_name, const int value) const;
