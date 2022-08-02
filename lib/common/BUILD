@@ -1,6 +1,6 @@
 cc_library(
-  name="allocator",
-  hdrs=["include/allocator.hpp",],
+  name="memory",
+  hdrs=["include/memory.hpp",],
   strip_include_prefix="include",
   include_prefix="tyl/common",
   visibility=["//visibility:public"]
