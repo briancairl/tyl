@@ -1,4 +1,14 @@
 cc_library(
+  name="animated_sprite",
+  hdrs=["include/animated_sprite.hpp"],
+  srcs=["src/animated_sprite.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[":texture_tilesheet_lookup", "//lib/common:assert", "//lib/common:rect", "//lib/device/graphics:graphics"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="image",
   hdrs=["include/image.hpp"],
   srcs=["src/image.cpp"],
