@@ -92,7 +92,7 @@ texture_id_t create_gl_texture_2d(
 }
 }  // namespace anonymous
 
-Texture::Texture(const texture_id_t id) : texture_id_{id}
+Texture::Texture(const texture_id_t id, const enum_t typecode) : texture_id_{id}, typecode_{typecode}
 {
   // Debug mode check to ensure that our texture unit limit is compatible OpenGL
   TYL_ASSERT_GE(
@@ -104,7 +104,10 @@ Texture::Texture(const texture_id_t id) : texture_id_{id}
     texture_unit_count);
 }
 
-Texture::Texture(Texture&& other) : texture_id_{other.texture_id_} { other.texture_id_ = invalid_texture_id; }
+Texture::Texture(Texture&& other) : texture_id_{other.texture_id_}, typecode_{other.typecode_}
+{
+  other.texture_id_ = invalid_texture_id;
+}
 
 Texture::Texture(
   const int h,
@@ -112,7 +115,7 @@ Texture::Texture(
   const std::int8_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_BYTE>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_BYTE>(h, w, data, channel_mode, options), GL_BYTE}
 {}
 
 Texture::Texture(
@@ -121,7 +124,7 @@ Texture::Texture(
   const std::uint8_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_BYTE>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_UNSIGNED_BYTE>(h, w, data, channel_mode, options), GL_UNSIGNED_BYTE}
 {}
 
 Texture::Texture(
@@ -130,7 +133,7 @@ Texture::Texture(
   const std::int16_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_SHORT>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_SHORT>(h, w, data, channel_mode, options), GL_SHORT}
 {}
 
 Texture::Texture(
@@ -139,7 +142,7 @@ Texture::Texture(
   const std::uint16_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_SHORT>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_UNSIGNED_SHORT>(h, w, data, channel_mode, options), GL_UNSIGNED_SHORT}
 {}
 
 Texture::Texture(
@@ -148,7 +151,7 @@ Texture::Texture(
   const std::int32_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_INT>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_INT>(h, w, data, channel_mode, options), GL_INT}
 {}
 
 Texture::Texture(
@@ -157,7 +160,7 @@ Texture::Texture(
   const std::uint32_t* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_INT>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_UNSIGNED_INT>(h, w, data, channel_mode, options), GL_UNSIGNED_INT}
 {}
 
 Texture::Texture(
@@ -166,7 +169,7 @@ Texture::Texture(
   const float* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_FLOAT>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_FLOAT>(h, w, data, channel_mode, options), GL_FLOAT}
 {}
 
 Texture::Texture(
@@ -175,7 +178,7 @@ Texture::Texture(
   const double* const data,
   const TextureChannels channel_mode,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_DOUBLE>(h, w, data, channel_mode, options)}
+    Texture{create_gl_texture_2d<GL_DOUBLE>(h, w, data, channel_mode, options), GL_DOUBLE}
 {}
 
 Texture::~Texture()

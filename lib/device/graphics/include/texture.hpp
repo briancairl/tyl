@@ -94,25 +94,33 @@ public:
   /**
    * @brief Returns unique ID associated with loaded texture
    */
-  inline texture_id_t get_id() const { return texture_id_; };
+  constexpr texture_id_t get_id() const { return texture_id_; };
+
+  /**
+   * @brief Returns texture type code
+   */
+  constexpr enum_t type() const { return typecode_; };
 
   /**
    * @brief Checks if texture is currently ready for use
    */
-  inline bool valid() const { return texture_id_ != invalid_texture_id; }
+  constexpr bool valid() const { return texture_id_ != invalid_texture_id; }
 
   /**
    * @brief Checks if texture is currently ready for use
    */
-  inline operator bool() const { return Texture::valid(); }
+  constexpr operator bool() const { return Texture::valid(); }
 
 private:
   Texture(const Texture&) = default;
 
-  explicit Texture(const texture_id_t id);
+  explicit Texture(const texture_id_t id, const enum_t typecode);
 
   /// Device texture ID
   texture_id_t texture_id_;
+
+  /// Device texture data typecode
+  enum_t typecode_;
 };
 
 }  // namespace tyl::device::graphics
