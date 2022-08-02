@@ -7,8 +7,6 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <memory>
-#include <type_traits>
 
 // Tyl
 #include <tyl/device/graphics/constants.hpp>
