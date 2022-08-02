@@ -84,9 +84,9 @@ private:
 };
 
 /**
- * @brief Compiled shared program
+ * @brief Compiled shader program, downloaded to host
  */
-struct ShaderBinary
+struct ShaderProgramHost
 {
 public:
   inline auto* data() { return data_.get(); }
@@ -96,10 +96,10 @@ public:
 
   inline bool valid() const { return static_cast<bool>(data_); }
 
-  ShaderBinary(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format);
+  ShaderProgramHost(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format);
 
 private:
-  ShaderBinary() = default;
+  ShaderProgramHost() = default;
 
   std::unique_ptr<std::uint8_t> data_ = nullptr;
   std::size_t size_ = 0;
@@ -121,13 +121,13 @@ public:
   Shader(Shader&& other);
   Shader(const ShaderSource vertex_source, const ShaderSource fragment_source);
   Shader(const ShaderSource vertex_source, const ShaderSource fragment_source, const ShaderSource geometry_source);
-  Shader(const ShaderBinary& binary);
+  Shader(const ShaderProgramHost& shader_host);
 
   ~Shader();
 
   Shader& operator=(Shader&& other);
 
-  [[nodiscard]] ShaderBinary download() const;
+  [[nodiscard]] ShaderProgramHost download() const;
 
   void bind() const;
   void unbind() const;

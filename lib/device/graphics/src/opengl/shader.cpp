@@ -216,7 +216,7 @@ ShaderSource::~ShaderSource()
   }
 }
 
-ShaderBinary::ShaderBinary(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format) :
+ShaderProgramHost::ShaderProgramHost(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format) :
     data_{std::move(data)}, size_{len}, format_{format}
 {}
 
@@ -260,10 +260,10 @@ Shader::Shader(
 
 Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_ = invalid_shader_id; }
 
-Shader::Shader(const ShaderBinary& binary) : Shader{create_gl_shader()}
+Shader::Shader(const ShaderProgramHost& shader_host) : Shader{create_gl_shader()}
 {
   // Load program as binary
-  glProgramBinary(shader_id_, binary.format_, binary.data(), binary.size());
+  glProgramBinary(shader_id_, shader_host.format_, shader_host.data(), shader_host.size());
 
   // Validate program linkage
   validate_gl_shader_linkage(shader_id_);
@@ -283,24 +283,24 @@ Shader::~Shader()
   }
 }
 
-ShaderBinary Shader::download() const
+ShaderProgramHost Shader::download() const
 {
   Shader::bind();
 
   GLint length = 0;
   glGetProgramiv(shader_id_, GL_PROGRAM_BINARY_LENGTH, &length);
 
-  ShaderBinary prog;
-  prog.size_ = length;
-  prog.data_ = std::unique_ptr<std::uint8_t>{new std::uint8_t[length]};
+  ShaderProgramHost shader_host;
+  shader_host.size_ = length;
+  shader_host.data_ = std::unique_ptr<std::uint8_t>{new std::uint8_t[length]};
 
   GLenum format = 0;
-  glGetProgramBinary(shader_id_, length, NULL, &format, prog.data());
-  prog.format_ = format;
+  glGetProgramBinary(shader_id_, length, NULL, &format, shader_host.data());
+  shader_host.format_ = format;
 
   Shader::unbind();
 
-  return prog;
+  return shader_host;
 }
 
 void Shader::bind() const
