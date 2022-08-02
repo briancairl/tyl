@@ -9,6 +9,7 @@
 #include <vector>
 
 // Tyl
+#include <tyl/common/allocator.hpp>
 #include <tyl/common/rect.hpp>
 
 namespace tyl::graphics
@@ -80,7 +81,7 @@ public:
 
 private:
   /// Bounds for tiles in texture UV coordinate space
-  std::vector<Rect2f> tile_uv_bounds_;
+  std::vector<Rect2f, ContainerAllocator<Rect2f>> tile_uv_bounds_;
 };
 
 }  // namespace tyl::graphics

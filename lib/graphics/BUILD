@@ -26,6 +26,6 @@ cc_library(
   srcs=["src/texture_tilesheet_lookup.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
-  deps=[":texture", "//lib/common:assert", "//lib/common:vec", "//lib/common:rect", "//lib/device/graphics:graphics"],
+  deps=[":texture", "//lib/common:allocator", "//lib/common:assert", "//lib/common:vec", "//lib/common:rect", "//lib/device/graphics:graphics"],
   visibility=["//visibility:public"]
 )
