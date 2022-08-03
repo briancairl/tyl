@@ -44,6 +44,6 @@ struct ImageLoadData
  *
  * @return host-side texture data
  */
-[[nodiscard]] device::TextureHost load(const ImageLoadData& options, const device::TextureOptions& texture_options);
+[[nodiscard]] device::TextureHost load(const ImageLoadData& options);
 
 }  // namespace tyl::graphics
