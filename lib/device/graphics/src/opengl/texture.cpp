@@ -15,7 +15,8 @@ namespace tyl::device::graphics
 {
 namespace  // anonymous
 {
-GLenum channel_mode_to_gl(const TextureChannels mode)
+
+GLenum channels_to_gl(const TextureChannels mode)
 {
   switch (mode)
   {
@@ -31,6 +32,24 @@ GLenum channel_mode_to_gl(const TextureChannels mode)
     break;
   }
   return GL_RED_INTEGER;
+}
+
+std::size_t channels_to_count(const TextureChannels mode)
+{
+  switch (mode)
+  {
+  case TextureChannels::R:
+    return 1;
+  case TextureChannels::RG:
+    return 2;
+  case TextureChannels::RGB:
+    return 3;
+  case TextureChannels::RGBA:
+    return 4;
+  default:
+    break;
+  }
+  return 0;
 }
 
 GLenum wrapping_mode_to_gl(const TextureOptions::Wrapping mode)
@@ -61,14 +80,65 @@ GLenum sampling_mode_to_gl(const TextureOptions::Sampling mode)
   return GL_NEAREST;
 }
 
-template <GLenum GL_DATA_TYPE, typename PtrT>
-texture_id_t create_gl_texture_2d(
-  const unsigned h,
-  const unsigned w,
-  const PtrT* const data,
-  const TextureChannels channel_mode,
-  const TextureOptions& options)
+TextureChannels channels_from_gl(const GLenum mode)
 {
+  switch (mode)
+  {
+  case GL_RED:
+    return TextureChannels::R;
+  case GL_RG:
+    return TextureChannels::RG;
+  case GL_RGB:
+    return TextureChannels::RGB;
+  case GL_RGBA:
+    return TextureChannels::RGBA;
+  default:
+    break;
+  }
+  return TextureChannels::R;
+}
+
+TextureOptions::Wrapping wrapping_mode_from_gl(const GLenum mode)
+{
+  switch (mode)
+  {
+  case GL_CLAMP_TO_BORDER:
+    return TextureOptions::Wrapping::CLAMP_TO_BORDER;
+  case GL_REPEAT:
+    return TextureOptions::Wrapping::REPEAT;
+  default:
+    break;
+  }
+  return TextureOptions::Wrapping::CLAMP_TO_BORDER;
+}
+
+TextureOptions::Sampling sampling_mode_from_gl(const GLenum mode)
+{
+  switch (mode)
+  {
+  case GL_LINEAR:
+    return TextureOptions::Sampling::LINEAR;
+  case GL_NEAREST:
+    return TextureOptions::Sampling::NEAREST;
+  default:
+    break;
+  }
+  return TextureOptions::Sampling::NEAREST;
+}
+
+template <typename PtrT>
+texture_id_t create_gl_texture_2d(
+  const int h,
+  const int w,
+  const PtrT* const data,
+  const TextureChannels channels,
+  const TextureOptions& options,
+  const TypeCode type = typecode<std::remove_pointer_t<PtrT>>())
+{
+  TYL_ASSERT_GT(h, 0);
+  TYL_ASSERT_GT(w, 0);
+  TYL_ASSERT_NON_NULL(data);
+
   GLuint id;
   glGenTextures(1, &id);
   glBindTexture(GL_TEXTURE_2D, id);
@@ -78,13 +148,22 @@ texture_id_t create_gl_texture_2d(
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampling_mode_to_gl(options.mag_sampling));
 
   // Original texture format
-  const auto gl_original_cmode = channel_mode_to_gl(channel_mode);
+  const auto gl_original_cmode = channels_to_gl(channels);
 
   // Format to store texture when uploaded
   const auto gl_storage_cmode = gl_original_cmode;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, gl_original_cmode, h, w, 0, gl_storage_cmode, GL_DATA_TYPE, data);
+  glTexImage2D(
+    GL_TEXTURE_2D,
+    0,
+    gl_original_cmode,
+    h,
+    w,
+    0,
+    gl_storage_cmode,
+    to_gl_typecode(type),
+    reinterpret_cast<const void*>(data));
   glGenerateMipmap(GL_TEXTURE_2D);
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -92,7 +171,19 @@ texture_id_t create_gl_texture_2d(
 }
 }  // namespace anonymous
 
-Texture::Texture(const texture_id_t id, const enum_t typecode) : texture_id_{id}, typecode_{typecode}
+TextureHost::TextureHost(const Texture& texture) : TextureHost{texture.download()} {}
+
+TextureHost::TextureHost(
+  std::unique_ptr<std::uint8_t>&& data,
+  const int h,
+  const int w,
+  const TypeCode typecode,
+  const TextureChannels channels,
+  const TextureOptions& options) :
+    data_{std::move(data)}, height_{h}, width_{w}, typecode_{typecode}, channels_{channels}, options_{options}
+{}
+
+Texture::Texture(const texture_id_t id, const TypeCode typecode) : texture_id_{id}, typecode_{typecode}
 {
   // Debug mode check to ensure that our texture unit limit is compatible OpenGL
   TYL_ASSERT_GE(
@@ -113,72 +204,84 @@ Texture::Texture(
   const int h,
   const int w,
   const std::int8_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_BYTE>(h, w, data, channel_mode, options), GL_BYTE}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int8_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const std::uint8_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_BYTE>(h, w, data, channel_mode, options), GL_UNSIGNED_BYTE}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint8_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const std::int16_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_SHORT>(h, w, data, channel_mode, options), GL_SHORT}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int16_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const std::uint16_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_SHORT>(h, w, data, channel_mode, options), GL_UNSIGNED_SHORT}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint16_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const std::int32_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_INT>(h, w, data, channel_mode, options), GL_INT}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int32_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const std::uint32_t* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_UNSIGNED_INT>(h, w, data, channel_mode, options), GL_UNSIGNED_INT}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint32_t>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const float* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_FLOAT>(h, w, data, channel_mode, options), GL_FLOAT}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<float>()}
 {}
 
 Texture::Texture(
   const int h,
   const int w,
   const double* const data,
-  const TextureChannels channel_mode,
+  const TextureChannels channels,
   const TextureOptions& options) :
-    Texture{create_gl_texture_2d<GL_DOUBLE>(h, w, data, channel_mode, options), GL_DOUBLE}
+    Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<double>()}
+{}
+
+Texture::Texture(const TextureHost& texture_data) :
+    Texture{
+      create_gl_texture_2d<std::uint8_t>(
+        texture_data.height_,
+        texture_data.width_,
+        texture_data.data_.get(),
+        texture_data.channels_,
+        texture_data.options_,
+        texture_data.typecode_),
+      texture_data.typecode_}
 {}
 
 Texture::~Texture()
@@ -189,15 +292,78 @@ Texture::~Texture()
   }
 }
 
+
+TextureHost Texture::download() const
+{
+  TextureHost texture_host;
+
+  static constexpr GLint MIP_LEVEL = 0;
+
+  glBindTexture(GL_TEXTURE_2D, texture_id_);
+
+  {
+    GLint w, h;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_WIDTH, &h);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_HEIGHT, &w);
+    texture_host.width_ = w;
+    texture_host.height_ = h;
+  }
+
+  {
+    GLint v;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_INTERNAL_FORMAT, &v);
+    texture_host.channels_ = channels_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &v);
+    texture_host.options_.u_wrapping = wrapping_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, &v);
+    texture_host.options_.v_wrapping = wrapping_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &v);
+    texture_host.options_.min_sampling = sampling_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &v);
+    texture_host.options_.mag_sampling = sampling_mode_from_gl(v);
+  }
+
+  {
+    const std::size_t bytes = texture_host.size() * byte_count(typecode_) * channels_to_count(texture_host.channels_);
+    texture_host.data_.reset(new std::uint8_t[bytes]);
+    texture_host.typecode_ = typecode_;
+  }
+
+  glGetTexImage(
+    GL_TEXTURE_2D,
+    MIP_LEVEL,
+    channels_to_gl(texture_host.channels_),
+    to_gl_typecode(typecode_),
+    reinterpret_cast<void*>(texture_host.data_.get()));
+
+  return texture_host;
+}
+
 Texture& Texture::operator=(Texture&& other)
 {
   new (this) Texture{std::move(other)};
   return *this;
 }
 
-void Texture::bind(const unsigned texture_index) const
+void Texture::bind(const index_t texture_index) const
 {
-  static constexpr unsigned S_texture_unit_lookup[texture_unit_count] = {
+  static constexpr GLenum S_texture_unit_lookup[texture_unit_count] = {
     GL_TEXTURE0,
     GL_TEXTURE1,
     GL_TEXTURE2,

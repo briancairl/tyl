@@ -25,7 +25,7 @@
 namespace tyl::device::graphics
 {
 
-static inline GLuint to_gl_typecode(const TypeCode code)
+static inline GLenum to_gl_typecode(const TypeCode code)
 {
   switch (code)
   {
@@ -52,6 +52,37 @@ static inline GLuint to_gl_typecode(const TypeCode code)
 }
 
 static constexpr GLboolean to_gl_bool(const bool value) { return value ? GL_TRUE : GL_FALSE; }
+
+
+static inline TypeCode from_gl_typecode(const GLenum code)
+{
+  switch (code)
+  {
+  case GL_BYTE:
+    return TypeCode::SInt8;
+  case GL_UNSIGNED_BYTE:
+    return TypeCode::UInt8;
+  case GL_SHORT:
+    return TypeCode::SInt16;
+  case GL_UNSIGNED_SHORT:
+    return TypeCode::UInt16;
+  case GL_FLOAT:
+    return TypeCode::Float32;
+  case GL_DOUBLE:
+    return TypeCode::Float64;
+  case GL_INT:
+    return TypeCode::SInt32;
+  case GL_UNSIGNED_INT:
+    return TypeCode::UInt32;
+  default:
+    break;
+  }
+  return TypeCode::SInt8;
+}
+
+static constexpr bool from_gl_bool(const GLboolean value) { return value == GL_TRUE; }
+
+
 
 static_assert(std::is_same<GLint, int>());
 
