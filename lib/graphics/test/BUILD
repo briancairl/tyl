@@ -1,0 +1,20 @@
+cc_binary(
+	name="texture",
+	srcs=["texture.cpp"],
+	deps=[
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"@glfw//:glfw",
+	]
+)
+
+cc_binary(
+	name="vertex_buffer",
+	srcs=["vertex_buffer.cpp"],
+	deps=[
+		"//lib/common:assert",
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"@glfw//:glfw",
+	]
+)
