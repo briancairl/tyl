@@ -41,16 +41,25 @@ struct AnimatedSpriteProperties
 // Forward declaration
 class TextureTilesheetLookup;
 
+using AnimatedSpriteFrames = TextureTilesheetLookup;
+
 /**
  * @brief Returns bounds for an animation frame in texture UV space
  */
-const Rect2f&
-get_animation_frame_bounds(const TextureTilesheetLookup& tilesheet, const AnimatedSpriteState& animated_sprite_state);
+const Rect2f& get_frame(const AnimatedSpriteFrames& tilesheet, const AnimatedSpriteState& animated_sprite_state);
 
 /**
  * @brief Progress sprite animation state
  */
-void tick_animation(
+void tick_one_shot(
+  AnimatedSpriteState& animated_sprite_state,
+  const AnimatedSpriteProperties& animated_sprite_properties,
+  const float dt);
+
+/**
+ * @brief Progress sprite animation state
+ */
+void tick_repeat(
   AnimatedSpriteState& animated_sprite_state,
   const AnimatedSpriteProperties& animated_sprite_properties,
   const float dt);
