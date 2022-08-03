@@ -198,7 +198,7 @@ void download_gl_texture_options(TextureOptions& options)
 }
 
 void download_gl_texture_image(
-  std::unique_ptr<std::uint8_t>& data,
+  std::unique_ptr<std::uint8_t[]>& data,
   int& h,
   int& w,
   TextureChannels& channels,
@@ -239,7 +239,7 @@ void download_gl_texture_image(
 TextureHost::TextureHost(const Texture& texture) : TextureHost{texture.download()} {}
 
 TextureHost::TextureHost(
-  std::unique_ptr<std::uint8_t>&& data,
+  std::unique_ptr<std::uint8_t[]>&& data,
   const int h,
   const int w,
   const TypeCode typecode,

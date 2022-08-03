@@ -44,7 +44,7 @@ public:
   TextureHost(const Texture& texture);
 
   TextureHost(
-    std::unique_ptr<std::uint8_t>&& data,
+    std::unique_ptr<std::uint8_t[]>&& data,
     const int h,
     const int w,
     const TypeCode typecode,
@@ -53,7 +53,7 @@ public:
 private:
   TextureHost() = default;
 
-  std::unique_ptr<std::uint8_t> data_;
+  std::unique_ptr<std::uint8_t[]> data_;
   int height_;
   int width_;
   TypeCode typecode_;

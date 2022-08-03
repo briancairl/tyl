@@ -88,7 +88,7 @@ device::TextureHost load(const ImageLoadData& image_options)
   }
 
   return device::TextureHost{
-    std::unique_ptr<std::uint8_t>{image_data_ptr}, h, w, device::TypeCode::UInt8, image_channel_count_to_mode(c)};
+    std::unique_ptr<std::uint8_t[]>{image_data_ptr}, h, w, device::TypeCode::UInt8, image_channel_count_to_mode(c)};
 }
 
 }  // namespace tyl::graphics
