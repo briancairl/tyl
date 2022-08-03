@@ -23,7 +23,8 @@
 #define TYL_ASSERT(cond, message)                                                                                      \
   if (!(cond))                                                                                                         \
   {                                                                                                                    \
-    std::printf(                                                                                                       \
+    std::fprintf(                                                                                                      \
+      stderr,                                                                                                          \
       "\n***RUNTIME ASSERTION FAILED***\n\ncondition : %s\nmessage   : %s\nfile      : %s\nline      : %d\n",          \
       #cond,                                                                                                           \
       message,                                                                                                         \
