@@ -14,7 +14,7 @@
 #include <tyl/device/graphics/gl.inl>
 #include <tyl/device/graphics/vertex_buffer.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -277,4 +277,4 @@ void VertexElementBuffer::draw_instanced(
   glBindVertexArray(0);
 }
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

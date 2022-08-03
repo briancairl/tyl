@@ -22,7 +22,7 @@
 #include <tyl/device/graphics/typecode.hpp>
 #include <tyl/device/graphics/typedef.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 static inline GLenum to_gl_typecode(const TypeCode code)
@@ -144,4 +144,4 @@ inline std::size_t byte_count(const TypeCode code)
   return 0UL;
 }
 
-}  // tyl::device::graphics
+}  // tyl::graphics::device

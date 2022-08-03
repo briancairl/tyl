@@ -5,7 +5,7 @@
  */
 #pragma once
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 /// Handle type used for sound playback devices
@@ -20,4 +20,4 @@ using source_handle_t = unsigned;
 /// Handle type used for sound buffers
 using buffer_handle_t = unsigned;
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

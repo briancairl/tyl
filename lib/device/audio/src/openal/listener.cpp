@@ -13,7 +13,7 @@
 #include <tyl/device/audio/device.hpp>
 #include <tyl/device/audio/listener.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 Listener::Listener(const Device& device) :
@@ -67,4 +67,4 @@ void Listener::set_orientation(
   TYL_AL_TEST_ERROR(alListenerfv(AL_ORIENTATION, listener_orientation));
 }
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

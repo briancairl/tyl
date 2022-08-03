@@ -7,7 +7,7 @@
 // Tyl
 #include <tyl/device/graphics/debug.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 void enable_debug_logs() {}
@@ -18,4 +18,4 @@ void enable_error_logs() {}
 
 void disable_error_logs() {}
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

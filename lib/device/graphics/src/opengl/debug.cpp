@@ -13,7 +13,7 @@
 
 #warning "Compiling with graphical device (OpenGL) debugging enabled"
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -165,4 +165,4 @@ void enable_error_logs()
 
 void disable_error_logs() { glDisable(GL_DEBUG_OUTPUT); }
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

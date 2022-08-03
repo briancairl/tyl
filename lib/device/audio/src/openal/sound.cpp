@@ -17,7 +17,7 @@
 #include <tyl/device/audio/al.inl>
 #include <tyl/device/audio/sound.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 namespace  // anonymous
 {
@@ -103,4 +103,4 @@ Sound load_sound_from_file(const char* filename)
   return sound;
 }
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 /// Indexing type
@@ -23,4 +23,4 @@ using texture_id_t = unsigned;
 /// ID type used for vertex_buffers, ideally identical to the graphics API ID
 using vertex_buffer_id_t = unsigned;
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

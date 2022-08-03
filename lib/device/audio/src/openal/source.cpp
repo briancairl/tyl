@@ -13,7 +13,7 @@
 #include <tyl/device/audio/sound.hpp>
 #include <tyl/device/audio/source.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 Playback::Playback(const source_handle_t source, const source_handle_t buffer) :
@@ -93,4 +93,4 @@ void Source::set_looped(const bool looped) const { TYL_AL_TEST_ERROR(alSourcei(s
 
 Playback Source::play(const Sound& sound) { return Playback{source_, sound.get_buffer_handle()}; }
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

@@ -16,7 +16,7 @@
 #include <tyl/device/graphics/fwd.hpp>
 #include <tyl/device/graphics/typedef.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 /**
@@ -161,4 +161,4 @@ private:
   mutable bool is_bound_;
 };
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

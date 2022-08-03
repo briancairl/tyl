@@ -12,12 +12,19 @@
 // Tyl
 #include <tyl/device/graphics/constants.hpp>
 #include <tyl/device/graphics/fwd.hpp>
-#include <tyl/device/graphics/texture_options.hpp>
 #include <tyl/device/graphics/typecode.hpp>
 #include <tyl/device/graphics/typedef.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
+
+enum class TextureChannels
+{
+  R,  //< Red (1-channel)
+  RG,  //< Red-green (2-channel)
+  RGB,  //< Red-green-blue (3-channel)
+  RGBA,  //< Red-green-blue-alpha (4-channel)
+};
 
 /**
  * @brief Texture data, downloaded to host
@@ -27,10 +34,10 @@ struct TextureHost
 public:
   inline auto* data() { return data_.get(); }
   inline const auto* data() const { return data_.get(); }
-  constexpr std::size_t size() const { return height_ * width_; }
+  constexpr int height() const { return height_; }
+  constexpr int width() const { return width_; }
   constexpr TypeCode type() const { return typecode_; }
   constexpr TextureChannels channels() const { return channels_; }
-  constexpr const TextureOptions& options() const { return options_; }
 
   inline bool valid() const { return static_cast<bool>(data_); }
 
@@ -41,8 +48,7 @@ public:
     const int h,
     const int w,
     const TypeCode typecode,
-    const TextureChannels channels,
-    const TextureOptions& options);
+    const TextureChannels channels);
 
 private:
   TextureHost() = default;
@@ -52,9 +58,33 @@ private:
   int width_;
   TypeCode typecode_;
   TextureChannels channels_;
-  TextureOptions options_;
 
   friend class Texture;
+};
+
+struct TextureOptions
+{
+  enum class Wrapping
+  {
+    CLAMP_TO_BORDER,
+    REPEAT
+  };
+
+  enum class Sampling
+  {
+    LINEAR,
+    NEAREST
+  };
+
+  Wrapping u_wrapping = Wrapping::CLAMP_TO_BORDER;
+
+  Wrapping v_wrapping = Wrapping::CLAMP_TO_BORDER;
+
+  Sampling min_sampling = Sampling::NEAREST;
+
+  Sampling mag_sampling = Sampling::NEAREST;
+
+  TextureOptions() = default;
 };
 
 /**
@@ -117,7 +147,7 @@ public:
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
 
-  explicit Texture(const TextureHost& texture_data);
+  explicit Texture(const TextureHost& texture_data, const TextureOptions& texture_options = TextureOptions{});
 
   ~Texture();
 
@@ -127,6 +157,11 @@ public:
    * @brief Downloads texture to host
    */
   [[nodiscard]] TextureHost download() const;
+
+  /**
+   * @brief Downloads texture to host
+   */
+  [[nodiscard]] TextureHost download(TextureOptions& options) const;
 
   /**
    * @brief Binds texture to a working texture unit
@@ -170,4 +205,4 @@ private:
   TypeCode typecode_;
 };
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

@@ -5,7 +5,7 @@
  */
 #pragma once
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 class Device;
@@ -13,4 +13,4 @@ class Listener;
 class Source;
 class Sound;
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

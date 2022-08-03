@@ -8,7 +8,7 @@
 // C++ Standard Library
 #include <cstdint>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 enum class TypeCode
@@ -43,4 +43,4 @@ template <> constexpr TypeCode typecode<std::int8_t>() { return TypeCode::SInt8;
 
 template <> constexpr TypeCode typecode<std::uint8_t>() { return TypeCode::UInt8; };
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

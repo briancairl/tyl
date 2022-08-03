@@ -61,10 +61,10 @@ int main(int argc, char** argv)
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  tyl::device::graphics::enable_debug_logs();
-  tyl::device::graphics::enable_error_logs();
+  tyl::graphics::device::enable_debug_logs();
+  tyl::graphics::device::enable_error_logs();
 
-  using namespace tyl::device::graphics;
+  using namespace tyl::graphics::device;
 
   // clang-format off
   const float ColorBytes[] =
@@ -80,12 +80,13 @@ int main(int argc, char** argv)
   const Texture texture{4, 2, ColorBytes, TextureChannels::RGBA};
 
   // Download texture data
-  const auto texture_on_host = texture.download();
+  TextureOptions texture_options;
+  const auto texture_on_host = texture.download(texture_options);
 
   TYL_ASSERT_EQ(std::memcmp(ColorBytes, texture_on_host.data(), sizeof(ColorBytes)), 0);
 
   // Then upload same texture again
-  const Texture reuploaded_texture{texture_on_host};
+  const Texture reuploaded_texture{texture_on_host, texture_options};
 
   reuploaded_texture.bind(1);
 

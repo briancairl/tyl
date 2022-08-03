@@ -9,7 +9,7 @@
 #include <tyl/device/audio/fwd.hpp>
 #include <tyl/device/audio/typedef.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 /**
@@ -46,4 +46,4 @@ private:
   listener_handle_t listener_;
 };
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

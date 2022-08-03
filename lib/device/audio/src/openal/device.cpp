@@ -12,7 +12,7 @@
 #include <tyl/device/audio/al.inl>
 #include <tyl/device/audio/device.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 Device::Device(const char* device_name) :
@@ -29,4 +29,4 @@ Device::~Device()
   alcCloseDevice(reinterpret_cast<ALCdevice*>(device_));
 }
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

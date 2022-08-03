@@ -12,7 +12,7 @@
 #include <tyl/device/audio/fwd.hpp>
 #include <tyl/device/audio/typedef.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 /**
@@ -68,4 +68,4 @@ private:
  */
 Sound load_sound_from_file(const char* filename);
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

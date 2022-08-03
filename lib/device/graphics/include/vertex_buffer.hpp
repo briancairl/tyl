@@ -16,7 +16,7 @@
 #include <tyl/device/graphics/typecode.hpp>
 #include <tyl/device/graphics/typedef.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 enum class VertexAccessMode
@@ -331,4 +331,4 @@ private:
 };
 
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

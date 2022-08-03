@@ -58,10 +58,10 @@ int main(int argc, char** argv)
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  tyl::device::graphics::enable_debug_logs();
-  tyl::device::graphics::enable_error_logs();
+  tyl::graphics::device::enable_debug_logs();
+  tyl::graphics::device::enable_error_logs();
 
-  using namespace tyl::device::graphics;
+  using namespace tyl::graphics::device;
 
   static constexpr std::size_t VERTEX_COUNT = 3;
 

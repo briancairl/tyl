@@ -16,7 +16,7 @@
 #include <tyl/device/graphics/gl.inl>
 #include <tyl/device/graphics/shader.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -383,4 +383,4 @@ void Shader::setMat4(const char* var_name, const float* data) const
 }
 
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

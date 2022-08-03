@@ -11,7 +11,7 @@
 #include <tyl/device/graphics/shader.hpp>
 #include <tyl/device/graphics/texture.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 namespace  // anonymous
 {
@@ -169,6 +169,71 @@ texture_id_t create_gl_texture_2d(
 
   return id;
 }
+
+void download_gl_texture_options(TextureOptions& options)
+{
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &v);
+    options.u_wrapping = wrapping_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, &v);
+    options.v_wrapping = wrapping_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &v);
+    options.min_sampling = sampling_mode_from_gl(v);
+  }
+
+  {
+    GLint v;
+    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &v);
+    options.mag_sampling = sampling_mode_from_gl(v);
+  }
+}
+
+void download_gl_texture_image(
+  std::unique_ptr<std::uint8_t>& data,
+  int& h,
+  int& w,
+  TextureChannels& channels,
+  const TypeCode& typecode)
+{
+  static constexpr GLint MIP_LEVEL = 0;
+
+  {
+    GLint v;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_WIDTH, &v);
+    h = v;
+  }
+
+  {
+    GLint v;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_HEIGHT, &v);
+    w = v;
+  }
+
+  {
+    GLint v;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_INTERNAL_FORMAT, &v);
+    channels = channels_from_gl(v);
+  }
+
+  {
+    const std::size_t bytes = (h * w) * byte_count(typecode) * channels_to_count(channels);
+    data.reset(new std::uint8_t[bytes]);
+  }
+
+
+  glGetTexImage(
+    GL_TEXTURE_2D, MIP_LEVEL, channels_to_gl(channels), to_gl_typecode(typecode), reinterpret_cast<void*>(data.get()));
+}
+
 }  // namespace anonymous
 
 TextureHost::TextureHost(const Texture& texture) : TextureHost{texture.download()} {}
@@ -178,9 +243,8 @@ TextureHost::TextureHost(
   const int h,
   const int w,
   const TypeCode typecode,
-  const TextureChannels channels,
-  const TextureOptions& options) :
-    data_{std::move(data)}, height_{h}, width_{w}, typecode_{typecode}, channels_{channels}, options_{options}
+  const TextureChannels channels) :
+    data_{std::move(data)}, height_{h}, width_{w}, typecode_{typecode}, channels_{channels}
 {}
 
 Texture::Texture(const texture_id_t id, const TypeCode typecode) : texture_id_{id}, typecode_{typecode}
@@ -272,14 +336,14 @@ Texture::Texture(
     Texture{create_gl_texture_2d(h, w, data, channels, options), typecode<double>()}
 {}
 
-Texture::Texture(const TextureHost& texture_data) :
+Texture::Texture(const TextureHost& texture_data, const TextureOptions& texture_options) :
     Texture{
       create_gl_texture_2d<std::uint8_t>(
         texture_data.height_,
         texture_data.width_,
         texture_data.data_.get(),
         texture_data.channels_,
-        texture_data.options_,
+        texture_options,
         texture_data.typecode_),
       texture_data.typecode_}
 {}
@@ -297,63 +361,32 @@ TextureHost Texture::download() const
 {
   TextureHost texture_host;
 
-  static constexpr GLint MIP_LEVEL = 0;
-
   glBindTexture(GL_TEXTURE_2D, texture_id_);
 
-  {
-    GLint w, h;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_WIDTH, &h);
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_HEIGHT, &w);
-    texture_host.width_ = w;
-    texture_host.height_ = h;
-  }
+  download_gl_texture_image(
+    texture_host.data_, texture_host.height_, texture_host.width_, texture_host.channels_, typecode_);
 
-  {
-    GLint v;
-    glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_INTERNAL_FORMAT, &v);
-    texture_host.channels_ = channels_from_gl(v);
-  }
-
-  {
-    GLint v;
-    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, &v);
-    texture_host.options_.u_wrapping = wrapping_mode_from_gl(v);
-  }
-
-  {
-    GLint v;
-    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, &v);
-    texture_host.options_.v_wrapping = wrapping_mode_from_gl(v);
-  }
-
-  {
-    GLint v;
-    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, &v);
-    texture_host.options_.min_sampling = sampling_mode_from_gl(v);
-  }
-
-  {
-    GLint v;
-    glGetTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, &v);
-    texture_host.options_.mag_sampling = sampling_mode_from_gl(v);
-  }
-
-  {
-    const std::size_t bytes = texture_host.size() * byte_count(typecode_) * channels_to_count(texture_host.channels_);
-    texture_host.data_.reset(new std::uint8_t[bytes]);
-    texture_host.typecode_ = typecode_;
-  }
-
-  glGetTexImage(
-    GL_TEXTURE_2D,
-    MIP_LEVEL,
-    channels_to_gl(texture_host.channels_),
-    to_gl_typecode(typecode_),
-    reinterpret_cast<void*>(texture_host.data_.get()));
+  texture_host.typecode_ = typecode_;
 
   return texture_host;
 }
+
+TextureHost Texture::download(TextureOptions& options) const
+{
+  TextureHost texture_host;
+
+  glBindTexture(GL_TEXTURE_2D, texture_id_);
+
+  download_gl_texture_options(options);
+
+  download_gl_texture_image(
+    texture_host.data_, texture_host.height_, texture_host.width_, texture_host.channels_, typecode_);
+
+  texture_host.typecode_ = typecode_;
+
+  return texture_host;
+}
+
 
 Texture& Texture::operator=(Texture&& other)
 {
@@ -389,4 +422,4 @@ void Texture::bind(const index_t texture_index) const
 
 void Texture::unbind() const { TYL_ASSERT_NE(texture_id_, invalid_texture_id); }
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

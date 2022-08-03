@@ -11,7 +11,7 @@
 // Tyl
 #include <tyl/device/graphics/typedef.hpp>
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 /// Total number of available texture units
@@ -26,4 +26,4 @@ static constexpr texture_id_t invalid_texture_id = 0;
 /// Invalid (NULL-like) vertex ID value
 static constexpr vertex_buffer_id_t invalid_vertex_buffer_id = 0;
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

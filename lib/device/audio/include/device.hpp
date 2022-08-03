@@ -8,7 +8,7 @@
 // Tyl
 #include <tyl/device/audio/typedef.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 /**
@@ -39,4 +39,4 @@ private:
   device_handle_t device_;
 };
 
-}  // namespace tyl::device::audio
+}  // namespace tyl::audio::device

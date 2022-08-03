@@ -5,13 +5,16 @@
  */
 #pragma once
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 class Image;
 class Shader;
+class ShaderHost;
 class Texture;
+class TextureHost;
+class TextureOptions;
 class VertexAttributeDescriptor;
 class VertexBuffer;
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device

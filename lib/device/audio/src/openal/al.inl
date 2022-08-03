@@ -19,7 +19,7 @@
 #include <tyl/common/assert.hpp>
 #include <tyl/device/audio/typedef.hpp>
 
-namespace tyl::device::audio
+namespace tyl::audio::device
 {
 
 static_assert(std::is_same<ALuint, source_handle_t>());
@@ -40,7 +40,7 @@ static inline const char* al_error_to_str(const ALenum error)
     return "<<INVALID ERROR CODE>>";
 }
 
-}  // tyl::device::audio
+}  // tyl::audio::device
 
 #ifndef NDEBUG
     #define TYL_AL_CHECK_LAST_ERROR() \

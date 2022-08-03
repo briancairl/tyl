@@ -5,7 +5,7 @@
  */
 #pragma once
 
-namespace tyl::device::graphics
+namespace tyl::graphics::device
 {
 
 /**
@@ -28,4 +28,4 @@ void enable_error_logs();
  */
 void disable_error_logs();
 
-}  // namespace tyl::device::graphics
+}  // namespace tyl::graphics::device
