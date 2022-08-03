@@ -216,7 +216,7 @@ ShaderSource::~ShaderSource()
   }
 }
 
-ShaderProgramHost::ShaderProgramHost(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format) :
+ShaderProgramHost::ShaderProgramHost(std::unique_ptr<std::uint8_t>&& data, const std::size_t len, const enum_t format) :
     data_{std::move(data)}, size_{len}, format_{format}
 {}
 

@@ -89,14 +89,14 @@ private:
 struct ShaderProgramHost
 {
 public:
-  inline auto* data() { return data_.get(); }
-  inline const auto* data() const { return data_.get(); }
-  constexpr std::size_t size() const { return size_; }
-  constexpr enum_t format() const { return format_; }
+  [[nodiscard]] inline auto* data() { return data_.get(); }
+  [[nodiscard]] inline const auto* data() const { return data_.get(); }
+  [[nodiscard]] constexpr std::size_t size() const { return size_; }
+  [[nodiscard]] constexpr enum_t format() const { return format_; }
 
   inline bool valid() const { return static_cast<bool>(data_); }
 
-  ShaderProgramHost(std::unique_ptr<std::uint8_t> data, std::size_t len, enum_t format);
+  ShaderProgramHost(std::unique_ptr<std::uint8_t>&& data, const std::size_t len, const enum_t format);
 
 private:
   ShaderProgramHost() = default;
