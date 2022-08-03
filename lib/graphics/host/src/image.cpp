@@ -72,10 +72,11 @@ device::TextureHost load(const ImageLoadData& image_options)
 {
   stbi_set_flip_vertically_on_load(image_options.flip_vertically);
 
+  const int c_forced = channel_mode_to_stbi_enum(image_options.channel_mode);
+
   // Load image data and sizing
   int w, h, c;
-  auto* image_data_ptr =
-    stbi_load(image_options.filename.c_str(), &h, &w, &c, channel_mode_to_stbi_enum(image_options.channel_mode));
+  auto* image_data_ptr = stbi_load(image_options.filename.c_str(), &h, &w, &c, c_forced);
 
   static_assert(std::is_same<decltype(image_data_ptr), std::uint8_t*>(), "Image data not loaded as byte array");
 
@@ -87,8 +88,14 @@ device::TextureHost load(const ImageLoadData& image_options)
     throw std::runtime_error{oss.str()};
   }
 
+  const int c_resolved = (image_options.channel_mode == ImageLoadData::ChannelMode::Default) ? c : c_forced;
+
   return device::TextureHost{
-    std::unique_ptr<std::uint8_t[]>{image_data_ptr}, h, w, device::TypeCode::UInt8, image_channel_count_to_mode(c)};
+    std::unique_ptr<std::uint8_t[]>{image_data_ptr},
+    h,
+    w,
+    device::TypeCode::UInt8,
+    image_channel_count_to_mode(c_resolved)};
 }
 
 }  // namespace tyl::graphics

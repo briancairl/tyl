@@ -36,7 +36,7 @@ struct ImageLoadData
   ChannelMode channel_mode = ChannelMode::Default;
 
   /// Flip image vertically file on load
-  bool flip_vertically = false;
+  bool flip_vertically = true;
 };
 
 /**
