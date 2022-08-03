@@ -15,6 +15,7 @@
 // clang-format on
 
 // C++ Standard Library
+#include <cstdint>
 #include <type_traits>
 
 // Tyl
@@ -28,6 +29,14 @@ static inline GLuint to_gl_typecode(const TypeCode code)
 {
   switch (code)
   {
+  case TypeCode::SInt8:
+    return GL_BYTE;
+  case TypeCode::UInt8:
+    return GL_UNSIGNED_BYTE;
+  case TypeCode::SInt16:
+    return GL_SHORT;
+  case TypeCode::UInt16:
+    return GL_UNSIGNED_SHORT;
   case TypeCode::Float32:
     return GL_FLOAT;
   case TypeCode::Float64:
@@ -54,6 +63,18 @@ static_assert(std::is_same<GLuint, texture_id_t>());
 
 static_assert(std::is_same<GLuint, vertex_buffer_id_t>());
 
+template <> constexpr std::size_t byte_count<TypeCode::SInt8>() { return 1UL; /* as per opengl specs */ }
+static_assert(sizeof(std::uint8_t) == byte_count<TypeCode::SInt8>());
+
+template <> constexpr std::size_t byte_count<TypeCode::UInt8>() { return 1UL; /* as per opengl specs */ }
+static_assert(sizeof(std::uint8_t) == byte_count<TypeCode::UInt8>());
+
+template <> constexpr std::size_t byte_count<TypeCode::SInt16>() { return 2UL; /* as per opengl specs */ }
+static_assert(sizeof(std::uint16_t) == byte_count<TypeCode::SInt16>());
+
+template <> constexpr std::size_t byte_count<TypeCode::UInt16>() { return 2UL; /* as per opengl specs */ }
+static_assert(sizeof(std::uint16_t) == byte_count<TypeCode::UInt16>());
+
 template <> constexpr std::size_t byte_count<TypeCode::Float32>() { return 4UL; /* as per opengl specs */ }
 static_assert(sizeof(float) == byte_count<TypeCode::Float32>());
 
@@ -78,6 +99,14 @@ inline std::size_t byte_count(const TypeCode code)
     return byte_count<TypeCode::SInt32>();
   case TypeCode::UInt32:
     return byte_count<TypeCode::UInt32>();
+  case TypeCode::SInt16:
+    return byte_count<TypeCode::SInt16>();
+  case TypeCode::UInt16:
+    return byte_count<TypeCode::UInt16>();
+  case TypeCode::SInt8:
+    return byte_count<TypeCode::SInt8>();
+  case TypeCode::UInt8:
+    return byte_count<TypeCode::UInt8>();
   default:
     break;
   }

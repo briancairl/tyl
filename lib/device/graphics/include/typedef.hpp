@@ -8,6 +8,9 @@
 namespace tyl::device::graphics
 {
 
+/// Indexing type
+using index_t = unsigned long;
+
 /// ID type used for enumerations
 using enum_t = unsigned;
 
