@@ -9,7 +9,6 @@
 #include <vector>
 
 // Tyl
-#include <tyl/common/memory.hpp>
 #include <tyl/common/rect.hpp>
 
 namespace tyl::graphics
