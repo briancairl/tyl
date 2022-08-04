@@ -26,8 +26,8 @@ http_archive(
 git_repository(
   name="entt",
   remote="https://github.com/skypjack/entt.git",
-  commit="7a949dd32849e8230b15a5ff8ad1104c7f748c2a",
-  shallow_since="1610207127 +0100"
+  commit="85ca2f356234de3c945667d12857dea2a26c214d",
+  shallow_since="1659518663 +0200"
 )
 
 # ImGui

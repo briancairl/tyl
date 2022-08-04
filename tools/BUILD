@@ -1,0 +1,16 @@
+cc_binary(
+	name="editor",
+	srcs=["editor.cpp"],
+	deps=[
+		"//lib/common:adaptors",
+		"//lib/common:dynamic_bitset",
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"//lib/graphics/host:animated_sprite",
+		"//lib/graphics/host:image",
+		"//lib/graphics/host:texture_tilesheet_lookup",
+		"@entt//:entt",
+		"@glfw//:glfw",
+		"@imgui//:imgui",
+	]
+)
