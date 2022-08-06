@@ -8,10 +8,10 @@
 namespace tyl::graphics::device
 {
 
-class Image;
 class Shader;
 class ShaderHost;
 class Texture;
+class TextureHandle;
 class TextureHost;
 class TextureOptions;
 class VertexAttributeDescriptor;

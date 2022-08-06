@@ -41,7 +41,7 @@ public:
 
   inline bool valid() const { return static_cast<bool>(data_); }
 
-  TextureHost(const Texture& texture);
+  TextureHost(const TextureHandle& texture);
 
   TextureHost(
     std::unique_ptr<std::uint8_t[]>&& data,
@@ -60,31 +60,100 @@ private:
   TextureChannels channels_;
 
   friend class Texture;
+  friend class TextureHandle;
 };
 
 struct TextureOptions
 {
-  enum class Wrapping
+  enum class Wrapping : std::uint8_t
   {
     CLAMP_TO_BORDER,
     REPEAT
   };
 
-  enum class Sampling
+  enum class Sampling : std::uint8_t
   {
     LINEAR,
     NEAREST
   };
 
   Wrapping u_wrapping = Wrapping::CLAMP_TO_BORDER;
-
   Wrapping v_wrapping = Wrapping::CLAMP_TO_BORDER;
 
   Sampling min_sampling = Sampling::NEAREST;
-
   Sampling mag_sampling = Sampling::NEAREST;
 
+  struct
+  {
+    std::uint8_t unpack_alignment : 1;
+    std::uint8_t generate_mip_map : 1;
+  } flags = {1, 1};
+
   TextureOptions() = default;
+};
+
+/**
+ * @brief Weak reference to a Texture
+ */
+class TextureHandle
+{
+public:
+  TextureHandle(TextureHandle&& other);
+  TextureHandle(const TextureHandle& other) = default;
+
+  ~TextureHandle() = default;
+
+  TextureHandle& operator=(TextureHandle&&);
+  TextureHandle& operator=(const TextureHandle&) = default;
+
+  /**
+   * @brief Downloads texture to host
+   */
+  [[nodiscard]] TextureHost download() const;
+
+  /**
+   * @brief Downloads texture to host
+   */
+  [[nodiscard]] TextureHost download(TextureOptions& options) const;
+
+  /**
+   * @brief Returns unique ID associated with loaded texture
+   */
+  [[nodiscard]] constexpr texture_id_t get_id() const { return texture_id_; };
+
+  /**
+   * @brief Returns texture type code
+   */
+  [[nodiscard]] constexpr TypeCode type() const { return typecode_; };
+
+  /**
+   * @brief Checks if texture is currently ready for use
+   */
+  [[nodiscard]] constexpr bool valid() const { return typecode_ != TypeCode::Invalid; }
+
+  /**
+   * @brief Checks if texture is currently ready for use
+   */
+  [[nodiscard]] constexpr operator bool() const { return TextureHandle::valid(); }
+
+  /**
+   * @brief Binds texture to a working texture unit
+   */
+  void bind(const index_t texture_index) const;
+
+  /**
+   * @brief Unbinds texture from a working texture unit
+   */
+  void unbind() const;
+
+protected:
+  explicit TextureHandle(const texture_id_t id, const TypeCode typecode);
+
+  /// Device texture ID
+  texture_id_t texture_id_;
+
+  /// Device texture data typecode
+  TypeCode typecode_;
 };
 
 /**
@@ -94,7 +163,7 @@ struct TextureOptions
  *
  * @warning Do not pass around Texture, use TextureHandle
  */
-class Texture
+class Texture : public TextureHandle
 {
 public:
   Texture(Texture&& other);
@@ -153,56 +222,8 @@ public:
 
   Texture& operator=(Texture&&);
 
-  /**
-   * @brief Downloads texture to host
-   */
-  [[nodiscard]] TextureHost download() const;
-
-  /**
-   * @brief Downloads texture to host
-   */
-  [[nodiscard]] TextureHost download(TextureOptions& options) const;
-
-  /**
-   * @brief Binds texture to a working texture unit
-   */
-  void bind(const index_t texture_index) const;
-
-  /**
-   * @brief Unbinds texture from a working texture unit
-   */
-  void unbind() const;
-
-  /**
-   * @brief Returns unique ID associated with loaded texture
-   */
-  [[nodiscard]] constexpr texture_id_t get_id() const { return texture_id_; };
-
-  /**
-   * @brief Returns texture type code
-   */
-  [[nodiscard]] constexpr TypeCode type() const { return typecode_; };
-
-  /**
-   * @brief Checks if texture is currently ready for use
-   */
-  [[nodiscard]] constexpr bool valid() const { return texture_id_ != invalid_texture_id; }
-
-  /**
-   * @brief Checks if texture is currently ready for use
-   */
-  [[nodiscard]] constexpr operator bool() const { return Texture::valid(); }
-
 private:
   Texture(const Texture&) = default;
-
-  explicit Texture(const texture_id_t id, const TypeCode typecode);
-
-  /// Device texture ID
-  texture_id_t texture_id_;
-
-  /// Device texture data typecode
-  TypeCode typecode_;
 };
 
 }  // namespace tyl::graphics::device

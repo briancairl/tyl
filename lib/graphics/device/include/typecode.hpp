@@ -13,6 +13,7 @@ namespace tyl::graphics::device
 
 enum class TypeCode
 {
+  Invalid,
   Float32,
   Float64,
   SInt32,
