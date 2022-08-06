@@ -28,19 +28,19 @@ namespace tyl::graphics
 namespace  // anonymous
 {
 
-int channel_mode_to_stbi_enum(const ImageLoadData::ChannelMode mode)
+int channel_mode_to_stbi_enum(const Image::ChannelMode mode)
 {
   switch (mode)
   {
-  case ImageLoadData::ChannelMode::Default:
+  case Image::ChannelMode::Default:
     return 0;
-  case ImageLoadData::ChannelMode::Grey:
+  case Image::ChannelMode::Grey:
     return 1;
-  case ImageLoadData::ChannelMode::GreyA:
+  case Image::ChannelMode::GreyA:
     return 2;
-  case ImageLoadData::ChannelMode::RGB:
+  case Image::ChannelMode::RGB:
     return 3;
-  case ImageLoadData::ChannelMode::RGBA:
+  case Image::ChannelMode::RGBA:
     return 4;
   default:
     break;
@@ -68,9 +68,9 @@ device::TextureChannels image_channel_count_to_mode(const int count)
 
 }  // namespace anonymous
 
-device::TextureHost load(const ImageLoadData& image_options)
+device::TextureHost load(const Image& image_options)
 {
-  stbi_set_flip_vertically_on_load(image_options.flip_vertically);
+  stbi_set_flip_vertically_on_load(image_options.flags.flip_vertically);
 
   const int c_forced = channel_mode_to_stbi_enum(image_options.channel_mode);
 
@@ -88,7 +88,7 @@ device::TextureHost load(const ImageLoadData& image_options)
     throw std::runtime_error{oss.str()};
   }
 
-  const int c_resolved = (image_options.channel_mode == ImageLoadData::ChannelMode::Default) ? c : c_forced;
+  const int c_resolved = (image_options.channel_mode == Image::ChannelMode::Default) ? c : c_forced;
 
   return device::TextureHost{
     std::unique_ptr<std::uint8_t[]>{image_data_ptr},

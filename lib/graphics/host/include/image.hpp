@@ -16,9 +16,9 @@ namespace tyl::graphics
 {
 
 /**
- * @brief Data used to describe an image to load from disk
+ * @brief Descriptor used to describe an image to load from disk
  */
-struct ImageLoadData
+struct Image
 {
   enum class ChannelMode
   {
@@ -35,8 +35,11 @@ struct ImageLoadData
   /// Image channel loading options
   ChannelMode channel_mode = ChannelMode::Default;
 
-  /// Flip image vertically file on load
-  bool flip_vertically = true;
+  /// On-load option flags
+  struct
+  {
+    std::uint8_t flip_vertically : 1;
+  } flags = {};
 };
 
 /**
@@ -44,6 +47,6 @@ struct ImageLoadData
  *
  * @return host-side texture data
  */
-[[nodiscard]] device::TextureHost load(const ImageLoadData& options);
+[[nodiscard]] device::TextureHost load(const Image& options);
 
 }  // namespace tyl::graphics
