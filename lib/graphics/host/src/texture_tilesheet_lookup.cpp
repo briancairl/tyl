@@ -83,7 +83,8 @@ void compute_tilesheet_bounds(
       for (int y = (region.subdivisions.y() - 1); y >= 0; --y)
       {
         const float lower_corner_y = region_tile_origin.y() + y * block_size_uv.y();
-        bounds.emplace_back(lower_corner_x, lower_corner_y, tile_size_uv.x(), tile_size_uv.y());
+        bounds.emplace_back(
+          lower_corner_x, lower_corner_y, lower_corner_x + tile_size_uv.x(), lower_corner_y + tile_size_uv.y());
       }
     }
   }
@@ -95,7 +96,8 @@ void compute_tilesheet_bounds(
       for (int y = 0; y < region.subdivisions.y(); ++y)
       {
         const float lower_corner_y = region_tile_origin.y() + y * block_size_uv.y();
-        bounds.emplace_back(lower_corner_x, lower_corner_y, tile_size_uv.x(), tile_size_uv.y());
+        bounds.emplace_back(
+          lower_corner_x, lower_corner_y, lower_corner_x + tile_size_uv.x(), lower_corner_y + tile_size_uv.y());
       }
     }
   }

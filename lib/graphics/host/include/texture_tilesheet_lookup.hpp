@@ -67,16 +67,16 @@ public:
   /**
    * @brief Returns total number of tile bounds
    */
-  std::size_t tile_count() const { return tile_uv_bounds_.size(); }
+  [[nodiscard]] std::size_t size() const { return tile_uv_bounds_.size(); }
 
   /**
    * @brief Returns tile bounds
    */
-  const Rect2f& operator[](const std::size_t index) const { return tile_uv_bounds_[index]; }
+  [[nodiscard]] const Rect2f& operator[](const std::size_t index) const { return tile_uv_bounds_[index]; }
 
-  auto begin() const { return tile_uv_bounds_.begin(); }
+  [[nodiscard]] auto begin() const { return tile_uv_bounds_.begin(); }
 
-  auto end() const { return tile_uv_bounds_.end(); }
+  [[nodiscard]] auto end() const { return tile_uv_bounds_.end(); }
 
 private:
   /// Bounds for tiles in texture UV coordinate space
