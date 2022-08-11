@@ -12,7 +12,7 @@
 // Tyl
 #include <tyl/graphics/device/fwd.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::host
 {
 
 /**
@@ -49,4 +49,4 @@ struct Image
  */
 [[nodiscard]] device::TextureHost load(const Image& options);
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::host

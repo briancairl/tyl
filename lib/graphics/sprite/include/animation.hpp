@@ -8,13 +8,13 @@
 // Tyl
 #include <tyl/common/rect.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::sprite
 {
 
 /**
  * @brief Describes current animation state
  */
-struct AnimatedSpriteState
+struct AnimationState
 {
   /// Lower-bound value on progress
   static constexpr float min_progress = 0.f;
@@ -22,46 +22,54 @@ struct AnimatedSpriteState
   /// Upper-bound value on progress
   static constexpr float max_progress = 1.f;
 
+  /// Was animation completed
+  bool complete = false;
+
   /// Sprite animation progress, represented as a value between [0, 1)
   float progress = min_progress;
 
   /// Resets progress state
-  constexpr void reset() { progress = min_progress; }
+  constexpr void reset()
+  {
+    complete = false;
+    progress = min_progress;
+  }
 };
 
 /**
  * @brief Describes animation properties
  */
-struct AnimatedSpriteProperties
+struct AnimationProperties
 {
   /// Amount to progress animation state per second
   float progress_per_second;
 };
 
 // Forward declaration
-class TextureTilesheetLookup;
+class SpriteSheet;
 
-using AnimatedSpriteFrames = TextureTilesheetLookup;
+/// Holds sequnce of frames
+using AnimationFrames = SpriteSheet;
 
 /**
  * @brief Returns bounds for an animation frame in texture UV space
  */
-const Rect2f& get_frame(const AnimatedSpriteFrames& tilesheet, const AnimatedSpriteState& animated_sprite_state);
+const Rect2f& get_frame(const AnimationFrames& animation_frames, const AnimationState& animated_sprite_state);
 
 /**
  * @brief Progress sprite animation state
  */
-void tick_one_shot(
-  AnimatedSpriteState& animated_sprite_state,
-  const AnimatedSpriteProperties& animated_sprite_properties,
+void play_one_shot(
+  AnimationState& animated_sprite_state,
+  const AnimationProperties& animated_sprite_properties,
   const float dt);
 
 /**
  * @brief Progress sprite animation state
  */
-void tick_repeat(
-  AnimatedSpriteState& animated_sprite_state,
-  const AnimatedSpriteProperties& animated_sprite_properties,
+void play_repeat(
+  AnimationState& animated_sprite_state,
+  const AnimationProperties& animated_sprite_properties,
   const float dt);
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::sprite

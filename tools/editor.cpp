@@ -32,11 +32,11 @@
 #include <tyl/common/dynamic_bitset.hpp>
 #include <tyl/common/reference.hpp>
 #include <tyl/common/vec.hpp>
-#include <tyl/graphics/animated_sprite.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/texture.hpp>
-#include <tyl/graphics/image.hpp>
-#include <tyl/graphics/texture_tilesheet_lookup.hpp>
+#include <tyl/graphics/host/image.hpp>
+#include <tyl/graphics/sprite/animation.hpp>
+#include <tyl/graphics/sprite/spritesheet.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -72,10 +72,8 @@ struct RegionEditState
   ImVec2 rect_max;
   ImVec2* editting_point = nullptr;
   tyl::Vec2i subdivisions;
-  // tyl::graphics::UniformlyDividedRegion region;
 };
 
-using AnimatedSpriteFramesPallet = tyl::Alias<tyl::graphics::AnimatedSpriteFrames, std::size_t, 0>;
 using TextureHandle = tyl::Reference<entt::entity, tyl::graphics::device::TextureHandle>;
 
 static void draw(
@@ -206,7 +204,7 @@ int main(int argc, char** argv)
     {
       try
       {
-        auto image_data = load(Image{filename_buffer});
+        auto image_data = load(host::Image{filename_buffer});
         const auto parent_e = reg.create();
         const auto& texture = reg.emplace<device::Texture>(parent_e, image_data);
 
@@ -228,7 +226,7 @@ int main(int argc, char** argv)
       view.each(
         [drawlist, &reg, &edittor_state](const auto entity, const TextureHandle& texture, const tyl::Vec2i& extents) {
           {
-            const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture.value().get_id());
+            const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture->get_id());
             const float ratio = static_cast<float>(extents.y()) / static_cast<float>(extents.x());
             ImGui::Image(im_texture_id, ImVec2{200, ratio * 200});
           }
@@ -357,7 +355,7 @@ int main(int argc, char** argv)
       drawlist->PushClipRect(texture_display_rect_min, texture_display_rect_max);
       {
         const auto& texture = reg.get<TextureHandle>(edittor_state->entity);
-        const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture().get_id());
+        const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture->get_id());
         drawlist->AddImage(
           im_texture_id,
           transform(screen_to_local, ImVec2(0, 0)),
@@ -481,25 +479,25 @@ int main(int argc, char** argv)
 
           if (ImGui::Button("create"))
           {
-            AnimatedSpriteFrames frames{
+            sprite::AnimationFrames frames{
               edittor_state->extents,
-              UniformlyDividedRegion{
+              sprite::UniformlyDividedRegion{
                 .subdivisions = region.subdivisions,
                 .inner_padding_px = {0, 0},
                 .area_px = {
                   tyl::Vec2i{region.rect_min.x, region.rect_min.y}, tyl::Vec2i{region.rect_max.x, region.rect_max.y}}}};
 
             auto animation_id = reg.create();
-            reg.emplace<AnimatedSpriteFrames>(animation_id, std::move(frames));
-            reg.emplace<AnimatedSpriteState>(animation_id, 0.f);
-            reg.emplace<AnimatedSpriteProperties>(animation_id, 0.5f);
+            reg.emplace<sprite::AnimationFrames>(animation_id, std::move(frames));
+            reg.emplace<sprite::AnimationState>(animation_id, false, 0.f);
+            reg.emplace<sprite::AnimationProperties>(animation_id, 0.5f);
 
             const float dx = (region.rect_max.x - region.rect_min.x) / region.subdivisions.x();
             const float dy = (region.rect_max.y - region.rect_min.y) / region.subdivisions.y();
             reg.emplace<tyl::Vec2f>(animation_id, dx, dy);
           }
 
-          reg.view<AnimatedSpriteState, AnimatedSpriteFrames, AnimatedSpriteProperties, tyl::Vec2f>().each(
+          reg.view<sprite::AnimationState, sprite::AnimationFrames, sprite::AnimationProperties, tyl::Vec2f>().each(
             [&reg, &edittor_state](
               const entt::entity ani_id,
               auto& ani_state,
@@ -507,10 +505,10 @@ int main(int argc, char** argv)
               const auto& ani_props,
               const auto& ani_size) {
               const auto& texture = reg.get<TextureHandle>(edittor_state->entity);
-              const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture().get_id());
+              const ImTextureID im_texture_id = reinterpret_cast<ImTextureID>(texture->get_id());
               const auto& bounds = get_frame(ani_frames, ani_state);
 
-              tick_repeat(ani_state, ani_props, ImGui::GetIO().DeltaTime);
+              sprite::play_repeat(ani_state, ani_props, ImGui::GetIO().DeltaTime);
 
               ImGui::PushID(static_cast<int>(ani_id));
               ImGui::SliderFloat("progress", &ani_state.progress, 0.f, 1.f);

@@ -21,9 +21,9 @@
 
 // Tyl
 #include <tyl/graphics/device/texture.hpp>
-#include <tyl/graphics/image.hpp>
+#include <tyl/graphics/host/image.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::host
 {
 namespace  // anonymous
 {
@@ -98,4 +98,4 @@ device::TextureHost load(const Image& image_options)
     image_channel_count_to_mode(c_resolved)};
 }
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::host

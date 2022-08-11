@@ -22,10 +22,15 @@ public:
   {}
 
   constexpr IdentifierT id() const { return id_; }
-  constexpr AccessT value() { return value_; }
-  constexpr const AccessT value() const { return value_; }
-  constexpr AccessT operator()() { return value_; }
-  constexpr const AccessT operator()() const { return value_; }
+
+  constexpr ValueT& value() { return value_; }
+  constexpr const ValueT& value() const { return value_; }
+
+  constexpr ValueT& operator*() { return value_; }
+  constexpr const ValueT& operator*() const { return value_; }
+
+  constexpr ValueT* operator->() { return std::addressof(value_); }
+  constexpr const ValueT* operator->() const { return std::addressof(value_); }
 
 private:
   IdentifierT id_;

@@ -11,7 +11,7 @@
 // Tyl
 #include <tyl/common/rect.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::sprite
 {
 
 /**
@@ -35,24 +35,24 @@ struct TransposedUniformlyDividedRegion
 /**
  * @brief Lookup from ID to UV offset in an altas texture
  */
-class TextureTilesheetLookup
+class SpriteSheet
 {
 public:
-  TextureTilesheetLookup() = default;
+  SpriteSheet() = default;
 
-  TextureTilesheetLookup(TextureTilesheetLookup&& other) = default;
+  SpriteSheet(SpriteSheet&& other) = default;
 
-  TextureTilesheetLookup(const TextureTilesheetLookup& other) = default;
+  SpriteSheet(const SpriteSheet& other) = default;
 
-  TextureTilesheetLookup(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor);
+  SpriteSheet(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor);
 
-  TextureTilesheetLookup(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region_descriptor);
+  SpriteSheet(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region_descriptor);
 
-  TextureTilesheetLookup(const Vec2i atlas_texture_extents, const TransposedUniformlyDividedRegion& region_descriptor);
+  SpriteSheet(const Vec2i atlas_texture_extents, const TransposedUniformlyDividedRegion& region_descriptor);
 
-  ~TextureTilesheetLookup();
+  ~SpriteSheet();
 
-  TextureTilesheetLookup& operator=(TextureTilesheetLookup&&) = default;
+  SpriteSheet& operator=(SpriteSheet&&) = default;
 
   void update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor);
 
@@ -83,4 +83,4 @@ private:
   std::vector<Rect2f> tile_uv_bounds_;
 };
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::sprite

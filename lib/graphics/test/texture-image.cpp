@@ -26,7 +26,7 @@
 #include <tyl/graphics/device/shader.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/device/vertex_buffer.hpp>
-#include <tyl/graphics/image.hpp>
+#include <tyl/graphics/host/image.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   using namespace tyl::graphics;
   using namespace tyl::graphics::device;
 
-  auto image = load(Image{"lib/graphics/test/texture-image.png"});
+  auto image = load(host::Image{"lib/graphics/test/texture-image.png"});
 
   // Upload texture data
   const Texture texture{image};

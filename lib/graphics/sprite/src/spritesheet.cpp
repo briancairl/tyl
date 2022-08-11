@@ -6,9 +6,9 @@
 
 // Tyl
 #include <tyl/common/assert.hpp>
-#include <tyl/graphics/texture_tilesheet_lookup.hpp>
+#include <tyl/graphics/sprite/spritesheet.hpp>
 
-namespace tyl::graphics
+namespace tyl::graphics::sprite
 {
 namespace  // anonymous
 {
@@ -105,27 +105,25 @@ void compute_tilesheet_bounds(
 
 }  // namespace anonymous
 
-TextureTilesheetLookup::TextureTilesheetLookup(const Vec2i atlas_texture_extents, const Rect2i& region)
+SpriteSheet::SpriteSheet(const Vec2i atlas_texture_extents, const Rect2i& region)
 {
-  TextureTilesheetLookup::update(atlas_texture_extents, region);
+  SpriteSheet::update(atlas_texture_extents, region);
   TYL_ASSERT_FALSE(tile_uv_bounds_.empty());
 }
 
-TextureTilesheetLookup::TextureTilesheetLookup(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region)
+SpriteSheet::SpriteSheet(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region)
 {
-  TextureTilesheetLookup::update(atlas_texture_extents, region);
+  SpriteSheet::update(atlas_texture_extents, region);
   TYL_ASSERT_FALSE(tile_uv_bounds_.empty());
 }
 
-TextureTilesheetLookup::TextureTilesheetLookup(
-  const Vec2i atlas_texture_extents,
-  const TransposedUniformlyDividedRegion& region)
+SpriteSheet::SpriteSheet(const Vec2i atlas_texture_extents, const TransposedUniformlyDividedRegion& region)
 {
-  TextureTilesheetLookup::update(atlas_texture_extents, region);
+  SpriteSheet::update(atlas_texture_extents, region);
   TYL_ASSERT_FALSE(tile_uv_bounds_.empty());
 }
 
-void TextureTilesheetLookup::update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor)
+void SpriteSheet::update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor)
 {
   const Vec2i tile_size_px{region_descriptor.extents()};
   const Vec2f tile_size_uv{
@@ -139,18 +137,16 @@ void TextureTilesheetLookup::update(const Vec2i atlas_texture_extents, const Rec
   tile_uv_bounds_.emplace_back(region_tile_origin.x(), region_tile_origin.y(), tile_size_uv.x(), tile_size_uv.y());
 }
 
-void TextureTilesheetLookup::update(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region_descriptor)
+void SpriteSheet::update(const Vec2i atlas_texture_extents, const UniformlyDividedRegion& region_descriptor)
 {
   compute_tilesheet_bounds<false>(tile_uv_bounds_, atlas_texture_extents, region_descriptor);
 }
 
-void TextureTilesheetLookup::update(
-  const Vec2i atlas_texture_extents,
-  const TransposedUniformlyDividedRegion& region_descriptor)
+void SpriteSheet::update(const Vec2i atlas_texture_extents, const TransposedUniformlyDividedRegion& region_descriptor)
 {
   compute_tilesheet_bounds<true>(tile_uv_bounds_, atlas_texture_extents, region_descriptor.region);
 }
 
-TextureTilesheetLookup::~TextureTilesheetLookup() = default;
+SpriteSheet::~SpriteSheet() = default;
 
-}  // namespace tyl::graphics
+}  // namespace tyl::graphics::sprite
