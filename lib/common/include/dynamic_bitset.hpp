@@ -24,7 +24,13 @@ template <typename BlockT, typename Alloc = std::allocator<BlockT>> class dynami
 public:
   static constexpr std::size_t bits_per_block = bits::size<BlockT>();
 
-  using const_block_return_t = std::conditional_t<sizeof(BlockT) < sizeof(BlockT&), BlockT, const BlockT&>;
+  // clang-format off
+  using const_block_return_t = std::conditional_t<
+    (sizeof(BlockT) < sizeof(BlockT&)),
+    BlockT,
+    const BlockT&
+  >;
+  // clang-format on
 
   dynamic_bitset() = default;
 
