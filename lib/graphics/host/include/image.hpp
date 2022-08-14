@@ -7,7 +7,6 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <string>
 
 // Tyl
 #include <tyl/graphics/device/fwd.hpp>
@@ -16,9 +15,9 @@ namespace tyl::graphics::host
 {
 
 /**
- * @brief Descriptor used to describe an image to load from disk
+ * @brief Image load options
  */
-struct Image
+struct ImageOptions
 {
   enum class ChannelMode
   {
@@ -28,9 +27,6 @@ struct Image
     RGB,
     RGBA
   };
-
-  /// Image filename
-  std::string filename;
 
   /// Image channel loading options
   ChannelMode channel_mode = ChannelMode::Default;
@@ -45,8 +41,11 @@ struct Image
 /**
  * @brief Loads image from filesystem to image data on host
  *
+ * @param path  path to image file
+ * @param options  image loading options
+ *
  * @return host-side texture data
  */
-[[nodiscard]] device::TextureHost load(const Image& options);
+[[nodiscard]] device::TextureHost load(const char* path, const ImageOptions& options = ImageOptions{});
 
 }  // namespace tyl::graphics::host

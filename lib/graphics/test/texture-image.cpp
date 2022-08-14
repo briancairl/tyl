@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   using namespace tyl::graphics;
   using namespace tyl::graphics::device;
 
-  auto image = load(host::Image{"lib/graphics/test/texture-image.png"});
+  auto image = host::load("lib/graphics/test/texture-image.png");
 
   // Upload texture data
   const Texture texture{image};

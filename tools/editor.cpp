@@ -204,7 +204,7 @@ int main(int argc, char** argv)
     {
       try
       {
-        auto image_data = load(host::Image{filename_buffer});
+        auto image_data = host::load(filename_buffer);
         const auto parent_e = reg.create();
         const auto& texture = reg.emplace<device::Texture>(parent_e, image_data);
 
