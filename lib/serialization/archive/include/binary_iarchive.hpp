@@ -10,7 +10,7 @@
 #include <utility>
 
 // Tyl
-#include <tyl/serialization/binary/payload.hpp>
+#include <tyl/serialization/binary_archive/packet.hpp>
 #include <tyl/serialization/iarchive.hpp>
 #include <tyl/serialization/istream.hpp>
 
@@ -28,13 +28,13 @@ public:
 
   using iarchive_base::operator>>;
 
-  binary_iarchive& operator>>(binary::payload packet)
+  binary_iarchive& operator>>(detail::packet packet)
   {
     is_->read(packet.data, packet.len);
     return *this;
   }
 
-  template <std::size_t Len> binary_iarchive& operator>>(binary::payload_fixed_size<Len> packet)
+  template <std::size_t Len> binary_iarchive& operator>>(detail::packet_fixed_size<Len> packet)
   {
     is_->read(packet.data, packet.len);
     return *this;
@@ -51,7 +51,7 @@ struct binary_iarchive_trivial_load
   template <typename IStreamT, typename ObjectT> void operator()(binary_iarchive<IStreamT>& ar, ObjectT&& target)
   {
     using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar >> binary::payload_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<void*>(std::addressof(target))};
+    ar >> detail::packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<void*>(std::addressof(target))};
   }
 };
 

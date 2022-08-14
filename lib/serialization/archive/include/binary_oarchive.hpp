@@ -10,7 +10,7 @@
 #include <utility>
 
 // Tyl
-#include <tyl/serialization/binary/payload.hpp>
+#include <tyl/serialization/binary_archive/packet.hpp>
 #include <tyl/serialization/oarchive.hpp>
 #include <tyl/serialization/ostream.hpp>
 
@@ -28,15 +28,15 @@ public:
 
   using oarchive_base::operator<<;
 
-  binary_oarchive& operator<<(binary::const_payload payload)
+  binary_oarchive& operator<<(detail::const_packet packet)
   {
-    os_->write(payload.data, payload.len);
+    os_->write(packet.data, packet.len);
     return *this;
   }
 
-  template <std::size_t Len> binary_oarchive& operator<<(binary::const_payload_fixed_size<Len> payload)
+  template <std::size_t Len> binary_oarchive& operator<<(detail::const_packet_fixed_size<Len> packet)
   {
-    os_->write(payload.data, payload.len);
+    os_->write(packet.data, packet.len);
     return *this;
   }
 
@@ -51,7 +51,7 @@ struct binary_oarchive_trivial_save
   template <typename OStreamT, typename ObjectT> void operator()(binary_oarchive<OStreamT>& ar, ObjectT&& target)
   {
     using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar << binary::const_payload_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<const void*>(std::addressof(target))};
+    ar << detail::const_packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<const void*>(std::addressof(target))};
   }
 };
 

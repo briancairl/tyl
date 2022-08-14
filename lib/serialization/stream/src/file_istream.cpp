@@ -17,7 +17,7 @@ file_istream::file_istream(const char* filename, const flags fileopt) : file_han
 {
   if (file_handle_ == nullptr)
   {
-    static char errbuf[64];
+    char errbuf[128];
     if (std::snprintf(errbuf, sizeof(errbuf), "failed to to open file (%s) for read", filename) < 0)
     {
       errbuf[sizeof(errbuf) - 1] = '\0';

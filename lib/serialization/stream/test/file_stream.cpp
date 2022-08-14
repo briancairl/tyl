@@ -23,7 +23,7 @@ TEST(FileInputStream, CannotOpenFile)
 
 TEST(FileInputStream, MoveCTor)
 {
-  tyl::serialization::file_istream ifs{"lib/serialization/test/resources/file_stream.dat", {.nobuf = true}};
+  tyl::serialization::file_istream ifs{"lib/serialization/stream/test/resources/file_stream.dat", {.nobuf = true}};
 
   ASSERT_EQ(ifs.available(), 22UL);
 
@@ -35,7 +35,7 @@ TEST(FileInputStream, MoveCTor)
 
 TEST(FileInputStream, ReadAll)
 {
-  tyl::serialization::file_istream ifs{"lib/serialization/test/resources/file_stream.dat", {.nobuf = true}};
+  tyl::serialization::file_istream ifs{"lib/serialization/stream/test/resources/file_stream.dat", {.nobuf = true}};
 
   char buf[23];
   ifs.read(buf, sizeof(buf));
@@ -49,7 +49,7 @@ TEST(FileInputStream, ReadAll)
 
 TEST(FileInputStream, ReadTooMany)
 {
-  tyl::serialization::file_istream ifs{"lib/serialization/test/resources/file_stream.dat", {.nobuf = true}};
+  tyl::serialization::file_istream ifs{"lib/serialization/stream/test/resources/file_stream.dat", {.nobuf = true}};
 
   char buf[23];
   ifs.read(buf, sizeof(buf) + 10);
