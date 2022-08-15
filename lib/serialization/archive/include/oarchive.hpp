@@ -9,14 +9,11 @@
 #include <type_traits>
 #include <utility>
 
+// Tyl
+#include <tyl/serialization/object.hpp>
+
 namespace tyl::serialization
 {
-
-struct save_not_implemented
-{};
-
-template <typename OArchiveT, typename ObjectT> struct save : save_not_implemented
-{};
 
 template <typename OArchiveT, typename ObjectT> struct oarchive_save_impl;
 

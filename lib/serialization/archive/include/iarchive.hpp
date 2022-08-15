@@ -9,14 +9,11 @@
 #include <type_traits>
 #include <utility>
 
+// Tyl
+#include <tyl/serialization/object.hpp>
+
 namespace tyl::serialization
 {
-
-struct load_not_implemented
-{};
-
-template <typename IArchiveT, typename ObjectT> struct load : load_not_implemented
-{};
 
 template <typename IArchiveT, typename ObjectT> struct iarchive_load_impl;
 

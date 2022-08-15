@@ -1,0 +1,17 @@
+cc_library(
+  name="std",
+  hdrs=[
+    "include/array.hpp",
+    "include/optional.hpp",
+    "include/string.hpp",
+    "include/unordered_map.hpp",
+    "include/vector.hpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization/types/std",
+  deps=[
+    "//lib/serialization/archive",
+    "//lib/serialization/types/common"
+  ],
+  visibility=["//visibility:public"]
+)

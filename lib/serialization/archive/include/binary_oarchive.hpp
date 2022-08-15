@@ -10,9 +10,9 @@
 #include <utility>
 
 // Tyl
-#include <tyl/serialization/binary_archive/packet.hpp>
 #include <tyl/serialization/oarchive.hpp>
 #include <tyl/serialization/ostream.hpp>
+#include <tyl/serialization/packet.hpp>
 
 namespace tyl::serialization
 {
@@ -28,13 +28,13 @@ public:
 
   using oarchive_base::operator<<;
 
-  binary_oarchive& operator<<(detail::const_packet packet)
+  binary_oarchive& operator<<(binary::const_packet packet)
   {
     os_->write(packet.data, packet.len);
     return *this;
   }
 
-  template <std::size_t Len> binary_oarchive& operator<<(detail::const_packet_fixed_size<Len> packet)
+  template <std::size_t Len> binary_oarchive& operator<<(binary::const_packet_fixed_size<Len> packet)
   {
     os_->write(packet.data, packet.len);
     return *this;
@@ -51,15 +51,15 @@ struct binary_oarchive_trivial_save
   template <typename OStreamT, typename ObjectT> void operator()(binary_oarchive<OStreamT>& ar, ObjectT&& target)
   {
     using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar << detail::const_packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<const void*>(std::addressof(target))};
+    ar << binary::const_packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<const void*>(std::addressof(target))};
   }
 };
 
 template <typename OStreamT, typename ObjectT>
 struct oarchive_save_impl<binary_oarchive<OStreamT>, ObjectT>
     : std::conditional_t<
-        (std::is_trivial_v<ObjectT> and
-         std::is_base_of_v<save_not_implemented, save<binary_oarchive<OStreamT>, ObjectT>>),
+        (is_trivially_serializable_v<binary_oarchive<OStreamT>, ObjectT> and
+         !save_is_implemented_v<binary_oarchive<OStreamT>, ObjectT>),
         binary_oarchive_trivial_save,
         save<binary_oarchive<OStreamT>, ObjectT>>
 {};

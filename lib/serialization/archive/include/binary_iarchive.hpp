@@ -10,9 +10,9 @@
 #include <utility>
 
 // Tyl
-#include <tyl/serialization/binary_archive/packet.hpp>
 #include <tyl/serialization/iarchive.hpp>
 #include <tyl/serialization/istream.hpp>
+#include <tyl/serialization/packet.hpp>
 
 namespace tyl::serialization
 {
@@ -28,13 +28,13 @@ public:
 
   using iarchive_base::operator>>;
 
-  binary_iarchive& operator>>(detail::packet packet)
+  binary_iarchive& operator>>(binary::packet packet)
   {
     is_->read(packet.data, packet.len);
     return *this;
   }
 
-  template <std::size_t Len> binary_iarchive& operator>>(detail::packet_fixed_size<Len> packet)
+  template <std::size_t Len> binary_iarchive& operator>>(binary::packet_fixed_size<Len> packet)
   {
     is_->read(packet.data, packet.len);
     return *this;
@@ -51,15 +51,15 @@ struct binary_iarchive_trivial_load
   template <typename IStreamT, typename ObjectT> void operator()(binary_iarchive<IStreamT>& ar, ObjectT&& target)
   {
     using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar >> detail::packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<void*>(std::addressof(target))};
+    ar >> binary::packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<void*>(std::addressof(target))};
   }
 };
 
 template <typename IStreamT, typename ObjectT>
 struct iarchive_load_impl<binary_iarchive<IStreamT>, ObjectT>
     : std::conditional_t<
-        (std::is_trivial_v<ObjectT> and
-         std::is_base_of_v<load_not_implemented, load<binary_iarchive<IStreamT>, ObjectT>>),
+        (is_trivially_serializable_v<binary_iarchive<IStreamT>, ObjectT> and
+         !load_is_implemented_v<binary_iarchive<IStreamT>, ObjectT>),
         binary_iarchive_trivial_load,
         load<binary_iarchive<IStreamT>, ObjectT>>
 {};
