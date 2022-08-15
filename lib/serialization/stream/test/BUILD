@@ -8,3 +8,11 @@ gtest(
   visibility=["//visibility:public"],
   data=["resources/file_stream.dat"]
 )
+
+gtest(
+  name="mem_stream",
+  timeout = "short",
+  srcs=["mem_stream.cpp"],
+  deps=["//lib/serialization/stream:mem_stream",],
+  visibility=["//visibility:public"],
+)

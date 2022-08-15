@@ -22,3 +22,19 @@ cc_library(
   deps=[":stream"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="mem_stream",
+  hdrs=[
+    "include/mem_istream.hpp",
+    "include/mem_ostream.hpp"
+  ],
+  srcs=[
+    "src/mem_istream.cpp",
+    "src/mem_ostream.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=[":stream"],
+  visibility=["//visibility:public"]
+)
