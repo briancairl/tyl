@@ -1,11 +1,17 @@
 /**
  * @copyright 2021-present Brian Cairl
  *
- * @file filesystem.hpp
+ * @file assert.hpp
  */
-#pragma once
+#ifdef TYL_COMMON_ASSERT
+#error("Detected double include of assert.hpp")
+#else
+#define TYL_COMMON_ASSERT
+#endif  // TYL_COMMON_ASSERT
 
 // C++ Standard Library
+#include <cstdio>
+#include <cstdlib>
 #include <type_traits>
 
 #ifdef NDEBUG
@@ -17,7 +23,8 @@
 #define TYL_ASSERT(cond, message)                                                                                      \
   if (!(cond))                                                                                                         \
   {                                                                                                                    \
-    std::printf(                                                                                                       \
+    std::fprintf(                                                                                                      \
+      stderr,                                                                                                          \
       "\n***RUNTIME ASSERTION FAILED***\n\ncondition : %s\nmessage   : %s\nfile      : %s\nline      : %d\n",          \
       #cond,                                                                                                           \
       message,                                                                                                         \

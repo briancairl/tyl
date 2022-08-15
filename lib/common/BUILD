@@ -1,139 +1,54 @@
-config_setting(
-    name = "debug_build",
-    values = {"compilation_mode": "dbg"},
+cc_library(
+  name="adaptors",
+  hdrs=[
+    "include/alias.hpp",
+    "include/reference.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  visibility=["//visibility:public"]
 )
 
 cc_library(
   name="assert",
-  hdrs=["include/assert.hpp"],
+  hdrs=["include/assert.hpp",],
   strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
+  include_prefix="tyl/common",
   visibility=["//visibility:public"]
 )
 
-DEBUG_COPTS = select({
-    ":debug_build": [],
-    "//conditions:default": ["-DNDEBUG"],
-})
-
 cc_library(
-  name="debug",
-  hdrs=["include/debug.hpp"],
+  name="bits",
+  hdrs=["include/bits.hpp",],
   strip_include_prefix="include",
-  include_prefix="tyl",
-  copts=DEBUG_COPTS,
+  include_prefix="tyl/common",
   deps=[],
   visibility=["//visibility:public"]
 )
 
 cc_library(
-  name="strong_alias",
-  hdrs=["include/strong_alias.hpp"],
+  name="dynamic_bitset",
+  hdrs=["include/dynamic_bitset.hpp",],
   strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="array_view",
-  hdrs=["include/array_view.hpp"] + glob(["include/array_view/*.hpp"]),
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="bitops",
-  hdrs=["include/bitops.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="filesystem",
-  hdrs=["include/filesystem.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=["-lstdc++fs"],
-  deps=[],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="types",
-  hdrs=["include/strong_alias.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
+  include_prefix="tyl/common",
+  deps=[":bits"],
   visibility=["//visibility:public"]
 )
 
 cc_library(
   name="vec",
-  hdrs=["include/vec.hpp"],
+  hdrs=["include/vec.hpp",],
   strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=["@eigen//:eigen"],
+  include_prefix="tyl/common",
+  deps=["@eigen"],
   visibility=["//visibility:public"]
 )
 
 cc_library(
   name="rect",
-  hdrs=["include/rect.hpp"],
+  hdrs=["include/rect.hpp",],
   strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
+  include_prefix="tyl/common",
   deps=[":vec"],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="serialization",
-  hdrs=glob(["include/serialization/**/**"]) + ["include/serialization.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=["@boost//:serialization"],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="ecs",
-  hdrs=glob(["include/ecs/**/**"]) + ["include/ecs.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=["@entt//:entt", ":serialization"],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="components",
-  hdrs=["include/components.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[":vec", ":strong_alias", ":rect"],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="time",
-  hdrs=["include/time.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl",
-  linkopts=[],
-  deps=[],
   visibility=["//visibility:public"]
 )

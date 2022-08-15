@@ -1,9 +1,12 @@
 /**
- * @copyright 2021-present Brian Cairl
+ * @copyright 2022-present Brian Cairl
  *
  * @file vec.hpp
  */
 #pragma once
+
+// C++ Standard Library
+#include <cmath>
 
 // Eigen
 #include <Eigen/Dense>
@@ -11,31 +14,56 @@
 namespace tyl
 {
 
-// clang-format off
-using Vec2f = Eigen::Matrix<float, 2, 1>; static_assert(sizeof(Vec2f) == sizeof(float) * 2);
-using Vec3f = Eigen::Matrix<float, 3, 1>; static_assert(sizeof(Vec3f) == sizeof(float) * 3);
-using Vec4f = Eigen::Matrix<float, 4, 1>; static_assert(sizeof(Vec4f) == sizeof(float) * 4);
-using Mat2f = Eigen::Matrix<float, 2, 2>; static_assert(sizeof(Mat2f) == sizeof(float) * 4);
-using Mat3f = Eigen::Matrix<float, 3, 3>; static_assert(sizeof(Mat3f) == sizeof(float) * 9);
-using VecXf = Eigen::Matrix<float, Eigen::Dynamic, 1>;
-using MatXf = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
+template <typename T, int N, int M> using Mat = Eigen::Matrix<T, N, M>;
 
-using Vec2d = Eigen::Matrix<double, 2, 1>; static_assert(sizeof(Vec2d) == sizeof(double) * 2);
-using Vec3d = Eigen::Matrix<double, 3, 1>; static_assert(sizeof(Vec3d) == sizeof(double) * 3);
-using Mat2d = Eigen::Matrix<double, 2, 2>; static_assert(sizeof(Mat2d) == sizeof(double) * 4);
-using Mat3d = Eigen::Matrix<double, 3, 3>; static_assert(sizeof(Mat3d) == sizeof(double) * 9);
-using VecXd = Eigen::Matrix<double, Eigen::Dynamic, 1>;
-using MatXd = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>;
+template <typename T, int N> using Vec = Mat<T, N, 1>;
 
-using Vec2i = Eigen::Matrix<int, 2, 1>; static_assert(sizeof(Vec2i) == sizeof(int) * 2);
-using Vec3i = Eigen::Matrix<int, 3, 1>; static_assert(sizeof(Vec3i) == sizeof(int) * 3);
-using Mat2i = Eigen::Matrix<int, 2, 2>; static_assert(sizeof(Mat2i) == sizeof(int) * 4);
-using Mat3i = Eigen::Matrix<int, 3, 3>; static_assert(sizeof(Mat3i) == sizeof(int) * 9);
-using VecXi = Eigen::Matrix<int, Eigen::Dynamic, 1>;
-using MatXi = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>;
+using Vec2i = Vec<int, 2>;
+using Vec3i = Vec<int, 3>;
+using Vec4i = Vec<int, 4>;
+using Vec2f = Vec<float, 2>;
+using Vec3f = Vec<float, 3>;
+using Vec4f = Vec<float, 4>;
 
-using Size2i = Eigen::Matrix<int, 2, 1>;
-using Size2f = Eigen::Matrix<float, 2, 1>;
-// clang-format on
+using Mat2i = Mat<int, 2, 2>;
+using Mat3i = Mat<int, 3, 3>;
+using Mat4i = Mat<int, 4, 4>;
+using Mat2f = Mat<float, 2, 2>;
+using Mat3f = Mat<float, 3, 3>;
+using Mat4f = Mat<float, 4, 4>;
+
+template <typename TargetT, typename MinT, typename MaxT>
+inline void clamp(TargetT&& target, const Eigen::DenseBase<MinT>& min_values, const Eigen::DenseBase<MaxT>& max_values)
+{
+  static_assert(
+    static_cast<int>(std::remove_reference_t<TargetT>::SizeAtCompileTime) == static_cast<int>(MinT::SizeAtCompileTime));
+  static_assert(
+    static_cast<int>(std::remove_reference_t<TargetT>::SizeAtCompileTime) == static_cast<int>(MaxT::SizeAtCompileTime));
+  for (int i = 0; i < std::remove_reference_t<TargetT>::SizeAtCompileTime; ++i)
+  {
+    target[i] = std::min(std::max(target[i], min_values[i]), max_values[i]);
+  }
+}
+
+template <typename TargetT, typename MinT, typename MaxT>
+inline TargetT
+clamped(TargetT&& target, const Eigen::DenseBase<MinT>& min_values, const Eigen::DenseBase<MaxT>& max_values)
+{
+  std::remove_reference_t<TargetT> retval{std::forward<TargetT>(target)};
+  clamp(retval, min_values, max_values);
+  return retval;
+}
+
+template <typename AsT, typename OrigT, int Access> inline AsT& as(Eigen::MapBase<OrigT, Access>& v)
+{
+  static_assert(alignof(AsT) == alignof(typename OrigT::Scalar));
+  return *reinterpret_cast<AsT*>(v.data());
+}
+
+template <typename AsT, typename OrigT, int Access> inline const AsT& as(const Eigen::MapBase<OrigT, Access>& v)
+{
+  static_assert(alignof(AsT) == alignof(typename OrigT::Scalar));
+  return *reinterpret_cast<const AsT*>(v.data());
+}
 
 }  // namespace tyl

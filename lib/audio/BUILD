@@ -1,47 +1,61 @@
+### Audio declarations ###
+
 cc_library(
-  name="al_user_types",
-  hdrs=["include/device/typedef.hpp"],
+  name="audio_hdrs",
+  hdrs=[
+    "include/device.hpp",
+    "include/listener.hpp",
+    "include/source.hpp",
+    "include/sound.hpp",
+    "include/fwd.hpp",
+  ],
   strip_include_prefix="include",
-  include_prefix="tyl/audio",
+  include_prefix="tyl/audio/device",
+  visibility=["//visibility:private"]
+)
+
+### OpenAL implemenatation ###
+
+cc_library(
+  name="audio_impl__openal_user_types",
+  hdrs=["include/typedef.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/audio/device",
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="audio_impl__openal_internal",
+  hdrs=["src/openal/al.inl"],
+  strip_include_prefix="src/openal",
+  include_prefix="tyl/audio/device",
+  deps=[
+    "//lib/common:assert",
+    ":audio_impl__openal_user_types",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="audio_impl__openal",
+  srcs=[
+    "src/openal/device.cpp",
+    "src/openal/listener.cpp",
+    "src/openal/source.cpp",
+    "src/openal/sound.cpp",
+  ],
   deps=[
     "@openal//:openal",
-  ],
-  visibility=["//visibility:private"]
-)
-
-cc_library(
-  name="al_internal",
-  hdrs=["src/device/al.inl"],
-  strip_include_prefix="src",
-  include_prefix="tyl/audio",
-  deps=[
     "//lib/common:assert",
-    ":al_user_types",
+    ":audio_hdrs",
+    ":audio_impl__openal_internal"
   ],
   visibility=["//visibility:private"]
 )
 
-cc_library(
+### Audio implemenatation ###
+
+alias(
   name="device",
-  hdrs=[
-    "include/device/device.hpp",
-    "include/device/listener.hpp",
-    "include/device/source.hpp",
-    "include/device/sound.hpp",
-    "include/device/fwd.hpp",
-  ],
-  srcs=[
-    "src/device/device.cpp",
-    "src/device/listener.cpp",
-    "src/device/source.cpp",
-    "src/device/sound.cpp",
-  ],
-  strip_include_prefix="include",
-  include_prefix="tyl/audio",
-  linkopts=[],
-  deps=[
-    "//lib/common:assert",
-    ":al_internal"
-  ],
-  visibility=["//visibility:public"]
+  actual=":audio_impl__openal",
 )
