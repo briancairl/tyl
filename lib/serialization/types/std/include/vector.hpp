@@ -13,6 +13,7 @@
 #include <tyl/serialization/fwd.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/sequence.hpp>
 #include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
@@ -28,14 +29,11 @@ template <typename OArchive, typename ValueT, typename AllocT> struct save<OArch
     ar << named{"size", vec.size()};
     if constexpr (is_trivially_serializable_v<OArchive, ValueT>)
     {
-      ar << named{"data", binary::make_packet(vec.data(), vec.size())};
+      ar << named{"data", make_packet(vec.data(), vec.size())};
     }
     else
     {
-      for (const auto& element : vec)
-      {
-        ar << element;
-      }
+      ar << named{"data", make_sequence(vec.begin(), vec.end())};
     }
   }
 };
@@ -55,14 +53,11 @@ template <typename IArchive, typename ValueT, typename AllocT> struct load<IArch
 
     if constexpr (is_trivially_serializable_v<IArchive, ValueT>)
     {
-      ar >> named{"data", binary::make_packet(vec.data(), vec.size())};
+      ar >> named{"data", make_packet(vec.data(), vec.size())};
     }
     else
     {
-      for (auto& element : vec)
-      {
-        ar >> element;
-      }
+      ar >> named{"data", make_sequence(vec.begin(), vec.end())};
     }
   }
 };

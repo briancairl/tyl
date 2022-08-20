@@ -42,7 +42,7 @@ const char* flags_to_write_mode_str_human_readable(file_ostream::flags fileopt)
 }  // namespace anonymous
 
 file_ostream::file_ostream(const char* filename, const flags fileopt) :
-    file_handle_{std::fopen(filename, flags_to_write_mode_str(fileopt))}
+    file_handle_ostream{std::fopen(filename, flags_to_write_mode_str(fileopt))}
 {
   if (file_handle_ == nullptr)
   {
@@ -65,8 +65,6 @@ file_ostream::file_ostream(const char* filename, const flags fileopt) :
     std::setvbuf(file_handle_, nullptr, _IONBF, 0);
   }
 }
-
-file_ostream::file_ostream(file_ostream&& other) : file_handle_{other.file_handle_} { other.file_handle_ = nullptr; }
 
 file_ostream::~file_ostream()
 {

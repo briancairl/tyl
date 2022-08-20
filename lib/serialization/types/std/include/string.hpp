@@ -27,7 +27,7 @@ struct save<OArchive, std::basic_string<ValueT, CharTraitsT, AllocT>>
   void operator()(OArchive& ar, const std::basic_string<ValueT, CharTraitsT, AllocT>& str)
   {
     ar << named{"size", str.size()};
-    ar << named{"data", binary::make_packet(str.data(), str.size())};
+    ar << named{"data", make_packet(str.data(), str.size())};
   }
 };
 
@@ -45,7 +45,7 @@ struct load<IArchive, std::basic_string<ValueT, CharTraitsT, AllocT>>
       str.resize(size);
     }
 
-    ar >> named{"data", binary::make_packet(str.data(), str.size())};
+    ar >> named{"data", make_packet(str.data(), str.size())};
   }
 };
 

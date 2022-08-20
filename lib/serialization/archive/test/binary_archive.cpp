@@ -64,7 +64,7 @@ template <typename IArchive> struct load<IArchive, ::NonTrivialStruct>
 
 TEST(BinaryOArchive, PrimitiveValue)
 {
-  file_ostream ofs{"text.bin"};
+  file_ostream ofs{"BinaryOArchive.PrimitiveValue.bin"};
   binary_oarchive oar{ofs};
 
   float primitive = 123.f;
@@ -73,7 +73,7 @@ TEST(BinaryOArchive, PrimitiveValue)
 
 TEST(BinaryOArchive, TrivialValue)
 {
-  file_ostream ofs{"text.bin"};
+  file_ostream ofs{"BinaryOArchive.TrivialValue.bin"};
   binary_oarchive oar{ofs};
 
   TrivialStruct trivial_value;
@@ -82,7 +82,7 @@ TEST(BinaryOArchive, TrivialValue)
 
 TEST(BinaryOArchive, NonTrivialStruct)
 {
-  file_ostream ofs{"text.bin"};
+  file_ostream ofs{"BinaryOArchive.NonTrivialStruct.bin"};
   binary_oarchive oar{ofs};
 
   NonTrivialStruct non_trivial_value;
@@ -95,13 +95,13 @@ TEST(BinaryIArchive, ReadbackTrivialStruct)
   const TrivialStruct target_trivial_value{1, 2, 3};
 
   {
-    file_ostream ofs{"text.bin"};
+    file_ostream ofs{"BinaryOArchive.ReadbackTrivialStruct.bin"};
     binary_oarchive oar{ofs};
     ASSERT_NO_THROW(oar << target_trivial_value);
   }
 
   {
-    file_istream ifs{"text.bin"};
+    file_istream ifs{"BinaryOArchive.ReadbackTrivialStruct.bin"};
     binary_iarchive iar{ifs};
 
     TrivialStruct read_trivial_value;
@@ -120,13 +120,13 @@ TEST(BinaryIArchive, ReadbackNonTrivialStruct)
   ASSERT_GT(target_non_trivial_value.values.size(), 0UL);
 
   {
-    file_ostream ofs{"text.bin"};
+    file_ostream ofs{"BinaryOArchive.ReadbackNonTrivialStruct.bin"};
     binary_oarchive oar{ofs};
     ASSERT_NO_THROW(oar << target_non_trivial_value);
   }
 
   {
-    file_istream ifs{"text.bin"};
+    file_istream ifs{"BinaryOArchive.ReadbackNonTrivialStruct.bin"};
     binary_iarchive iar{ifs};
 
     NonTrivialStruct read_non_trivial_value;

@@ -45,6 +45,16 @@ private:
   }
 
   /**
+   * @copydoc istream<file_istream>::peek
+   */
+  char peek_impl()
+  {
+    char ch = std::getc(file_handle_);
+    std::ungetc(ch, file_handle_);
+    return ch;
+  }
+
+  /**
    * @copydoc istream<file_istream>::available
    */
   std::size_t available_impl() const { return file_bytes_remaining_; }

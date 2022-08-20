@@ -15,24 +15,14 @@
 namespace tyl::serialization
 {
 
-class file_ostream final : public ostream<file_ostream>
+class file_handle_ostream : public ostream<file_handle_ostream>
 {
-  friend class ostream<file_ostream>;
+  friend class ostream<file_handle_ostream>;
 
 public:
-  struct flags
-  {
-    std::uint8_t nobuf : 1;
-    std::uint8_t append : 1;
-  };
+  explicit file_handle_ostream(std::FILE* file_handle) : file_handle_{file_handle} {}
 
-  static constexpr flags default_flags{.nobuf = true, .append = false};
-
-  file_ostream(const char* filename, const flags fileopt = default_flags);
-
-  file_ostream(file_ostream&& other);
-
-  ~file_ostream();
+  file_handle_ostream(file_handle_ostream&& other) : file_handle_{other.file_handle_} { other.file_handle_ = nullptr; }
 
 private:
   /**
@@ -45,8 +35,28 @@ private:
    */
   void flush_impl() { std::fflush(file_handle_); }
 
+protected:
   /// Native file handle
   std::FILE* file_handle_ = nullptr;
+};
+
+
+class file_ostream final : public file_handle_ostream
+{
+public:
+  struct flags
+  {
+    std::uint8_t nobuf : 1;
+    std::uint8_t append : 1;
+  };
+
+  static constexpr flags default_flags{.nobuf = true, .append = false};
+
+  file_ostream(const char* filename, const flags fileopt = default_flags);
+
+  file_ostream(file_ostream&& other) = default;
+
+  ~file_ostream();
 };
 
 }  // namespace tyl::serialization
