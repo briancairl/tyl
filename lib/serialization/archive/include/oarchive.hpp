@@ -26,6 +26,13 @@ template <typename OArchiveT> class oarchive
   static constexpr bool is_primitive = is_label_v<ValueT> or is_packet_v<ValueT> or is_sequence_v<ValueT>;
 
 public:
+  template <typename ValueT> OArchiveT& operator&(const ValueT& value)
+  {
+    using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
+    save_impl<OArchiveT, CleanT>{}(derived(), value);
+    return derived();
+  }
+
   template <typename ValueT> std::enable_if_t<!is_primitive<ValueT>, OArchiveT&> operator<<(const ValueT& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;

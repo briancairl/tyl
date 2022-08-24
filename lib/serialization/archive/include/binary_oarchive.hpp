@@ -27,6 +27,7 @@ public:
   explicit binary_oarchive(ostream<OStreamT>& os) : os_{static_cast<OStreamT*>(std::addressof(os))} {}
 
   using oarchive_base::operator<<;
+  using oarchive_base::operator&;
 
 private:
   static constexpr void write_impl(const label& _)

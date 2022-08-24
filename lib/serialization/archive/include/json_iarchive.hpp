@@ -50,6 +50,7 @@ public:
   constexpr json_iarchive& operator>>(label l) { return iarchive_base::operator>>(l); }
 
   using iarchive_base::operator>>;
+  using iarchive_base::operator&;
 
 private:
   template <char TargetChar> void eat()

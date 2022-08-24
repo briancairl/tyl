@@ -27,6 +27,7 @@ public:
   explicit binary_iarchive(istream<IStreamT>& is) : is_{static_cast<IStreamT*>(std::addressof(is))} {}
 
   using iarchive_base::operator>>;
+  using iarchive_base::operator&;
 
 private:
   static constexpr void read_impl(label _)

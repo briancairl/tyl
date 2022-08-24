@@ -52,6 +52,8 @@ public:
     return oarchive_base::operator<<(l);
   }
 
+  using oarchive_base::operator&;
+
 private:
   using oarchive_base::operator<<;
 
