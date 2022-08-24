@@ -227,8 +227,6 @@ VertexElementBuffer::VertexElementBuffer(VertexElementBuffer&& other) :
 
 VertexElementBuffer::~VertexElementBuffer()
 {
-  static_cast<VertexBuffer&>(*this).~VertexBuffer();
-
   if (ebo_ != 0)
   {
     GLuint delete_buffer = ebo_;
