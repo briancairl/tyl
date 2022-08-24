@@ -33,7 +33,7 @@ public:
 
 private:
   /**
-   * @copydoc istream<file_istream>::read
+   * @copydoc istream<mem_istream>::read
    */
   std::size_t read_impl(void* ptr, std::size_t len)
   {
@@ -50,7 +50,12 @@ private:
   }
 
   /**
-   * @copydoc istream<file_istream>::available
+   * @copydoc istream<mem_istream>::peek
+   */
+  constexpr char peek_impl() { return buffer_[pos_]; }
+
+  /**
+   * @copydoc istream<mem_istream>::available
    */
   std::size_t available_impl() const { return buffer_.size() - pos_; }
 

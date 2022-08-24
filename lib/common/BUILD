@@ -52,3 +52,12 @@ cc_library(
   deps=[":vec"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="typestr",
+  hdrs=["include/typestr.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/common",
+  deps=[],
+  visibility=["//visibility:public"]
+)

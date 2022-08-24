@@ -28,40 +28,66 @@ public:
 
   using iarchive_base::operator>>;
 
-  binary_iarchive& operator>>(binary::packet packet)
-  {
-    is_->read(packet.data, packet.len);
-    return *this;
-  }
-
-  template <std::size_t Len> binary_iarchive& operator>>(binary::packet_fixed_size<Len> packet)
-  {
-    is_->read(packet.data, packet.len);
-    return *this;
-  }
-
 private:
+  static constexpr void read_impl(label _)
+  { /* labels are ignored */
+  }
+
+  template <typename IteratorT> constexpr void read_impl(sequence<IteratorT> sequence)
+  {
+    const auto [first, last] = sequence;
+    for (auto itr = first; itr != last; ++itr)
+    {
+      (*this) >> (*itr);
+    }
+  }
+
+  template <typename PointerT> constexpr void read_impl(basic_packet<PointerT> packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      is_->read(packet.data, packet.len);
+    }
+    else
+    {
+      is_->read(packet.data, packet.len * sizeof(value_type));
+    }
+  }
+
+  template <typename PointerT, std::size_t Len> constexpr void read_impl(basic_packet_fixed_size<PointerT, Len> packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      is_->read(packet.data, packet.len);
+    }
+    else
+    {
+      is_->read(packet.data, packet.len * sizeof(value_type));
+    }
+  }
+
   IStreamT* is_;
 };
 
 template <typename IStreamT> binary_iarchive(istream<IStreamT>& is) -> binary_iarchive<IStreamT>;
 
-struct binary_iarchive_trivial_load
+struct load_trivial
 {
-  template <typename IStreamT, typename ObjectT> void operator()(binary_iarchive<IStreamT>& ar, ObjectT&& target)
+  template <typename IStreamT, typename ValueT> void operator()(binary_iarchive<IStreamT>& ar, ValueT& value)
   {
-    using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar >> binary::packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<void*>(std::addressof(target))};
+    ar >> make_packet(std::addressof(value));
   }
 };
 
-template <typename IStreamT, typename ObjectT>
-struct iarchive_load_impl<binary_iarchive<IStreamT>, ObjectT>
+template <typename IStreamT, typename ValueT>
+struct load_impl<binary_iarchive<IStreamT>, ValueT>
     : std::conditional_t<
-        (is_trivially_serializable_v<binary_iarchive<IStreamT>, ObjectT> and
-         !load_is_implemented_v<binary_iarchive<IStreamT>, ObjectT>),
-        binary_iarchive_trivial_load,
-        load<binary_iarchive<IStreamT>, ObjectT>>
+        (is_trivially_serializable_v<binary_iarchive<IStreamT>, ValueT> and
+         !load_is_implemented_v<binary_iarchive<IStreamT>, ValueT>),
+        load_trivial,
+        load<binary_iarchive<IStreamT>, ValueT>>
 {};
 
 }  // namespace tyl::serialization

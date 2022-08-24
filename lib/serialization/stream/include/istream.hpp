@@ -28,6 +28,11 @@ public:
   }
 
   /**
+   * @brief Checks the next byte in the stream without changing the state of the stream
+   */
+  constexpr decltype(auto) peek() { return istream::derived()->peek_impl(); }
+
+  /**
    * @brief Returns number of available bytes left in the stream
    */
   constexpr std::size_t available() const { return istream::derived()->available_impl(); }

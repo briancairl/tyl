@@ -1,6 +1,12 @@
 cc_library(
   name="archive",
-  hdrs=["include/fwd.hpp", "include/iarchive.hpp", "include/oarchive.hpp", "include/object.hpp", "include/packet.hpp"],
+  hdrs=["include/fwd.hpp",
+        "include/iarchive.hpp",
+        "include/oarchive.hpp",
+        "include/object.hpp",
+        "include/packet.hpp",
+        "include/label.hpp",
+        "include/sequence.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
   deps=[],
@@ -13,5 +19,14 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
   deps=[":archive", "//lib/serialization/stream"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="json_archive",
+  hdrs=["include/json_iarchive.hpp", "include/json_oarchive.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=[":archive", "//lib/serialization/stream", "//lib/serialization/types/common"],
   visibility=["//visibility:public"]
 )

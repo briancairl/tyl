@@ -9,41 +9,41 @@
 #include <cstdint>
 #include <type_traits>
 
-namespace tyl::serialization::binary
-{
-namespace detail
+namespace tyl::serialization
 {
 
-template <typename VoidT> struct packet
+template <typename PointerT> struct basic_packet
 {
-  VoidT* data;
+  static_assert(std::is_pointer_v<PointerT>);
+  PointerT data;
   std::size_t len;
 };
 
-template <std::size_t SIZE, typename VoidT> struct packet_fixed_size
+template <typename PointerT, std::size_t Len> struct basic_packet_fixed_size
 {
-  VoidT* data;
-  static constexpr std::size_t len = SIZE;
+  static_assert(std::is_pointer_v<PointerT>);
+  PointerT data;
+  static constexpr std::size_t len = Len;
 };
 
-}  // namespace detail
-
-struct packet : detail::packet<void>
+struct packet : basic_packet<void*>
 {};
 
-struct const_packet : detail::packet<const void>
+struct const_packet : basic_packet<const void*>
 {};
 
-template <std::size_t SIZE> struct packet_fixed_size : detail::packet_fixed_size<SIZE, void>
+template <std::size_t Len> struct packet_fixed_size : basic_packet_fixed_size<void*, Len>
 {};
 
-template <std::size_t SIZE> struct const_packet_fixed_size : detail::packet_fixed_size<SIZE, const void>
+template <std::size_t Len> struct const_packet_fixed_size : basic_packet_fixed_size<const void*, Len>
 {};
 
 template <typename PointerT> auto make_packet(PointerT data, std::size_t element_count)
 {
   static_assert(std::is_pointer_v<PointerT>, "'PointerT' must be a pointer type");
-  using value_type = std::remove_pointer_t<decltype(data)>;
+
+  using value_type = std::remove_pointer_t<PointerT>;
+
   if constexpr (std::is_const_v<value_type>)
   {
     return const_packet{data, sizeof(value_type) * element_count};
@@ -54,13 +54,40 @@ template <typename PointerT> auto make_packet(PointerT data, std::size_t element
   }
 }
 
-template <typename ObjectT> struct is_packet : std::false_type
+template <typename PointerT> auto make_packet(PointerT data)
+{
+  static_assert(std::is_pointer_v<PointerT>, "'PointerT' must be a pointer type");
+
+  using value_type = std::remove_pointer_t<PointerT>;
+
+  static_assert(!std::is_void_v<value_type>, "'PointerT' must not be a void pointer");
+
+  if constexpr (std::is_const_v<value_type>)
+  {
+    return const_packet_fixed_size<sizeof(value_type)>{data};
+  }
+  else
+  {
+    return packet_fixed_size<sizeof(value_type)>{data};
+  }
+}
+
+template <typename T> struct is_packet : std::false_type
 {};
 
-template <typename VoidT> struct is_packet<detail::packet<VoidT>> : std::true_type
+template <> struct is_packet<packet> : std::true_type
 {};
 
-template <typename ObjectT>
-static constexpr bool is_packet_v = is_packet<std::remove_reference_t<std::remove_const_t<ObjectT>>>::value;
+template <> struct is_packet<const_packet> : std::true_type
+{};
 
-}  // namespace tyl::serialization::binary
+template <std::size_t Len> struct is_packet<packet_fixed_size<Len>> : std::true_type
+{};
+
+template <std::size_t Len> struct is_packet<const_packet_fixed_size<Len>> : std::true_type
+{};
+
+template <typename T>
+static constexpr bool is_packet_v = is_packet<std::remove_const_t<std::remove_reference_t<T>>>::value;
+
+}  // namespace tyl::serialization

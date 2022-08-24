@@ -28,40 +28,67 @@ public:
 
   using oarchive_base::operator<<;
 
-  binary_oarchive& operator<<(binary::const_packet packet)
-  {
-    os_->write(packet.data, packet.len);
-    return *this;
-  }
-
-  template <std::size_t Len> binary_oarchive& operator<<(binary::const_packet_fixed_size<Len> packet)
-  {
-    os_->write(packet.data, packet.len);
-    return *this;
-  }
-
 private:
+  static constexpr void write_impl(const label& _)
+  { /* labels are ignored */
+  }
+
+  template <typename IteratorT> constexpr void write_impl(const sequence<IteratorT>& sequence)
+  {
+    const auto [first, last] = sequence;
+    for (auto itr = first; itr != last; ++itr)
+    {
+      (*this) << (*itr);
+    }
+  }
+
+  template <typename PointerT> constexpr void write_impl(const basic_packet<PointerT>& packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      os_->write(packet.data, packet.len);
+    }
+    else
+    {
+      os_->write(packet.data, packet.len * sizeof(value_type));
+    }
+  }
+
+  template <typename PointerT, std::size_t Len>
+  constexpr void write_impl(const basic_packet_fixed_size<PointerT, Len>& packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      os_->write(packet.data, packet.len);
+    }
+    else
+    {
+      os_->write(packet.data, packet.len * sizeof(value_type));
+    }
+  }
+
   OStreamT* os_;
 };
 
 template <typename OStreamT> binary_oarchive(ostream<OStreamT>& os) -> binary_oarchive<OStreamT>;
 
-struct binary_oarchive_trivial_save
+struct save_trivial
 {
-  template <typename OStreamT, typename ObjectT> void operator()(binary_oarchive<OStreamT>& ar, ObjectT&& target)
+  template <typename OStreamT, typename ValueT> void operator()(binary_oarchive<OStreamT>& ar, const ValueT& value)
   {
-    using NoRefObjectT = std::remove_reference_t<ObjectT>;
-    ar << binary::const_packet_fixed_size<sizeof(NoRefObjectT)>{reinterpret_cast<const void*>(std::addressof(target))};
+    ar << make_packet(std::addressof(value));
   }
 };
 
-template <typename OStreamT, typename ObjectT>
-struct oarchive_save_impl<binary_oarchive<OStreamT>, ObjectT>
+template <typename OStreamT, typename ValueT>
+struct save_impl<binary_oarchive<OStreamT>, ValueT>
     : std::conditional_t<
-        (is_trivially_serializable_v<binary_oarchive<OStreamT>, ObjectT> and
-         !save_is_implemented_v<binary_oarchive<OStreamT>, ObjectT>),
-        binary_oarchive_trivial_save,
-        save<binary_oarchive<OStreamT>, ObjectT>>
+        (is_trivially_serializable_v<binary_oarchive<OStreamT>, ValueT> and
+         !save_is_implemented_v<binary_oarchive<OStreamT>, ValueT>),
+        save_trivial,
+        save<binary_oarchive<OStreamT>, ValueT>>
 {};
 
 }  // namespace tyl::serialization

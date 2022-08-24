@@ -27,7 +27,7 @@ template <typename OArchive, typename ValueT, std::size_t N> struct save<OArchiv
   {
     if constexpr (is_trivially_serializable_v<OArchive, ValueT>)
     {
-      ar << named{"data", binary::make_packet(arr.data(), arr.size())};
+      ar << named{"data", make_packet(arr.data(), arr.size())};
     }
     else
     {
@@ -48,7 +48,7 @@ template <typename IArchive, typename ValueT, std::size_t N> struct load<IArchiv
   {
     if constexpr (is_trivially_serializable_v<IArchive, ValueT>)
     {
-      ar >> named{"data", binary::make_packet(arr.data(), arr.size())};
+      ar >> named{"data", make_packet(arr.data(), arr.size())};
     }
     else
     {
