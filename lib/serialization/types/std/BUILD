@@ -10,7 +10,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/serialization/types/std",
   deps=[
-    "//lib/serialization/archive",
+    "//lib/serialization:object",
     "//lib/serialization/types/common"
   ],
   visibility=["//visibility:public"]

@@ -1,0 +1,10 @@
+cc_library(
+  name="primitives",
+  hdrs=["include/packet.hpp",
+        "include/label.hpp",
+        "include/sequence.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=[],
+  visibility=["//visibility:public"]
+)

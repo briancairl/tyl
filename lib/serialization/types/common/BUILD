@@ -6,7 +6,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/serialization/types/common",
   deps=[
-    "//lib/serialization/archive",
+    "//lib/serialization:object",
   ],
   visibility=["//visibility:public"]
 )

@@ -2,14 +2,10 @@ cc_library(
   name="archive",
   hdrs=["include/fwd.hpp",
         "include/iarchive.hpp",
-        "include/oarchive.hpp",
-        "include/object.hpp",
-        "include/packet.hpp",
-        "include/label.hpp",
-        "include/sequence.hpp"],
+        "include/oarchive.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
-  deps=[],
+  deps=["//lib/serialization/types/primitives", "//lib/serialization:object"],
   visibility=["//visibility:public"]
 )
 
