@@ -31,7 +31,7 @@ template <typename BlockT> static constexpr BlockT one() { return static_cast<Bl
 /**
  * @brief Returns a \c BlockT filled with all ones
  */
-template <typename BlockT> static constexpr BlockT identity() { return std::numeric_limits<BlockT>::max(); }
+template <typename BlockT> static constexpr BlockT all() { return std::numeric_limits<BlockT>::max(); }
 
 /**
  * @brief Returns the number of bits which will not fill one or more \c BlockT
@@ -86,7 +86,7 @@ template <typename BlockT> static constexpr std::size_t min_blocks(const std::si
  */
 template <typename BlockT> static constexpr BlockT default_block(const bool state)
 {
-  return static_cast<BlockT>(state) * identity<BlockT>();
+  return static_cast<BlockT>(state) * all<BlockT>();
 }
 
 /**
@@ -94,7 +94,7 @@ template <typename BlockT> static constexpr BlockT default_block(const bool stat
  */
 template <typename BlockT, bool State> static constexpr BlockT default_block()
 {
-  return static_cast<BlockT>(State) * identity<BlockT>();
+  return static_cast<BlockT>(State) * all<BlockT>();
 }
 
 /**
