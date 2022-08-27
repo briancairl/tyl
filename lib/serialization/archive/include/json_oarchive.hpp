@@ -37,7 +37,6 @@ public:
 
   template <typename ValueT> constexpr json_oarchive& operator<<(const ValueT& payload)
   {
-    static_assert(!is_packet_v<ValueT>, "json_oarchive cannot serialize binary blobs");
     return oarchive_base::operator<<(payload);
   }
 
@@ -74,6 +73,19 @@ private:
     os_->write("\"", 1);
     os_->write(l.value.data(), l.value.size());
     os_->write("\":", 2);
+  }
+
+  template <typename PointerT> constexpr void write_impl(const basic_packet<PointerT>& packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      (*this) << std::string_view{reinterpret_cast<const char*>(packet.data), packet.len};
+    }
+    else
+    {
+      (*this) << std::string_view{reinterpret_cast<const char*>(packet.data), packet.len * sizeof(value_type)};
+    }
   }
 
   template <typename IteratorT> constexpr void write_impl(const sequence<IteratorT>& sequence)
