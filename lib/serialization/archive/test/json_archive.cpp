@@ -139,6 +139,45 @@ TEST(JSONIArchive, Primitive)
 }
 
 
+TEST(JSONIArchive, BoolTrue)
+{
+  const bool target = true;
+
+  {
+    file_ostream ofs{"BoolTrue.json"};
+    json_oarchive oar{ofs};
+    ASSERT_NO_THROW((oar << named{"bool", target}));
+  }
+
+  {
+    file_istream ifs{"BoolTrue.json"};
+    json_iarchive iar{ifs};
+    bool read_value;
+    ASSERT_NO_THROW((iar >> named{"bool", read_value}));
+    ASSERT_EQ(target, read_value);
+  }
+}
+
+
+TEST(JSONIArchive, BoolFalse)
+{
+  const bool target = false;
+
+  {
+    file_ostream ofs{"BoolFalse.json"};
+    json_oarchive oar{ofs};
+    ASSERT_NO_THROW((oar << named{"bool", target}));
+  }
+
+  {
+    file_istream ifs{"BoolFalse.json"};
+    json_iarchive iar{ifs};
+    bool read_value;
+    ASSERT_NO_THROW((iar >> named{"bool", read_value}));
+    ASSERT_EQ(target, read_value);
+  }
+}
+
 TEST(JSONIArchive, TrivialStruct)
 {
   const TrivialStruct target = {5, 123.f, 321.0};

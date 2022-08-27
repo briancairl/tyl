@@ -140,6 +140,26 @@ struct save_impl<json_oarchive<OStreamT>, ValueT> : std::conditional_t<
 /**
  * @brief JSON output archive <code>double</code> save implementation
  */
+template <> struct save_json_primitive<bool>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, bool v)
+  {
+    if (v)
+    {
+      static constexpr std::string_view str{"True"};
+      ar.os_->write(str.data(), str.size());
+    }
+    else
+    {
+      static constexpr std::string_view str{"False"};
+      ar.os_->write(str.data(), str.size());
+    }
+  }
+};
+
+/**
+ * @brief JSON output archive <code>double</code> save implementation
+ */
 template <> struct save_json_primitive<double>
 {
   template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, double v)

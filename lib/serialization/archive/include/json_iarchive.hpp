@@ -166,9 +166,41 @@ struct load_json_numeric
 };
 
 /**
+ * @brief JSON output archive <code>bool</code> save implementation
+ */
+template <> struct load_json_primitive<bool>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, bool& v)
+  {
+    if (ar.is_->peek() == 'T')
+    {
+      static char buf[4];
+      ar.is_->read(buf, sizeof(buf));
+      v = true;
+    }
+    else if (ar.is_->peek() == 'F')
+    {
+      static char buf[5];
+      ar.is_->read(buf, sizeof(buf));
+      v = false;
+    }
+    else
+    {
+      throw std::runtime_error{"JSON is ill-formed. Error while reading bool type."};
+    }
+  }
+};
+
+/**
  * @brief JSON input archive <code>float</code> save implementation
  */
 template <> struct load_json_primitive<float> : load_json_numeric
+{};
+
+/**
+ * @brief JSON input archive <code>double</code> save implementation
+ */
+template <> struct load_json_primitive<double> : load_json_numeric
 {};
 
 /**
@@ -193,12 +225,6 @@ template <> struct load_json_primitive<unsigned int> : load_json_numeric
  * @brief JSON input archive <code>int</code> save implementation
  */
 template <> struct load_json_primitive<long unsigned int> : load_json_numeric
-{};
-
-/**
- * @brief JSON input archive <code>double</code> save implementation
- */
-template <> struct load_json_primitive<double> : load_json_numeric
 {};
 
 /**
