@@ -116,9 +116,16 @@ template <typename ValueT> struct save_json_primitive
   template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, const ValueT& object)
   {
     ar.skip_next_comma_ = true;
-    ar.os_->write("{", 1);
-    save<JSONArchiveT, ValueT>{}(ar, object);
-    ar.os_->write("}", 1);
+    if constexpr (std::is_scalar_v<ValueT>)
+    {
+      save<JSONArchiveT, ValueT>{}(ar, object);
+    }
+    else
+    {
+      ar.os_->write("{", 1);
+      save<JSONArchiveT, ValueT>{}(ar, object);
+      ar.os_->write("}", 1);
+    }
     ar.skip_next_comma_ = false;
   }
 };
@@ -129,6 +136,18 @@ struct save_impl<json_oarchive<OStreamT>, ValueT> : std::conditional_t<
                                                       /* ->( true  ) */ save<json_oarchive<OStreamT>, ValueT>,
                                                       /* ->( false ) */ save_json_primitive<ValueT>>
 {};
+
+/**
+ * @brief JSON output archive <code>double</code> save implementation
+ */
+template <> struct save_json_primitive<double>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, double v)
+  {
+    auto str = std::to_string(v);
+    ar.os_->write(str.data(), str.size());
+  }
+};
 
 /**
  * @brief JSON output archive <code>float</code> save implementation
@@ -189,19 +208,6 @@ template <> struct save_json_primitive<long unsigned int>
     ar.os_->write(str.data(), str.size());
   }
 };
-
-/**
- * @brief JSON output archive <code>double</code> save implementation
- */
-template <> struct save_json_primitive<double>
-{
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, double v)
-  {
-    auto str = std::to_string(v);
-    ar.os_->write(str.data(), str.size());
-  }
-};
-
 
 /**
  * @brief JSON output archive <code>std::string_view</code> save implementation
