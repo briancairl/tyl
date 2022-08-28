@@ -148,9 +148,9 @@ template <typename ArchiveT> struct save<ArchiveT, graphics::device::Texture>
   }
 };
 
-template <typename ArchiveT> struct load<ArchiveT, DeferredConstruct<graphics::device::Texture>>
+template <typename ArchiveT> struct load<ArchiveT, bypass_default_constructor<graphics::device::Texture>>
 {
-  void operator()(ArchiveT& ar, DeferredConstruct<graphics::device::Texture>& texture)
+  void operator()(ArchiveT& ar, bypass_default_constructor<graphics::device::Texture>& texture)
   {
     int height, width, type, channels;
     ar >> named{"height", height};

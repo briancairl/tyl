@@ -86,4 +86,25 @@ template <typename ArchiveT, typename ObjectT> struct is_trivially_serializable 
 template <typename ArchiveT, typename ObjectT>
 const bool is_trivially_serializable_v = is_trivially_serializable<ArchiveT, ObjectT>::value;
 
+/**
+ * @brief Proxy object for use during de-serialization while bypassing default object construction
+ */
+template <typename ComponentT> class bypass_default_constructor
+{
+public:
+  template <typename... CTorArgTs> void construct(CTorArgTs&&... ctor_args)
+  {
+    new (self()) ComponentT{std::forward<CTorArgTs>(ctor_args)...};
+  }
+
+  constexpr operator ComponentT&&() { return std::move(*self()); }
+
+  ~bypass_default_constructor() { self()->~ComponentT(); }
+
+private:
+  ComponentT* self() { return reinterpret_cast<ComponentT*>(buffer_); }
+
+  alignas(ComponentT) std::byte buffer_[sizeof(ComponentT)];
+};
+
 }  // namespace tyl::serialization

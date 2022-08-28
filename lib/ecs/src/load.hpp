@@ -32,24 +32,6 @@ template <typename ComponentT> struct RegistryAccessOnLoad
   ecs::registry* const registry;
 };
 
-template <typename ComponentT> class DeferredConstruct
-{
-public:
-  template <typename... CTorArgTs> void construct(CTorArgTs&&... ctor_args)
-  {
-    new (self()) ComponentT{std::forward<CTorArgTs>(ctor_args)...};
-  }
-
-  constexpr ComponentT& value() { return *self(); }
-
-  ~DeferredConstruct() { self()->~ComponentT(); }
-
-private:
-  ComponentT* self() { return reinterpret_cast<ComponentT*>(buffer_); }
-
-  alignas(ComponentT) std::byte buffer_[sizeof(ComponentT)];
-};
-
 /**
  * @brief Wrapper which represents a component and the entity which it belongs to
  */
@@ -86,16 +68,16 @@ template <typename ArchiveT, typename ComponentT> struct load<ArchiveT, LoadComp
  * @brief De-serializes LoadComponentProxy for ComponentT which are not default constructible
  */
 template <typename ArchiveT, typename ComponentT>
-struct load<ArchiveT, LoadComponentProxy<DeferredConstruct<ComponentT>>>
+struct load<ArchiveT, LoadComponentProxy<bypass_default_constructor<ComponentT>>>
 {
-  void operator()(ArchiveT& ar, LoadComponentProxy<DeferredConstruct<ComponentT>>& proxy)
+  void operator()(ArchiveT& ar, LoadComponentProxy<bypass_default_constructor<ComponentT>>& proxy)
   {
     ecs::entity e;
     ar >> named{"id", reinterpret_cast<ecs::entity_int_t&>(e)};
 
-    DeferredConstruct<ComponentT> deferred;
+    bypass_default_constructor<ComponentT> deferred;
     ar >> named{"value", deferred};
-    proxy.reg->template emplace<ComponentT>(e, std::move(deferred.value()));
+    proxy.reg->template emplace<ComponentT>(e, deferred);
   }
 };
 
@@ -199,7 +181,7 @@ template <typename ArchiveT, typename ComponentT> void load_dispatch(ArchiveT& a
   }
   else
   {
-    LoadComponent<DeferredConstruct<ComponentT>> lc{std::addressof(reg)};
+    LoadComponent<bypass_default_constructor<ComponentT>> lc{std::addressof(reg)};
     ar >> named{typestr<ComponentT>(), lc};
   }
 }
