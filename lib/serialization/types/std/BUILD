@@ -11,7 +11,7 @@ cc_library(
   include_prefix="tyl/serialization/types/std",
   deps=[
     "//lib/serialization:object",
-    "//lib/serialization/types/common"
+    "//lib/serialization/types/primitives"
   ],
   visibility=["//visibility:public"]
 )

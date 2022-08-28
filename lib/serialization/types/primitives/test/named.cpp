@@ -15,7 +15,7 @@
 #include <tyl/serialization/binary_oarchive.hpp>
 #include <tyl/serialization/file_istream.hpp>
 #include <tyl/serialization/file_ostream.hpp>
-#include <tyl/serialization/types/common/named.hpp>
+#include <tyl/serialization/named.hpp>
 
 using namespace tyl::serialization;
 

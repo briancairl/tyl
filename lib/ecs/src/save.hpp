@@ -11,9 +11,9 @@
 // Tyl
 #include <tyl/common/typestr.hpp>
 #include <tyl/ecs/ecs.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/oarchive.hpp>
 #include <tyl/serialization/sequence.hpp>
-#include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
 {

@@ -16,8 +16,8 @@
 // Tyl
 #include <tyl/serialization/iarchive.hpp>
 #include <tyl/serialization/istream.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
-#include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
 {

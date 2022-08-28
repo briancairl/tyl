@@ -23,6 +23,6 @@ cc_library(
   hdrs=["include/json_archive.hpp", "include/json_iarchive.hpp", "include/json_oarchive.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
-  deps=[":archive", "//lib/serialization/stream", "//lib/serialization/types/common"],
+  deps=[":archive", "//lib/serialization/stream", "//lib/serialization/types/primitives"],
   visibility=["//visibility:public"]
 )

@@ -4,12 +4,16 @@ cc_binary(
 	deps=[
 		"//lib/common:adaptors",
 		"//lib/common:dynamic_bitset",
+		"//lib/ecs",
+		"//lib/ecs:serialization",
 		"//lib/graphics/device",
 		"//lib/graphics/device/glad:glad",
 		"//lib/graphics/host:image",
 		"//lib/graphics/sprite:animation",
 		"//lib/graphics/sprite:spritesheet",
-		"@entt//:entt",
+		"//lib/serialization/archive:binary_archive",
+		"//lib/serialization/archive:json_archive",
+		"//lib/serialization/stream:file_stream",
 		"@glfw//:glfw",
 		"@imgui//:imgui",
 	]

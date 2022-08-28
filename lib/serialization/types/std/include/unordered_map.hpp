@@ -11,8 +11,8 @@
 
 // Tyl
 #include <tyl/serialization/fwd.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
-#include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
 {

@@ -32,11 +32,19 @@
 #include <tyl/common/dynamic_bitset.hpp>
 #include <tyl/common/reference.hpp>
 #include <tyl/common/vec.hpp>
+#include <tyl/ecs/ecs.hpp>
+#include <tyl/ecs/serialization.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/graphics/sprite/animation.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
+#include <tyl/serialization/binary_archive.hpp>
+#include <tyl/serialization/file_stream.hpp>
+#include <tyl/serialization/json_archive.hpp>
+#include <tyl/serialization/named.hpp>
+#include <tyl/serialization/object.hpp>
+#include <tyl/serialization/packet.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -59,7 +67,7 @@ static bool within(const ImVec2& delta, const float radius)
 
 struct TextureDisplayState
 {
-  entt::entity entity;
+  tyl::ecs::entity entity;
   tyl::Vec2i extents;
   float zoom_level;
   ImVec2 origin;
@@ -74,7 +82,7 @@ struct RegionEditState
   tyl::Vec2i subdivisions;
 };
 
-using TextureHandle = tyl::Reference<entt::entity, tyl::graphics::device::TextureHandle>;
+using TextureHandle = tyl::Reference<tyl::ecs::entity, tyl::graphics::device::TextureHandle>;
 
 static void draw(
   ImDrawList* const drawlist,
@@ -111,6 +119,82 @@ static void draw(
     drawlist->AddText(rect_max_screen + ImVec2{10, 10}, IM_COL32(255, 255, 255, 255), text_buffer);
   }
 }
+
+namespace tyl::serialization
+{
+
+template <typename ArchiveT> struct serialize<ArchiveT, Vec2i>
+{
+  void operator()(ArchiveT& ar, Vec2i& vec)
+  {
+    ar& named{"x", vec.x()};
+    ar& named{"y", vec.y()};
+  }
+};
+
+template <typename ArchiveT> struct save<ArchiveT, graphics::device::Texture>
+{
+  void operator()(ArchiveT& ar, const graphics::device::Texture& texture)
+  {
+    const auto host_texture = texture.download();
+
+    ar << named{"height", host_texture.height()};
+    ar << named{"width", host_texture.width()};
+    ar << named{"type", static_cast<int>(host_texture.type())};
+    ar << named{"channels", static_cast<int>(host_texture.channels())};
+
+    ar << named{"size", host_texture.size()};
+    ar << named{"data", make_packet(host_texture.data(), host_texture.size())};
+  }
+};
+
+template <typename ArchiveT> struct load<ArchiveT, DeferredConstruct<graphics::device::Texture>>
+{
+  void operator()(ArchiveT& ar, DeferredConstruct<graphics::device::Texture>& texture)
+  {
+    int height, width, type, channels;
+    ar >> named{"height", height};
+    ar >> named{"width", width};
+    ar >> named{"type", type};
+    ar >> named{"channels", channels};
+
+    std::size_t size;
+    ar >> named{"size", size};
+
+    auto buffer = std::make_unique<std::uint8_t[]>(size);
+    ar >> named{"data", make_packet(buffer.get(), size)};
+
+    texture.construct(graphics::device::TextureHost{
+      std::move(buffer),
+      height,
+      width,
+      static_cast<tyl::graphics::device::TypeCode>(type),
+      static_cast<tyl::graphics::device::TextureChannels>(channels)});
+  }
+};
+
+template <typename ArchiveT> struct save<ArchiveT, TextureHandle>
+{
+  void operator()(ArchiveT& ar, const TextureHandle& texture_handle) { ar << named{"guid", texture_handle.id()}; }
+};
+
+template <> struct enable_registry_access_on_load<TextureHandle> : std::true_type
+{};
+
+template <typename ArchiveT> struct load<ArchiveT, RegistryAccessOnLoad<TextureHandle>>
+{
+  void operator()(ArchiveT& ar, RegistryAccessOnLoad<TextureHandle>& rol)
+  {
+    ecs::entity reference_guid;
+    ar >> named{"guid", reference_guid};
+
+    const auto& texture = rol.registry->get<tyl::graphics::device::Texture>(reference_guid);
+    rol.registry->template emplace<TextureHandle>(rol.entity, reference_guid, texture);
+  }
+};
+
+}  // namespace tyl::serialization
+
 
 int main(int argc, char** argv)
 {
@@ -177,12 +261,26 @@ int main(int argc, char** argv)
 
   using namespace tyl::graphics;
 
-  entt::registry reg;
+  tyl::ecs::registry reg;
 
   ImVec2* editting_point = nullptr;
-  std::optional<entt::entity> active_new_region_id;
-  std::optional<entt::entity> active_editting_region_id;
+  std::optional<tyl::ecs::entity> active_new_region_id;
+  std::optional<tyl::ecs::entity> active_editting_region_id;
   std::optional<TextureDisplayState> edittor_state;
+
+
+  try
+  {
+    using namespace ::tyl::ecs;
+    using namespace ::tyl::serialization;
+    file_istream ifs{"/tmp/editor.bin"};
+    binary_iarchive ia{ifs};
+    ia >> named{"reg", reader<entity, device::Texture, tyl::Vec2i, TextureHandle>{reg}};
+  }
+  catch (const std::exception& ex)
+  {
+    std::fprintf(stderr, "%s : %s\n", "Failed to load: ", ex.what());
+  }
 
   bool disable_window_move = false;
   while (!glfwWindowShouldClose(window))
@@ -416,7 +514,7 @@ int main(int argc, char** argv)
          &local_mouse_pos,
          &editting_point,
          &active_editting_region_id,
-         &edittor = edittor_state.value()](const entt::entity region_id, auto& edit_state) {
+         &edittor = edittor_state.value()](const tyl::ecs::entity region_id, auto& edit_state) {
           draw(drawlist, screen_to_local, edit_state, edittor.zoom_level > 3.f);
 
           {
@@ -499,7 +597,7 @@ int main(int argc, char** argv)
 
           reg.view<sprite::AnimationState, sprite::AnimationFrames, sprite::AnimationProperties, tyl::Vec2f>().each(
             [&reg, &edittor_state](
-              const entt::entity ani_id,
+              const tyl::ecs::entity ani_id,
               auto& ani_state,
               const auto& ani_frames,
               const auto& ani_props,
@@ -546,6 +644,17 @@ int main(int argc, char** argv)
     glViewport(0, 0, x_size, y_size);
     glfwSwapBuffers(window);
   }
+
+  try
+  {
+    using namespace ::tyl::ecs;
+    using namespace ::tyl::serialization;
+    file_ostream ofs{"/tmp/editor.bin"};
+    binary_oarchive oa{ofs};
+    oa << named{"reg", writer<entity, device::Texture, tyl::Vec2i, TextureHandle>{reg}};
+  }
+  catch (const std::exception& ex)
+  {}
 
   return 0;
 }
