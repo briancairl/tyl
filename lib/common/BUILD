@@ -36,20 +36,14 @@ cc_library(
 )
 
 cc_library(
-  name="vec",
-  hdrs=["include/vec.hpp",],
+  name="math",
+  hdrs=[
+    "include/vec.hpp",
+    "include/rect.hpp",
+  ],
   strip_include_prefix="include",
   include_prefix="tyl/common",
   deps=["@eigen"],
-  visibility=["//visibility:public"]
-)
-
-cc_library(
-  name="rect",
-  hdrs=["include/rect.hpp",],
-  strip_include_prefix="include",
-  include_prefix="tyl/common",
-  deps=[":vec"],
   visibility=["//visibility:public"]
 )
 

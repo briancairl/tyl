@@ -4,7 +4,7 @@ cc_library(
   srcs=["src/animation.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics/sprite",
-  deps=[":spritesheet", "//lib/common:assert", "//lib/common:rect", "//lib/graphics/device"],
+  deps=[":spritesheet", "//lib/common:assert", "//lib/graphics/device"],
   visibility=["//visibility:public"]
 )
 
@@ -14,6 +14,6 @@ cc_library(
   srcs=["src/spritesheet.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics/sprite",
-  deps=["//lib/common:assert", "//lib/common:vec", "//lib/common:rect", "//lib/graphics/device"],
+  deps=["//lib/common:assert", "//lib/common:math", "//lib/graphics/device"],
   visibility=["//visibility:public"]
 )

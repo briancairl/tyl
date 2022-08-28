@@ -4,6 +4,6 @@ cc_library(
   srcs=["src/image.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics/host",
-  deps=["//lib/common:vec", "//lib/graphics/device", "@stb//:stb",],
+  deps=["//lib/common:math", "//lib/graphics/device", "@stb//:stb",],
   visibility=["//visibility:public"]
 )
