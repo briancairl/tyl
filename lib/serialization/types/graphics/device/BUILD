@@ -1,0 +1,15 @@
+cc_library(
+  name="device",
+  hdrs=[
+    "include/shader.hpp",
+    "include/texture.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization/types/graphics/device",
+  deps=[
+    "//lib/graphics/device",
+    "//lib/serialization:object",
+    "//lib/serialization/types/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

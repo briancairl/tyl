@@ -42,6 +42,8 @@
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/types/graphics/device/texture.hpp>
+#include <tyl/serialization/types/math/vec.hpp>
 #include <tyl/utility/alias.hpp>
 #include <tyl/utility/dynamic_bitset.hpp>
 #include <tyl/utility/reference.hpp>
@@ -122,56 +124,6 @@ static void draw(
 
 namespace tyl::serialization
 {
-
-template <typename ArchiveT> struct serialize<ArchiveT, Vec2i>
-{
-  void operator()(ArchiveT& ar, Vec2i& vec)
-  {
-    ar& named{"x", vec.x()};
-    ar& named{"y", vec.y()};
-  }
-};
-
-template <typename ArchiveT> struct save<ArchiveT, graphics::device::Texture>
-{
-  void operator()(ArchiveT& ar, const graphics::device::Texture& texture)
-  {
-    const auto host_texture = texture.download();
-
-    ar << named{"height", host_texture.height()};
-    ar << named{"width", host_texture.width()};
-    ar << named{"type", static_cast<int>(host_texture.type())};
-    ar << named{"channels", static_cast<int>(host_texture.channels())};
-
-    ar << named{"size", host_texture.size()};
-    ar << named{"data", make_packet(host_texture.data(), host_texture.size())};
-  }
-};
-
-template <typename ArchiveT> struct load<ArchiveT, bypass_default_constructor<graphics::device::Texture>>
-{
-  void operator()(ArchiveT& ar, bypass_default_constructor<graphics::device::Texture>& texture)
-  {
-    int height, width, type, channels;
-    ar >> named{"height", height};
-    ar >> named{"width", width};
-    ar >> named{"type", type};
-    ar >> named{"channels", channels};
-
-    std::size_t size;
-    ar >> named{"size", size};
-
-    auto buffer = std::make_unique<std::uint8_t[]>(size);
-    ar >> named{"data", make_packet(buffer.get(), size)};
-
-    texture.construct(graphics::device::TextureHost{
-      std::move(buffer),
-      height,
-      width,
-      static_cast<tyl::graphics::device::TypeCode>(type),
-      static_cast<tyl::graphics::device::TextureChannels>(channels)});
-  }
-};
 
 template <typename ArchiveT> struct save<ArchiveT, TextureHandle>
 {
