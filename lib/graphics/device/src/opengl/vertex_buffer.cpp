@@ -10,7 +10,7 @@
 #include <numeric>
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/vertex_buffer.hpp>
 

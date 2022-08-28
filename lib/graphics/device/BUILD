@@ -45,7 +45,7 @@ cc_library(
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,
-  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common:assert"],
+  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common/debug:assert"],
   visibility=["//visibility:private"]
 )
 

@@ -1,0 +1,15 @@
+cc_library(
+  name="geometry",
+  hdrs=[
+    "include/rect.hpp",
+    "include/vec.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization/types/math",
+  deps=[
+    "//lib/common/math:geometry",
+    "//lib/serialization:object",
+    "//lib/serialization/types/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

@@ -1,0 +1,11 @@
+cc_library(
+  name="geometry",
+  hdrs=[
+    "include/vec.hpp",
+    "include/rect.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/math",
+  deps=["@eigen"],
+  visibility=["//visibility:public"]
+)

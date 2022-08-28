@@ -5,7 +5,7 @@
  */
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>

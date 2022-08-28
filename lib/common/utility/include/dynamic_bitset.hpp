@@ -12,7 +12,7 @@
 #include <type_traits>
 
 // Tyl
-#include <tyl/common/bits.hpp>
+#include <tyl/utility/bits.hpp>
 
 namespace tyl
 {

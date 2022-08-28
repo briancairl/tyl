@@ -11,8 +11,8 @@
 #include <vector>
 
 // Tyl
-#include <tyl/common/typestr.hpp>
 #include <tyl/ecs/ecs.hpp>
+#include <tyl/reflection/typestr.hpp>
 #include <tyl/serialization/iarchive.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/sequence.hpp>

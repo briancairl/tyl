@@ -6,7 +6,7 @@
 #pragma once
 
 // Tyl
-#include <tyl/common/rect.hpp>
+#include <tyl/math/rect.hpp>
 
 namespace tyl::graphics::sprite
 {

@@ -21,7 +21,7 @@ cc_library(
   include_prefix="tyl/ecs",
   deps = [
     ":ecs",
-    "//lib/common:typestr",
+    "//lib/common/reflection:typestr",
     "//lib/serialization/archive",
     "//lib/serialization/types/primitives",
   ],

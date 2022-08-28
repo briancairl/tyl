@@ -6,7 +6,7 @@
 #pragma once
 
 // Tyl
-#include <tyl/common/vec.hpp>
+#include <tyl/math/vec.hpp>
 
 namespace tyl
 {

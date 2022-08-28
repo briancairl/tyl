@@ -27,11 +27,7 @@
 #include <entt/entt.hpp>
 
 // Tyl
-#include <tyl/common/alias.hpp>
-#include <tyl/common/assert.hpp>
-#include <tyl/common/dynamic_bitset.hpp>
-#include <tyl/common/reference.hpp>
-#include <tyl/common/vec.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/ecs/ecs.hpp>
 #include <tyl/ecs/serialization.hpp>
 #include <tyl/graphics/device/debug.hpp>
@@ -39,12 +35,16 @@
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/graphics/sprite/animation.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
+#include <tyl/math/vec.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/json_archive.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
+#include <tyl/utility/alias.hpp>
+#include <tyl/utility/dynamic_bitset.hpp>
+#include <tyl/utility/reference.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {

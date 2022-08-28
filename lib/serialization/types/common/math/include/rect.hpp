@@ -6,7 +6,7 @@
 #pragma once
 
 // Tyl
-#include <tyl/common/rect.hpp>
+#include <tyl/math/rect.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>

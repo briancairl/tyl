@@ -12,8 +12,8 @@
 #include <tyl/serialization/binary_oarchive.hpp>
 #include <tyl/serialization/mem_istream.hpp>
 #include <tyl/serialization/mem_ostream.hpp>
-#include <tyl/serialization/types/common/rect.hpp>
-#include <tyl/serialization/types/common/vec.hpp>
+#include <tyl/serialization/types/math/rect.hpp>
+#include <tyl/serialization/types/math/vec.hpp>
 
 using namespace tyl::serialization;
 

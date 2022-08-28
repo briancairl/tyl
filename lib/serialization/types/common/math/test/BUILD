@@ -1,13 +1,13 @@
 load("@tyl//:bazel/test_rules.bzl", "gtest")
 
 gtest(
-  name="math",
+  name="geometry",
   timeout = "short",
-  srcs=["math.cpp"],
+  srcs=["geometry.cpp"],
   deps=[
     "//lib/serialization/archive:binary_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/common:math",
+    "//lib/serialization/types/common/math:geometry",
   ],
   visibility=["//visibility:public"],
 )

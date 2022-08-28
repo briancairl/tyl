@@ -2,8 +2,8 @@ cc_binary(
 	name="editor",
 	srcs=["editor.cpp"],
 	deps=[
-		"//lib/common:adaptors",
-		"//lib/common:dynamic_bitset",
+		"//lib/common/utility:adaptors",
+		"//lib/common/utility:dynamic_bitset",
 		"//lib/ecs",
 		"//lib/ecs:serialization",
 		"//lib/graphics/device",
