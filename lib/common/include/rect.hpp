@@ -36,4 +36,14 @@ public:
 using Rect2i = Rect<int>;
 using Rect2f = Rect<float>;
 
+template <typename T> inline bool operator==(const Rect<T>& lhs, const Rect<T>& rhs)
+{
+  return std::memcmp(&lhs, &rhs, sizeof(Rect<T>)) == 0;
+}
+
+template <typename T> inline bool operator!=(const Rect<T>& lhs, const Rect<T>& rhs)
+{
+  return std::memcmp(&lhs, &rhs, sizeof(Rect<T>)) != 0;
+}
+
 }  // namespace tyl
