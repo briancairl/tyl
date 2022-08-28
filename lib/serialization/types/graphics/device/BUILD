@@ -9,7 +9,7 @@ cc_library(
   deps=[
     "//lib/graphics/device",
     "//lib/serialization:object",
-    "//lib/serialization/types/primitives"
+    "//lib/serialization/primitives"
   ],
   visibility=["//visibility:public"]
 )

@@ -9,7 +9,7 @@ cc_library(
   deps=[
     "//lib/common/math:geometry",
     "//lib/serialization:object",
-    "//lib/serialization/types/primitives"
+    "//lib/serialization/primitives"
   ],
   visibility=["//visibility:public"]
 )

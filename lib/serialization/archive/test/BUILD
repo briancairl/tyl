@@ -12,6 +12,6 @@ gtest(
   name="json_archive",
   timeout = "short",
   srcs=["json_archive.cpp"],
-  deps=["//lib/serialization/archive:json_archive", "//lib/serialization/stream:file_stream", "//lib/serialization/types/primitives", "//lib/serialization/types/std",],
+  deps=["//lib/serialization/archive:json_archive", "//lib/serialization/stream:file_stream", "//lib/serialization/primitives", "//lib/serialization/types/std",],
   visibility=["//visibility:public"],
 )

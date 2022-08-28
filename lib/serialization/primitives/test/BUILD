@@ -7,7 +7,7 @@ gtest(
   deps=[
     "//lib/serialization/archive:binary_archive",
     "//lib/serialization/stream:file_stream", 
-    "//lib/serialization/types/primitives",
+    "//lib/serialization/primitives",
   ],
   visibility=["//visibility:public"],
 )

@@ -23,7 +23,7 @@ cc_library(
     ":ecs",
     "//lib/common/reflection:typestr",
     "//lib/serialization/archive",
-    "//lib/serialization/types/primitives",
+    "//lib/serialization/primitives",
   ],
   visibility=["//visibility:private"]
 )
