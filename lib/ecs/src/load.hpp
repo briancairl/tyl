@@ -7,6 +7,7 @@
 
 // C++ Standard Library
 #include <iterator>
+#include <type_traits>
 #include <vector>
 
 // Tyl
@@ -18,6 +19,36 @@
 
 namespace tyl::serialization
 {
+
+template <typename ComponentT> struct enable_registry_access_on_load : std::false_type
+{};
+
+template <typename ComponentT>
+constexpr bool enable_registry_access_on_load_v = enable_registry_access_on_load<ComponentT>::value;
+
+template <typename ComponentT> struct RegistryAccessOnLoad
+{
+  ecs::entity entity;
+  ecs::registry* const registry;
+};
+
+template <typename ComponentT> class DeferredConstruct
+{
+public:
+  template <typename... CTorArgTs> void construct(CTorArgTs&&... ctor_args)
+  {
+    new (self()) ComponentT{std::forward<CTorArgTs>(ctor_args)...};
+  }
+
+  constexpr ComponentT& value() { return *self(); }
+
+  ~DeferredConstruct() { self()->~ComponentT(); }
+
+private:
+  ComponentT* self() { return reinterpret_cast<ComponentT*>(buffer_); }
+
+  alignas(ComponentT) std::byte buffer_[sizeof(ComponentT)];
+};
 
 /**
  * @brief Wrapper which represents a component and the entity which it belongs to
@@ -31,15 +62,56 @@ template <typename ComponentT> struct LoadComponentProxy
 };
 
 /**
- * @brief Serializes LoadComponentProxy
+ * @brief Dederializes ecs::entity
+ */
+template <typename ArchiveT> struct load<ArchiveT, ecs::entity>
+{
+  void operator()(ArchiveT& ar, ecs::entity& e) { ar >> reinterpret_cast<ecs::entity_int_t&>(e); }
+};
+
+/**
+ * @brief De-serializes LoadComponentProxy
  */
 template <typename ArchiveT, typename ComponentT> struct load<ArchiveT, LoadComponentProxy<ComponentT>>
 {
-  void operator()(ArchiveT& ar, LoadComponentProxy<ComponentT>& l)
+  void operator()(ArchiveT& ar, LoadComponentProxy<ComponentT>& proxy)
+  {
+    ecs::entity e;
+    ar >> named{"id", e};
+    ar >> named{"value", proxy.reg->template emplace<ComponentT>(e)};
+  }
+};
+
+/**
+ * @brief De-serializes LoadComponentProxy for ComponentT which are not default constructible
+ */
+template <typename ArchiveT, typename ComponentT>
+struct load<ArchiveT, LoadComponentProxy<DeferredConstruct<ComponentT>>>
+{
+  void operator()(ArchiveT& ar, LoadComponentProxy<DeferredConstruct<ComponentT>>& proxy)
   {
     ecs::entity e;
     ar >> named{"id", reinterpret_cast<ecs::entity_int_t&>(e)};
-    ar >> named{"value", l.reg->template emplace<ComponentT>(e)};
+
+    DeferredConstruct<ComponentT> deferred;
+    ar >> named{"value", deferred};
+    proxy.reg->template emplace<ComponentT>(e, std::move(deferred.value()));
+  }
+};
+
+/**
+ * @brief De-serializes LoadComponentProxy for ComponentT which is added to the registry directyly
+ */
+template <typename ArchiveT, typename ComponentT>
+struct load<ArchiveT, LoadComponentProxy<RegistryAccessOnLoad<ComponentT>>>
+{
+  void operator()(ArchiveT& ar, LoadComponentProxy<RegistryAccessOnLoad<ComponentT>>& proxy)
+  {
+    ecs::entity e;
+    ar >> named{"id", reinterpret_cast<ecs::entity_int_t&>(e)};
+
+    RegistryAccessOnLoad<ComponentT> registry_access{e, proxy.reg};
+    ar >> named{"value", registry_access};
   }
 };
 
@@ -115,8 +187,21 @@ template <typename ArchiveT, typename ComponentT> struct load<ArchiveT, LoadComp
 
 template <typename ArchiveT, typename ComponentT> void load_dispatch(ArchiveT& ar, ecs::registry& reg)
 {
-  LoadComponent<ComponentT> lc{std::addressof(reg)};
-  ar >> named{typestr<ComponentT>(), lc};
+  if constexpr (enable_registry_access_on_load_v<ComponentT>)
+  {
+    LoadComponent<RegistryAccessOnLoad<ComponentT>> lc{std::addressof(reg)};
+    ar >> named{typestr<ComponentT>(), lc};
+  }
+  else if constexpr (std::is_default_constructible_v<ComponentT>)
+  {
+    LoadComponent<ComponentT> lc{std::addressof(reg)};
+    ar >> named{typestr<ComponentT>(), lc};
+  }
+  else
+  {
+    LoadComponent<DeferredConstruct<ComponentT>> lc{std::addressof(reg)};
+    ar >> named{typestr<ComponentT>(), lc};
+  }
 }
 
 template <typename... ComponentTs> struct load_components_are_valid : std::true_type

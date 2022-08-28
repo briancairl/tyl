@@ -33,13 +33,22 @@ template <typename ComponentT> struct SaveComponentProxy
 };
 
 /**
+ * @brief Serializes ecs::entity
+ */
+template <typename ArchiveT> struct save<ArchiveT, ecs::entity>
+{
+  void operator()(ArchiveT& ar, const ecs::entity& e) { ar << reinterpret_cast<const ecs::entity_int_t&>(e); }
+};
+
+
+/**
  * @brief Serializes SaveComponentProxy
  */
 template <typename ArchiveT, typename ComponentT> struct save<ArchiveT, SaveComponentProxy<ComponentT>>
 {
   void operator()(ArchiveT& ar, const SaveComponentProxy<ComponentT>& s)
   {
-    ar << named{"id", static_cast<ecs::entity_int_t>(s.e)};
+    ar << named{"id", s.e};
     ar << named{"value", *(s.c)};
   }
 };
@@ -82,7 +91,7 @@ public:
     ++itr_;
     return *this;
   }
-  constexpr auto operator*() const { return *(reinterpret_cast<const ecs::entity_int_t*>(itr_)); }
+  constexpr auto operator*() const { return *itr_; }
   constexpr bool operator!=(const SaveComponentProxyIterator& other) const { return itr_ != other.itr_; }
 
 private:
