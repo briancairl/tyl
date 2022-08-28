@@ -205,7 +205,7 @@ void download_gl_texture_options(TextureOptions& options)
   }
 }
 
-void download_gl_texture_image(
+std::size_t download_gl_texture_image(
   std::unique_ptr<std::uint8_t[]>& data,
   int& h,
   int& w,
@@ -232,14 +232,13 @@ void download_gl_texture_image(
     channels = channels_from_gl(v);
   }
 
-  {
-    const std::size_t bytes = (h * w) * byte_count(typecode) * channels_to_count(channels);
-    data.reset(new std::uint8_t[bytes]);
-  }
-
+  const std::size_t bytes = (h * w) * byte_count(typecode) * channels_to_count(channels);
+  data.reset(new std::uint8_t[bytes]);
 
   glGetTexImage(
     GL_TEXTURE_2D, MIP_LEVEL, channels_to_gl(channels), to_gl_typecode(typecode), reinterpret_cast<void*>(data.get()));
+
+  return bytes;
 }
 
 }  // namespace anonymous
@@ -252,7 +251,12 @@ TextureHost::TextureHost(
   const int w,
   const TypeCode typecode,
   const TextureChannels channels) :
-    data_{std::move(data)}, height_{h}, width_{w}, typecode_{typecode}, channels_{channels}
+    data_{std::move(data)},
+    size_{(h * w) * byte_count(typecode) * channels_to_count(channels)},
+    height_{h},
+    width_{w},
+    typecode_{typecode},
+    channels_{channels}
 {}
 
 TextureHandle::TextureHandle(TextureHandle&& other) : TextureHandle{other.texture_id_, other.typecode_}
@@ -270,7 +274,7 @@ TextureHost TextureHandle::download() const
 
   glBindTexture(GL_TEXTURE_2D, texture_id_);
 
-  download_gl_texture_image(
+  texture_host.size_ = download_gl_texture_image(
     texture_host.data_, texture_host.height_, texture_host.width_, texture_host.channels_, typecode_);
 
   texture_host.typecode_ = typecode_;

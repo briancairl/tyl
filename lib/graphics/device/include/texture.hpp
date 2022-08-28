@@ -34,6 +34,7 @@ struct TextureHost
 public:
   inline auto* data() { return data_.get(); }
   inline const auto* data() const { return data_.get(); }
+  constexpr std::size_t size() const { return size_; }
   constexpr int height() const { return height_; }
   constexpr int width() const { return width_; }
   constexpr TypeCode type() const { return typecode_; }
@@ -54,6 +55,7 @@ private:
   TextureHost() = default;
 
   std::unique_ptr<std::uint8_t[]> data_;
+  std::size_t size_;
   int height_;
   int width_;
   TypeCode typecode_;
