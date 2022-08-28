@@ -52,7 +52,7 @@ private:
   /**
    * @copydoc istream<mem_istream>::peek
    */
-  constexpr char peek_impl() { return buffer_[pos_]; }
+  char peek_impl() { return buffer_[pos_]; }
 
   /**
    * @copydoc istream<mem_istream>::available
