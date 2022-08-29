@@ -14,6 +14,7 @@
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/sequence.hpp>
 
 namespace tyl::serialization
 {
@@ -31,10 +32,7 @@ template <typename OArchive, typename ValueT, std::size_t N> struct save<OArchiv
     }
     else
     {
-      for (const auto& element : arr)
-      {
-        ar << element;
-      }
+      ar << named{"data", make_sequence(arr.begin(), arr.end())};
     }
   }
 };
@@ -52,10 +50,7 @@ template <typename IArchive, typename ValueT, std::size_t N> struct load<IArchiv
     }
     else
     {
-      for (auto& element : arr)
-      {
-        ar >> element;
-      }
+      ar >> named{"data", make_sequence(arr.begin(), arr.end())};
     }
   }
 };

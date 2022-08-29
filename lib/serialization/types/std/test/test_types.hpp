@@ -22,6 +22,24 @@ const bool operator==(const NonTrivial& lhs, const NonTrivial& rhs) { return lhs
 namespace tyl::serialization
 {
 
+template <typename OArchive> struct save<OArchive, Trivial>
+{
+  void operator()(OArchive& ar, const Trivial& tv)
+  {
+    ar << named{"x", tv.x};
+    ar << named{"y", tv.y};
+  }
+};
+
+template <typename IArchive> struct load<IArchive, Trivial>
+{
+  void operator()(IArchive& ar, Trivial& tv)
+  {
+    ar >> named{"x", tv.x};
+    ar >> named{"y", tv.y};
+  }
+};
+
 template <typename OArchive> struct save<OArchive, NonTrivial>
 {
   void operator()(OArchive& ar, const NonTrivial& ntv)

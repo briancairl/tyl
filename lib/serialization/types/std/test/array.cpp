@@ -11,10 +11,10 @@
 #include <gtest/gtest.h>
 
 // Tyl
-#include <tyl/serialization/binary_iarchive.hpp>
-#include <tyl/serialization/binary_oarchive.hpp>
-#include <tyl/serialization/file_istream.hpp>
-#include <tyl/serialization/file_ostream.hpp>
+#include <tyl/serialization/json_iarchive.hpp>
+#include <tyl/serialization/json_oarchive.hpp>
+#include <tyl/serialization/mem_istream.hpp>
+#include <tyl/serialization/mem_ostream.hpp>
 #include <tyl/serialization/types/std/array.hpp>
 
 #include "test_types.hpp"
@@ -26,18 +26,18 @@ TEST(Array, PrimitiveElementValue)
 {
   static const float TARGET_VALUE = 123.f;
 
+  mem_ostream oms;
   {
-    file_ostream ofs{"Array.PrimitiveElementValue.bin"};
-    binary_oarchive oar{ofs};
+    json_oarchive oar{oms};
     const std::array<float, 3> vec = {TARGET_VALUE, TARGET_VALUE, TARGET_VALUE};
-    ASSERT_NO_THROW(oar << vec);
+    ASSERT_NO_THROW((oar << named{"vec", vec}));
   }
 
   {
-    file_istream ifs{"Array.PrimitiveElementValue.bin"};
-    binary_iarchive iar{ifs};
+    mem_istream ims{std::move(oms)};
+    json_iarchive iar{ims};
     std::array<float, 3> vec;
-    ASSERT_NO_THROW(iar >> vec);
+    ASSERT_NO_THROW((iar >> named{"vec", vec}));
 
     for (const auto& e : vec)
     {
@@ -51,18 +51,18 @@ TEST(Array, TrivialElementValue)
 {
   static const Trivial TARGET_VALUE = {6, 9};
 
+  mem_ostream oms;
   {
-    file_ostream ofs{"Array.TrivialElementValue.bin"};
-    binary_oarchive oar{ofs};
+    json_oarchive oar{oms};
     const std::array<Trivial, 3> vec = {TARGET_VALUE, TARGET_VALUE, TARGET_VALUE};
-    ASSERT_NO_THROW(oar << vec);
+    ASSERT_NO_THROW((oar << named{"vec", vec}));
   }
 
   {
-    file_istream ifs{"Array.TrivialElementValue.bin"};
-    binary_iarchive iar{ifs};
+    mem_istream ims{std::move(oms)};
+    json_iarchive iar{ims};
     std::array<Trivial, 3> vec;
-    ASSERT_NO_THROW(iar >> vec);
+    ASSERT_NO_THROW((iar >> named{"vec", vec}));
 
     for (const auto& e : vec)
     {
@@ -75,18 +75,18 @@ TEST(Array, NonTrivialElementValue)
 {
   static const NonTrivial TARGET_VALUE = {6, 9};
 
+  mem_ostream oms;
   {
-    file_ostream ofs{"Array.NonTrivialElementValue.bin"};
-    binary_oarchive oar{ofs};
+    json_oarchive oar{oms};
     const std::array<NonTrivial, 3> vec = {TARGET_VALUE, TARGET_VALUE, TARGET_VALUE};
-    ASSERT_NO_THROW(oar << vec);
+    ASSERT_NO_THROW((oar << named{"vec", vec}));
   }
 
   {
-    file_istream ifs{"Array.NonTrivialElementValue.bin"};
-    binary_iarchive iar{ifs};
+    mem_istream ims{std::move(oms)};
+    json_iarchive iar{ims};
     std::array<NonTrivial, 3> vec;
-    ASSERT_NO_THROW(iar >> vec);
+    ASSERT_NO_THROW((iar >> named{"vec", vec}));
 
     for (const auto& e : vec)
     {

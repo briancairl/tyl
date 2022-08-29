@@ -35,9 +35,11 @@ public:
 
   ~json_oarchive() { os_->write("}\n", 2); }
 
-  template <typename ValueT> constexpr json_oarchive& operator<<(const ValueT& payload)
+  template <typename ValueT> constexpr json_oarchive& operator<<(const named<ValueT>& nv)
   {
-    return oarchive_base::operator<<(payload);
+    this->operator<<(label{nv.name});
+    this->operator<<(nv.value);
+    return *this;
   }
 
   template <typename IteratorT> constexpr json_oarchive& operator<<(const sequence<IteratorT>& sequence)

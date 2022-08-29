@@ -11,28 +11,28 @@
 #include <gtest/gtest.h>
 
 // Tyl
-#include <tyl/serialization/binary_iarchive.hpp>
-#include <tyl/serialization/binary_oarchive.hpp>
-#include <tyl/serialization/file_istream.hpp>
-#include <tyl/serialization/file_ostream.hpp>
+#include <tyl/serialization/json_iarchive.hpp>
+#include <tyl/serialization/json_oarchive.hpp>
+#include <tyl/serialization/mem_istream.hpp>
+#include <tyl/serialization/mem_ostream.hpp>
 #include <tyl/serialization/types/std/string.hpp>
 
 using namespace tyl::serialization;
 
 TEST(String, Empty)
 {
+  mem_ostream oms;
   {
-    file_ostream ofs{"String.Empty.bin"};
-    binary_oarchive oar{ofs};
+    json_oarchive oar{oms};
     std::string str;
-    ASSERT_NO_THROW(oar << str);
+    ASSERT_NO_THROW((oar << named{"str", str}));
   }
 
   {
-    file_istream ifs{"String.Empty.bin"};
-    binary_iarchive iar{ifs};
+    mem_istream ims{std::move(oms)};
+    json_iarchive iar{ims};
     std::string str;
-    ASSERT_NO_THROW(iar >> str);
+    ASSERT_NO_THROW((iar >> named{"str", str}));
 
     ASSERT_TRUE(str.empty());
   }
@@ -40,18 +40,18 @@ TEST(String, Empty)
 
 TEST(String, NonEmpty)
 {
+  mem_ostream oms;
   {
-    file_ostream ofs{"String.Empty.bin"};
-    binary_oarchive oar{ofs};
+    json_oarchive oar{oms};
     std::string str{"ey boss"};
-    ASSERT_NO_THROW(oar << str);
+    ASSERT_NO_THROW((oar << named{"str", str}));
   }
 
   {
-    file_istream ifs{"String.Empty.bin"};
-    binary_iarchive iar{ifs};
+    mem_istream ims{std::move(oms)};
+    json_iarchive iar{ims};
     std::string str;
-    ASSERT_NO_THROW(iar >> str);
+    ASSERT_NO_THROW((iar >> named{"str", str}));
 
     ASSERT_EQ(str, "ey boss");
   }
