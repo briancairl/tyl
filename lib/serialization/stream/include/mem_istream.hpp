@@ -37,7 +37,7 @@ private:
    */
   std::size_t read_impl(void* ptr, std::size_t len)
   {
-    if (const std::size_t len = std::min(len, buffer_.size()); len > 0)
+    if (len + pos_ < buffer_.size())
     {
       std::memcpy(ptr, buffer_.data() + pos_, len);
       pos_ += len;
