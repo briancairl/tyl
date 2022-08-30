@@ -14,11 +14,11 @@
 namespace tyl::serialization
 {
 
-mem_istream::mem_istream(std::vector<std::uint8_t>&& buffer) : buffer_{std::move(buffer)} {}
+mem_istream::mem_istream(std::vector<std::uint8_t>&& buffer) : buffer_{std::move(buffer)}, pos_{0} {}
 
-mem_istream::mem_istream(mem_istream&& other) : buffer_{std::move(other.buffer_)} {}
+mem_istream::mem_istream(mem_istream&& other) : buffer_{std::move(other.buffer_)}, pos_{0} {}
 
-mem_istream::mem_istream(mem_ostream&& other) : buffer_{std::move(other.buffer_)} {}
+mem_istream::mem_istream(mem_ostream&& other) : buffer_{std::move(other.buffer_)}, pos_{0} {}
 
 mem_istream::~mem_istream() = default;
 
