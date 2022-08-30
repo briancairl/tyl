@@ -1,0 +1,18 @@
+cc_library(
+  name="sprite",
+  hdrs=[
+    "include/animation.hpp",
+    "include/spritesheet.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics/serialization/sprite",
+  deps=[
+    "//lib/common/serialization/std",
+    "//lib/common/serialization/math:geometry",
+    "//lib/graphics/sprite:animation",
+    "//lib/graphics/sprite:spritesheet",
+    "//lib/serialization:object",
+    "//lib/serialization/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

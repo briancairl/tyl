@@ -123,6 +123,14 @@ SpriteSheet::SpriteSheet(const Vec2i atlas_texture_extents, const TransposedUnif
   TYL_ASSERT_FALSE(tile_uv_bounds_.empty());
 }
 
+SpriteSheet::SpriteSheet(std::vector<Rect2f>&& tile_uv_bounds) : tile_uv_bounds_{std::move(tile_uv_bounds)} {}
+
+SpriteSheet& SpriteSheet::operator=(std::vector<Rect2f>&& tile_uv_bounds)
+{
+  tile_uv_bounds_ = std::move(tile_uv_bounds);
+  return *this;
+}
+
 void SpriteSheet::update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor)
 {
   const Vec2i tile_size_px{region_descriptor.extents()};

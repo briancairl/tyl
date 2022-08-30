@@ -9,6 +9,7 @@
 #include <tyl/math/vec.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
+#include <tyl/serialization/sequence.hpp>
 
 namespace tyl::serialization
 {
@@ -22,7 +23,14 @@ template <typename OArchive, typename ScalarT, int N, int M> struct save<OArchiv
   static_assert(M > 0);
   void operator()(OArchive& ar, const Mat<ScalarT, N, M>& mat)
   {
-    ar << named{"data", make_packet_fixed_size<N * M>(mat.data())};
+    if constexpr (is_trivially_serializable_v<OArchive, Mat<ScalarT, N, M>>)
+    {
+      ar << named{"data", make_packet_fixed_size<N * M>(mat.data())};
+    }
+    else
+    {
+      ar << named{"data", make_sequence(mat.data(), mat.data() + N * M)};
+    }
   }
 };
 
@@ -35,7 +43,14 @@ template <typename IArchive, typename ScalarT, int N, int M> struct load<IArchiv
   static_assert(M > 0);
   void operator()(IArchive& ar, Mat<ScalarT, N, M>& mat)
   {
-    ar >> named{"data", make_packet_fixed_size<N * M>(mat.data())};
+    if constexpr (is_trivially_serializable_v<IArchive, Mat<ScalarT, N, M>>)
+    {
+      ar >> named{"data", make_packet_fixed_size<N * M>(mat.data())};
+    }
+    else
+    {
+      ar >> named{"data", make_sequence(mat.data(), mat.data() + N * M)};
+    }
   }
 };
 

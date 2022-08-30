@@ -50,9 +50,12 @@ public:
 
   SpriteSheet(const Vec2i atlas_texture_extents, const TransposedUniformlyDividedRegion& region_descriptor);
 
+  explicit SpriteSheet(std::vector<Rect2f>&& tile_uv_bounds);
+
   ~SpriteSheet();
 
   SpriteSheet& operator=(SpriteSheet&&) = default;
+  SpriteSheet& operator=(std::vector<Rect2f>&& tile_uv_bounds);
 
   void update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor);
 
@@ -63,6 +66,11 @@ public:
   void update(const Rect2f& bounds) { tile_uv_bounds_.emplace_back(bounds); }
 
   void clear() { tile_uv_bounds_.clear(); }
+
+  /**
+   * @brief Returns all bounds info
+   */
+  [[nodiscard]] constexpr const auto& bounds() const { return tile_uv_bounds_; }
 
   /**
    * @brief Returns total number of tile bounds
