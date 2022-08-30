@@ -12,30 +12,18 @@ cc_library(
 )
 
 cc_library(
-  name="serialization_impl",
+  name="ecs_serial",
   hdrs=[
-    "src/load.hpp",
-    "src/save.hpp",
+    "serial/reader.hpp",
+    "serial/writer.hpp",
   ],
-  strip_include_prefix="src",
-  include_prefix="tyl/ecs",
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/ecs",
   deps = [
     ":ecs",
     "//lib/common/reflection:typestr",
     "//lib/serialization/archive",
     "//lib/serialization/primitives",
-  ],
-  visibility=["//visibility:private"]
-)
-
-
-cc_library(
-  name="serialization",
-  hdrs=["include/serialization.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl/ecs",
-  deps = [
-    ":serialization_impl",
   ],
   visibility=["//visibility:public"]
 )

@@ -12,7 +12,7 @@
 #include <gtest/gtest.h>
 
 // Tyl
-#include <tyl/common/serialization/std/vector.hpp>
+#include <tyl/serial/std/vector.hpp>
 #include <tyl/serialization/file_istream.hpp>
 #include <tyl/serialization/file_ostream.hpp>
 #include <tyl/serialization/json_iarchive.hpp>

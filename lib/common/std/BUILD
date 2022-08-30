@@ -1,0 +1,17 @@
+cc_library(
+  name="std_serial",
+  hdrs=[
+    "serial/array.hpp",
+    "serial/optional.hpp",
+    "serial/string.hpp",
+    "serial/unordered_map.hpp",
+    "serial/vector.hpp"
+  ],
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/std",
+  deps=[
+    "//lib/serialization:object",
+    "//lib/serialization/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

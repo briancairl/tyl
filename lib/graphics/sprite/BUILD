@@ -17,3 +17,22 @@ cc_library(
   deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/graphics/device"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="sprite_serial",
+  hdrs=[
+    "serial/animation.hpp",
+    "serial/spritesheet.hpp",
+  ],
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/graphics/sprite",
+  deps=[
+    "//lib/common/std:std_serial",
+    "//lib/common/math:geometry_serial",
+    "//lib/graphics/sprite:animation",
+    "//lib/graphics/sprite:spritesheet",
+    "//lib/serialization:object",
+    "//lib/serialization/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

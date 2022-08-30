@@ -9,3 +9,15 @@ cc_library(
   deps=["@eigen"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="geometry_serial",
+  hdrs=[
+    "serial/vec.hpp",
+    "serial/rect.hpp",
+  ],
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/math",
+  deps=[":geometry"],
+  visibility=["//visibility:public"]
+)

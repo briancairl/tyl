@@ -27,17 +27,18 @@
 #include <entt/entt.hpp>
 
 // Tyl
-#include <tyl/common/serialization/math/vec.hpp>
 #include <tyl/debug/assert.hpp>
 #include <tyl/ecs/ecs.hpp>
-#include <tyl/ecs/serialization.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
-#include <tyl/graphics/serialization/device/texture.hpp>
 #include <tyl/graphics/sprite/animation.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
 #include <tyl/math/vec.hpp>
+#include <tyl/serial/ecs/reader.hpp>
+#include <tyl/serial/ecs/writer.hpp>
+#include <tyl/serial/graphics/device/texture.hpp>
+#include <tyl/serial/math/vec.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/json_archive.hpp>
