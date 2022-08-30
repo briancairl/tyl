@@ -1,0 +1,14 @@
+cc_library(
+  name="image",
+  hdrs=[
+    "include/image.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics/serialization/host",
+  deps=[
+    "//lib/graphics/host:image",
+    "//lib/serialization:object",
+    "//lib/serialization/primitives"
+  ],
+  visibility=["//visibility:public"]
+)

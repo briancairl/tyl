@@ -217,22 +217,44 @@ template <> struct load_json_primitive<int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code> longint</code> save implementation
+ * @brief JSON input archive <code>long int</code> save implementation
  */
 template <> struct load_json_primitive<long int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code>int</code> save implementation
+ * @brief JSON input archive <code>unsigned int</code> save implementation
  */
 template <> struct load_json_primitive<unsigned int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code>int</code> save implementation
+ * @brief JSON input archive <code>long unsigned int</code> save implementation
  */
 template <> struct load_json_primitive<long unsigned int> : load_json_numeric
 {};
+
+/**
+ * @brief JSON input archive <code>unsigned char</code> save implementation
+ */
+template <> struct load_json_primitive<unsigned char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, unsigned char& v)
+  {
+    ar.is_->read(reinterpret_cast<void*>(&v), 1);
+  }
+};
+
+/**
+ * @brief JSON input archive <code>unsigned char</code> save implementation
+ */
+template <> struct load_json_primitive<char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, char& v)
+  {
+    ar.is_->read(reinterpret_cast<void*>(&v), 1);
+  }
+};
 
 /**
  * @brief JSON input archive <code>std::string</code> save implementation

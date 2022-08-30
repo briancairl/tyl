@@ -239,6 +239,28 @@ template <> struct save_json_primitive<long unsigned int>
 };
 
 /**
+ * @brief JSON output archive <code>int</code> save implementation
+ */
+template <> struct save_json_primitive<char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, char v)
+  {
+    ar.os_->write(reinterpret_cast<void*>(&v), 1);
+  }
+};
+
+/**
+ * @brief JSON output archive <code>int</code> save implementation
+ */
+template <> struct save_json_primitive<unsigned char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, unsigned char v)
+  {
+    ar.os_->write(reinterpret_cast<void*>(&v), 1);
+  }
+};
+
+/**
  * @brief JSON output archive <code>std::string_view</code> save implementation
  */
 template <> struct save_json_primitive<std::string_view>
