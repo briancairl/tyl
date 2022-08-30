@@ -22,6 +22,18 @@
 namespace tyl::serialization
 {
 
+template <typename ValueT> struct load_json_primitive
+{
+  static_assert(std::is_object_v<ValueT>);
+
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, ValueT& object)
+  {
+    ar.template eat<'{'>();
+    load<JSONArchiveT, ValueT>{}(ar, object);
+    ar.template eat<'}'>();
+  }
+};
+
 template <typename IStreamT> class json_iarchive : public iarchive<json_iarchive<IStreamT>>
 {
   using iarchive_base = iarchive<json_iarchive<IStreamT>>;
@@ -36,10 +48,17 @@ public:
 
   ~json_iarchive() { json_iarchive::eat<'}'>(); }
 
-  template <typename ValueT> constexpr json_iarchive& operator>>(ValueT& payload)
+  template <typename ValueT> constexpr json_iarchive& operator>>(ValueT& v)
   {
-    static_assert(!is_packet_v<ValueT>, "json_iarchive cannot serialize binary blobs");
-    return iarchive_base::operator>>(payload);
+    load_json_primitive<ValueT>{}(*this, v);
+    return *this;
+  }
+
+  template <typename ValueT> constexpr json_iarchive& operator>>(named<ValueT>& nv)
+  {
+    this->operator>>(label{nv.name});
+    this->operator>>(nv.value);
+    return *this;
   }
 
   template <typename IteratorT> constexpr json_iarchive& operator>>(sequence<IteratorT> sequence)
@@ -110,18 +129,6 @@ private:
 };
 
 template <typename IStreamT> json_iarchive(istream<IStreamT>& os) -> json_iarchive<IStreamT>;
-
-template <typename ValueT> struct load_json_primitive
-{
-  static_assert(std::is_object_v<ValueT>);
-
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, ValueT& object)
-  {
-    ar.template eat<'{'>();
-    load<JSONArchiveT, ValueT>{}(ar, object);
-    ar.template eat<'}'>();
-  }
-};
 
 template <typename IStreamT, typename ValueT>
 struct load_impl<json_iarchive<IStreamT>, ValueT> : std::conditional_t<

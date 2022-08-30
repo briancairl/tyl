@@ -20,6 +20,27 @@
 namespace tyl::serialization
 {
 
+template <typename ValueT> struct save_json_primitive
+{
+  static_assert(std::is_object_v<ValueT>);
+
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, const ValueT& object)
+  {
+    ar.skip_next_comma_ = true;
+    if constexpr (std::is_scalar_v<ValueT>)
+    {
+      save<JSONArchiveT, ValueT>{}(ar, object);
+    }
+    else
+    {
+      ar.os_->write("{", 1);
+      save<JSONArchiveT, ValueT>{}(ar, object);
+      ar.os_->write("}", 1);
+    }
+    ar.skip_next_comma_ = false;
+  }
+};
+
 template <typename OStreamT> class json_oarchive : public oarchive<json_oarchive<OStreamT>>
 {
   using oarchive_base = oarchive<json_oarchive<OStreamT>>;
@@ -34,6 +55,12 @@ public:
   }
 
   ~json_oarchive() { os_->write("}\n", 2); }
+
+  template <typename ValueT> constexpr json_oarchive& operator<<(const ValueT& v)
+  {
+    save_json_primitive<ValueT>{}(*this, v);
+    return *this;
+  }
 
   template <typename ValueT> constexpr json_oarchive& operator<<(const named<ValueT>& nv)
   {
@@ -111,26 +138,6 @@ private:
 
 template <typename OStreamT> json_oarchive(ostream<OStreamT>& os) -> json_oarchive<OStreamT>;
 
-template <typename ValueT> struct save_json_primitive
-{
-  static_assert(std::is_object_v<ValueT>);
-
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, const ValueT& object)
-  {
-    ar.skip_next_comma_ = true;
-    if constexpr (std::is_scalar_v<ValueT>)
-    {
-      save<JSONArchiveT, ValueT>{}(ar, object);
-    }
-    else
-    {
-      ar.os_->write("{", 1);
-      save<JSONArchiveT, ValueT>{}(ar, object);
-      ar.os_->write("}", 1);
-    }
-    ar.skip_next_comma_ = false;
-  }
-};
 
 template <typename OStreamT, typename ValueT>
 struct save_impl<json_oarchive<OStreamT>, ValueT> : std::conditional_t<
