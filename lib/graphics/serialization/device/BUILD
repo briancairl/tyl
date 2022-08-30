@@ -5,7 +5,7 @@ cc_library(
     "include/texture.hpp",
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/serialization/types/graphics/device",
+  include_prefix="tyl/graphics/serialization/device",
   deps=[
     "//lib/graphics/device",
     "//lib/serialization:object",

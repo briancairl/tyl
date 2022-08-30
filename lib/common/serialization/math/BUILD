@@ -5,7 +5,7 @@ cc_library(
     "include/vec.hpp",
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/serialization/types/math",
+  include_prefix="tyl/common/serialization/math",
   deps=[
     "//lib/common/math:geometry",
     "//lib/serialization:object",

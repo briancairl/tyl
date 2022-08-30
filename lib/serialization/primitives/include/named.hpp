@@ -9,6 +9,7 @@
 #include <type_traits>
 
 // Tyl
+#include <tyl/serialization/label.hpp>
 #include <tyl/serialization/object.hpp>
 
 namespace tyl::serialization

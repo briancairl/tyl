@@ -72,6 +72,24 @@ template <typename PointerT> auto make_packet(PointerT data)
   }
 }
 
+template <std::size_t N, typename PointerT> auto make_packet_fixed_size(PointerT data)
+{
+  static_assert(std::is_pointer_v<PointerT>, "'PointerT' must be a pointer type");
+
+  using value_type = std::remove_pointer_t<PointerT>;
+
+  static_assert(!std::is_void_v<value_type>, "'PointerT' must not be a void pointer");
+
+  if constexpr (std::is_const_v<value_type>)
+  {
+    return const_packet_fixed_size<N * sizeof(value_type)>{data};
+  }
+  else
+  {
+    return packet_fixed_size<N * sizeof(value_type)>{data};
+  }
+}
+
 template <typename T> struct is_packet : std::false_type
 {};
 

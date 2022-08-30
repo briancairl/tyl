@@ -15,7 +15,7 @@ gtest(
     ":test_types",
     "//lib/serialization/archive:json_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/std",
+    "//lib/common/serialization/std",
   ],
   visibility=["//visibility:public"],
 )
@@ -28,7 +28,7 @@ gtest(
     ":test_types",
     "//lib/serialization/archive:json_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/std",
+    "//lib/common/serialization/std",
   ],
   visibility=["//visibility:public"],
 )
@@ -40,7 +40,7 @@ gtest(
   deps=[
     "//lib/serialization/archive:json_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/std",
+    "//lib/common/serialization/std",
   ],
   visibility=["//visibility:public"],
 )
@@ -54,7 +54,7 @@ gtest(
     ":test_types",
     "//lib/serialization/archive:json_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/std",
+    "//lib/common/serialization/std",
   ],
   visibility=["//visibility:public"],
 )
@@ -67,7 +67,7 @@ gtest(
     ":test_types",
     "//lib/serialization/archive:json_archive",
     "//lib/serialization/stream:mem_stream", 
-    "//lib/serialization/types/std",
+    "//lib/common/serialization/std",
   ],
   visibility=["//visibility:public"],
 )

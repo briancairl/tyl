@@ -14,8 +14,8 @@ cc_binary(
 		"//lib/serialization/archive:binary_archive",
 		"//lib/serialization/archive:json_archive",
 		"//lib/serialization/stream:file_stream",
-		"//lib/serialization/types/graphics/device:device",
-		"//lib/serialization/types/common/math:geometry",
+		"//lib/graphics/serialization/device",
+		"//lib/common/serialization/math:geometry",
 		"@glfw//:glfw",
 		"@imgui//:imgui",
 	]

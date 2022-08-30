@@ -11,12 +11,12 @@
 #include <gtest/gtest.h>
 
 // Tyl
+#include <tyl/common/serialization/std/string.hpp>
+#include <tyl/common/serialization/std/unordered_map.hpp>
 #include <tyl/serialization/json_iarchive.hpp>
 #include <tyl/serialization/json_oarchive.hpp>
 #include <tyl/serialization/mem_istream.hpp>
 #include <tyl/serialization/mem_ostream.hpp>
-#include <tyl/serialization/types/std/string.hpp>
-#include <tyl/serialization/types/std/unordered_map.hpp>
 
 #include "test_types.hpp"
 

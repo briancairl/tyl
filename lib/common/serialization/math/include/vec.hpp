@@ -22,7 +22,7 @@ template <typename OArchive, typename ScalarT, int N, int M> struct save<OArchiv
   static_assert(M > 0);
   void operator()(OArchive& ar, const Mat<ScalarT, N, M>& mat)
   {
-    ar << named{"data", make_packet(mat.data(), mat.size())};
+    ar << named{"data", make_packet_fixed_size<N * M>(mat.data())};
   }
 };
 
@@ -33,7 +33,10 @@ template <typename IArchive, typename ScalarT, int N, int M> struct load<IArchiv
 {
   static_assert(N > 0);
   static_assert(M > 0);
-  void operator()(IArchive& ar, Mat<ScalarT, N, M>& mat) { ar >> named{"data", make_packet(mat.data(), mat.size())}; }
+  void operator()(IArchive& ar, Mat<ScalarT, N, M>& mat)
+  {
+    ar >> named{"data", make_packet_fixed_size<N * M>(mat.data())};
+  }
 };
 
 }  // namespace tyl::serialization

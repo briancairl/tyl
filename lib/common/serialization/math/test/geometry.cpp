@@ -8,12 +8,12 @@
 #include <gtest/gtest.h>
 
 // Tyl
+#include <tyl/common/serialization/math/rect.hpp>
+#include <tyl/common/serialization/math/vec.hpp>
 #include <tyl/serialization/binary_iarchive.hpp>
 #include <tyl/serialization/binary_oarchive.hpp>
 #include <tyl/serialization/mem_istream.hpp>
 #include <tyl/serialization/mem_ostream.hpp>
-#include <tyl/serialization/types/math/rect.hpp>
-#include <tyl/serialization/types/math/vec.hpp>
 
 using namespace tyl::serialization;
 

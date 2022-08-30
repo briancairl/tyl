@@ -11,11 +11,11 @@
 #include <gtest/gtest.h>
 
 // Tyl
+#include <tyl/common/serialization/std/vector.hpp>
 #include <tyl/serialization/json_iarchive.hpp>
 #include <tyl/serialization/json_oarchive.hpp>
 #include <tyl/serialization/mem_istream.hpp>
 #include <tyl/serialization/mem_ostream.hpp>
-#include <tyl/serialization/types/std/vector.hpp>
 
 #include "test_types.hpp"
 

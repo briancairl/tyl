@@ -8,7 +8,7 @@ cc_library(
     "include/vector.hpp"
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/serialization/types/std",
+  include_prefix="tyl/common/serialization/std",
   deps=[
     "//lib/serialization:object",
     "//lib/serialization/primitives"
