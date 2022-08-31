@@ -2,7 +2,6 @@ cc_library(
   name="adaptors",
   hdrs=[
     "include/alias.hpp",
-    "include/reference.hpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/utility",

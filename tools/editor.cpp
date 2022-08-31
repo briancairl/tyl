@@ -36,6 +36,7 @@
 #include <tyl/graphics/sprite/spritesheet.hpp>
 #include <tyl/math/vec.hpp>
 #include <tyl/serial/ecs/reader.hpp>
+#include <tyl/serial/ecs/reference.hpp>
 #include <tyl/serial/ecs/writer.hpp>
 #include <tyl/serial/graphics/device/texture.hpp>
 #include <tyl/serial/math/vec.hpp>
@@ -47,7 +48,6 @@
 #include <tyl/serialization/packet.hpp>
 #include <tyl/utility/alias.hpp>
 #include <tyl/utility/dynamic_bitset.hpp>
-#include <tyl/utility/reference.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -85,7 +85,7 @@ struct RegionEditState
   tyl::Vec2i subdivisions;
 };
 
-using TextureHandle = tyl::Reference<tyl::ecs::entity, tyl::graphics::device::TextureHandle>;
+using TextureHandle = tyl::ecs::ref<tyl::graphics::device::Texture, tyl::graphics::device::TextureHandle>;
 
 static void draw(
   ImDrawList* const drawlist,
@@ -122,32 +122,6 @@ static void draw(
     drawlist->AddText(rect_max_screen + ImVec2{10, 10}, IM_COL32(255, 255, 255, 255), text_buffer);
   }
 }
-
-namespace tyl::serialization
-{
-
-template <typename ArchiveT> struct save<ArchiveT, TextureHandle>
-{
-  void operator()(ArchiveT& ar, const TextureHandle& texture_handle) { ar << named{"guid", texture_handle.id()}; }
-};
-
-template <> struct enable_registry_access_on_load<TextureHandle> : std::true_type
-{};
-
-template <typename ArchiveT> struct load<ArchiveT, RegistryAccessOnLoad<TextureHandle>>
-{
-  void operator()(ArchiveT& ar, RegistryAccessOnLoad<TextureHandle>& rol)
-  {
-    ecs::entity reference_guid;
-    ar >> named{"guid", reference_guid};
-
-    const auto& texture = rol.registry->get<tyl::graphics::device::Texture>(reference_guid);
-    rol.registry->template emplace<TextureHandle>(rol.entity, reference_guid, texture);
-  }
-};
-
-}  // namespace tyl::serialization
-
 
 int main(int argc, char** argv)
 {
@@ -229,6 +203,7 @@ int main(int argc, char** argv)
     file_istream ifs{"/tmp/editor.bin"};
     binary_iarchive ia{ifs};
     ia >> named{"reg", reader<entity, device::Texture, tyl::Vec2i, TextureHandle>{reg}};
+    tyl::ecs::resolve_references<TextureHandle>(reg);
   }
   catch (const std::exception& ex)
   {

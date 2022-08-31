@@ -32,23 +32,13 @@ struct TestComponent
 namespace tyl::serialization
 {
 
-template <typename OArchive> struct save<OArchive, ::TestComponent>
+template <typename Archive> struct serialize<Archive, ::TestComponent>
 {
-  void operator()(OArchive& ar, const ::TestComponent& target)
+  void operator()(Archive& ar, ::TestComponent& target)
   {
-    ar << named{"x", target.x};
-    ar << named{"y", target.y};
-    ar << named{"z", target.z};
-  }
-};
-
-template <typename IArchive> struct load<IArchive, ::TestComponent>
-{
-  void operator()(IArchive& ar, ::TestComponent& target)
-  {
-    ar >> named{"x", target.x};
-    ar >> named{"y", target.y};
-    ar >> named{"z", target.z};
+    ar& named{"x", target.x};
+    ar& named{"y", target.y};
+    ar& named{"z", target.z};
   }
 };
 
