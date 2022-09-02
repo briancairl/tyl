@@ -3,6 +3,7 @@ cc_library(
   hdrs=[
     "include/vec.hpp",
     "include/rect.hpp",
+    "include/size.hpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/math",
@@ -15,6 +16,7 @@ cc_library(
   hdrs=[
     "serial/vec.hpp",
     "serial/rect.hpp",
+    "serial/size.hpp",
   ],
   strip_include_prefix="serial",
   include_prefix="tyl/serial/math",

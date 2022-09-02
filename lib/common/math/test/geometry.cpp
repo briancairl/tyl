@@ -9,6 +9,7 @@
 
 // Tyl
 #include <tyl/serial/math/rect.hpp>
+#include <tyl/serial/math/size.hpp>
 #include <tyl/serial/math/vec.hpp>
 #include <tyl/serialization/binary_iarchive.hpp>
 #include <tyl/serialization/binary_oarchive.hpp>
@@ -59,5 +60,25 @@ TEST(Rect, WriteThenRead)
     tyl::Rect2i r_rect;
     ASSERT_NO_THROW(iar >> r_rect);
     ASSERT_EQ(w_rect, r_rect);
+  }
+}
+
+TEST(Size, WriteThenRead)
+{
+  mem_ostream oms;
+
+  tyl::Size2f w_size{{1, 2}};
+
+  {
+    binary_oarchive oar{oms};
+    ASSERT_NO_THROW(oar << w_size);
+  }
+
+  {
+    mem_istream ims{std::move(oms)};
+    binary_iarchive iar{ims};
+    tyl::Size2f r_size;
+    ASSERT_NO_THROW(iar >> r_size);
+    ASSERT_EQ(w_size, r_size);
   }
 }
