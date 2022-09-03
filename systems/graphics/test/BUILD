@@ -1,0 +1,17 @@
+cc_binary(
+  name="sprite_renderer",
+  srcs=["sprite_renderer.cpp"],
+  deps=[
+    "//lib/common/debug:assert",
+    "//lib/graphics/device",
+    "//lib/graphics/device/glad:glad",
+    "//lib/graphics/host:image",
+    "//systems/graphics:render_target",
+    "//systems/graphics:sprite_rendering",
+    "//systems/graphics:sprite_animation",
+    "@glfw//:glfw",
+  ],
+  data=[
+    "@tyl//resources/test:test_images"
+  ]
+)
