@@ -168,6 +168,7 @@ void VertexBuffer::setup_attributes(
 
 VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other)
 {
+  this->~VertexBuffer();
   new (this) VertexBuffer{std::move(other)};
   return *this;
 }
@@ -234,6 +235,13 @@ VertexElementBuffer::~VertexElementBuffer()
   }
 }
 
+VertexElementBuffer& VertexElementBuffer::operator=(VertexElementBuffer&& other)
+{
+  this->~VertexElementBuffer();
+  new (this) VertexElementBuffer{std::move(other)};
+  return *this;
+}
+
 MappedBuffer VertexElementBuffer::get_mapped_element_buffer_write() const
 {
   return get_mapped_buffer<GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY>(ebo_);
@@ -257,11 +265,11 @@ void VertexElementBuffer::set(const VertexElementBufferLayout& layout, const ele
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, layout.length * sizeof(element_t), data);
 }
 
-void VertexElementBuffer::draw(const VertexElementBufferLayout& layout, const DrawMode mode) const
+void VertexElementBuffer::draw(const std::size_t count, const DrawMode mode) const
 {
   glBindVertexArray(vao_);
   TYL_ASSERT_TRUE(ebo_);
-  glDrawElements(to_gl_draw_mode(mode), layout.length, GL_UNSIGNED_INT, 0);
+  glDrawElements(to_gl_draw_mode(mode), count, GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 }
 
