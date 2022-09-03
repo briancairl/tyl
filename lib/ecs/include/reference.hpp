@@ -23,7 +23,7 @@ public:
   static_assert(!std::is_void_v<AccessT>, "AccessT may not be a void type");
   static_assert(!std::is_pointer_v<AccessT>, "AccessT may not be a raw pointer type");
 
-  explicit ref(entity id, const AccessT& parent) : guid_{id}, value_{parent} {}
+  ref(entity id, const AccessT& parent) : guid_{id}, value_{parent} {}
 
   constexpr entity guid() const { return guid_; }
 
@@ -47,7 +47,7 @@ private:
 template <typename ComponentT> class ref<ComponentT, registry>
 {
 public:
-  explicit ref(entity id, registry& reg) : guid_{id}, reg_{&reg} {}
+  ref(entity id, registry& reg) : guid_{id}, reg_{&reg} {}
 
   constexpr entity guid() const { return guid_; }
 
