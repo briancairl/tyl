@@ -1,5 +1,5 @@
 cc_library(
-  name="geometry",
+  name="geometry_core",
   hdrs=[
     "include/vec.hpp",
     "include/rect.hpp",
@@ -20,6 +20,12 @@ cc_library(
   ],
   strip_include_prefix="serial",
   include_prefix="tyl/serial/math",
-  deps=[":geometry"],
+  deps=[":geometry_core", "//lib/serialization:object",],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="geometry",
+  deps=[":geometry_core", ":geometry_serial"],
   visibility=["//visibility:public"]
 )
