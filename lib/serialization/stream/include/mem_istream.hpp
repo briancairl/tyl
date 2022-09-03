@@ -37,22 +37,19 @@ private:
    */
   std::size_t read_impl(void* ptr, std::size_t len)
   {
-    if (const std::size_t len = std::min(len, buffer_.size()); len > 0)
+    if (len + pos_ > buffer_.size())
     {
-      std::memcpy(ptr, buffer_.data() + pos_, len);
-      pos_ += len;
-      return len;
+      len = buffer_.size() - pos_;
     }
-    else
-    {
-      return 0;
-    }
+    std::memcpy(ptr, buffer_.data() + pos_, len);
+    pos_ += len;
+    return len;
   }
 
   /**
    * @copydoc istream<mem_istream>::peek
    */
-  constexpr char peek_impl() { return buffer_[pos_]; }
+  char peek_impl() { return buffer_[pos_]; }
 
   /**
    * @copydoc istream<mem_istream>::available

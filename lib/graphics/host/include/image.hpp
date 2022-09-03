@@ -19,7 +19,7 @@ namespace tyl::graphics::host
  */
 struct ImageOptions
 {
-  enum class ChannelMode
+  enum class ChannelMode : std::uint8_t
   {
     Default,
     Grey,

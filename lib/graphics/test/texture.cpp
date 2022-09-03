@@ -21,7 +21,7 @@
 #include <GLFW/glfw3.h>
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/shader.hpp>
 #include <tyl/graphics/device/texture.hpp>

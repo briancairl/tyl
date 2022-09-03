@@ -12,13 +12,34 @@
 #include <utility>
 
 // Tyl
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/oarchive.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/ostream.hpp>
-#include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
 {
+
+template <typename ValueT> struct save_json_primitive
+{
+  static_assert(std::is_object_v<ValueT>);
+
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, const ValueT& object)
+  {
+    ar.skip_next_comma_ = true;
+    if constexpr (std::is_scalar_v<ValueT>)
+    {
+      save<JSONArchiveT, ValueT>{}(ar, object);
+    }
+    else
+    {
+      ar.os_->write("{", 1);
+      save<JSONArchiveT, ValueT>{}(ar, object);
+      ar.os_->write("}", 1);
+    }
+    ar.skip_next_comma_ = false;
+  }
+};
 
 template <typename OStreamT> class json_oarchive : public oarchive<json_oarchive<OStreamT>>
 {
@@ -35,10 +56,17 @@ public:
 
   ~json_oarchive() { os_->write("}\n", 2); }
 
-  template <typename ValueT> constexpr json_oarchive& operator<<(const ValueT& payload)
+  template <typename ValueT> constexpr json_oarchive& operator<<(const ValueT& v)
   {
-    static_assert(!is_packet_v<ValueT>, "json_oarchive cannot serialize binary blobs");
-    return oarchive_base::operator<<(payload);
+    save_json_primitive<ValueT>{}(*this, v);
+    return *this;
+  }
+
+  template <typename ValueT> constexpr json_oarchive& operator<<(const named<ValueT>& nv)
+  {
+    this->operator<<(label{nv.name});
+    this->operator<<(nv.value);
+    return *this;
   }
 
   template <typename IteratorT> constexpr json_oarchive& operator<<(const sequence<IteratorT>& sequence)
@@ -51,6 +79,8 @@ public:
     json_oarchive::update();
     return oarchive_base::operator<<(l);
   }
+
+  using oarchive_base::operator&;
 
 private:
   using oarchive_base::operator<<;
@@ -74,6 +104,19 @@ private:
     os_->write("\":", 2);
   }
 
+  template <typename PointerT> constexpr void write_impl(const basic_packet<PointerT>& packet)
+  {
+    using value_type = std::remove_pointer_t<PointerT>;
+    if constexpr (std::is_void_v<value_type>)
+    {
+      (*this) << std::string_view{reinterpret_cast<const char*>(packet.data), packet.len};
+    }
+    else
+    {
+      (*this) << std::string_view{reinterpret_cast<const char*>(packet.data), packet.len * sizeof(value_type)};
+    }
+  }
+
   template <typename IteratorT> constexpr void write_impl(const sequence<IteratorT>& sequence)
   {
     skip_next_comma_ = true;
@@ -95,19 +138,6 @@ private:
 
 template <typename OStreamT> json_oarchive(ostream<OStreamT>& os) -> json_oarchive<OStreamT>;
 
-template <typename ValueT> struct save_json_primitive
-{
-  static_assert(std::is_object_v<ValueT>);
-
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, const ValueT& object)
-  {
-    ar.skip_next_comma_ = true;
-    ar.os_->write("{", 1);
-    save<JSONArchiveT, ValueT>{}(ar, object);
-    ar.os_->write("}", 1);
-    ar.skip_next_comma_ = false;
-  }
-};
 
 template <typename OStreamT, typename ValueT>
 struct save_impl<json_oarchive<OStreamT>, ValueT> : std::conditional_t<
@@ -115,6 +145,38 @@ struct save_impl<json_oarchive<OStreamT>, ValueT> : std::conditional_t<
                                                       /* ->( true  ) */ save<json_oarchive<OStreamT>, ValueT>,
                                                       /* ->( false ) */ save_json_primitive<ValueT>>
 {};
+
+/**
+ * @brief JSON output archive <code>double</code> save implementation
+ */
+template <> struct save_json_primitive<bool>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, bool v)
+  {
+    if (v)
+    {
+      static constexpr std::string_view str{"True"};
+      ar.os_->write(str.data(), str.size());
+    }
+    else
+    {
+      static constexpr std::string_view str{"False"};
+      ar.os_->write(str.data(), str.size());
+    }
+  }
+};
+
+/**
+ * @brief JSON output archive <code>double</code> save implementation
+ */
+template <> struct save_json_primitive<double>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, double v)
+  {
+    auto str = std::to_string(v);
+    ar.os_->write(str.data(), str.size());
+  }
+};
 
 /**
  * @brief JSON output archive <code>float</code> save implementation
@@ -177,17 +239,26 @@ template <> struct save_json_primitive<long unsigned int>
 };
 
 /**
- * @brief JSON output archive <code>double</code> save implementation
+ * @brief JSON output archive <code>int</code> save implementation
  */
-template <> struct save_json_primitive<double>
+template <> struct save_json_primitive<char>
 {
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, double v)
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, char v)
   {
-    auto str = std::to_string(v);
-    ar.os_->write(str.data(), str.size());
+    ar.os_->write(reinterpret_cast<void*>(&v), 1);
   }
 };
 
+/**
+ * @brief JSON output archive <code>int</code> save implementation
+ */
+template <> struct save_json_primitive<unsigned char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, unsigned char v)
+  {
+    ar.os_->write(reinterpret_cast<void*>(&v), 1);
+  }
+};
 
 /**
  * @brief JSON output archive <code>std::string_view</code> save implementation

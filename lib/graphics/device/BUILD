@@ -45,7 +45,7 @@ cc_library(
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,
-  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common:assert"],
+  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common/debug:assert"],
   visibility=["//visibility:private"]
 )
 
@@ -54,5 +54,21 @@ cc_library(
 alias(
   name="device",
   actual=":graphics_impl__opengl",
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="device_serial",
+  hdrs=[
+    "serial/shader.hpp",
+    "serial/texture.hpp",
+  ],
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/graphics/device",
+  deps=[
+    ":device",
+    "//lib/serialization:object",
+    "//lib/serialization/primitives"
+  ],
   visibility=["//visibility:public"]
 )

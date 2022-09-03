@@ -26,10 +26,17 @@ template <typename IArchiveT> class iarchive
   static constexpr bool is_primitive = is_label_v<ValueT> or is_packet_v<ValueT> or is_sequence_v<ValueT>;
 
 public:
-  template <typename ValueT> std::enable_if_t<!is_primitive<ValueT>, IArchiveT&> operator>>(ValueT&& payload)
+  template <typename ValueT> IArchiveT& operator&(ValueT&& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
-    load_impl<IArchiveT, CleanT>{}(derived(), std::forward<ValueT>(payload));
+    load_impl<IArchiveT, CleanT>{}(derived(), std::forward<ValueT>(value));
+    return derived();
+  }
+
+  template <typename ValueT> std::enable_if_t<!is_primitive<ValueT>, IArchiveT&> operator>>(ValueT&& value)
+  {
+    using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
+    load_impl<IArchiveT, CleanT>{}(derived(), std::forward<ValueT>(value));
     return derived();
   }
 

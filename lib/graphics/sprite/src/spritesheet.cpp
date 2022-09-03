@@ -5,7 +5,7 @@
  */
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
 
 namespace tyl::graphics::sprite
@@ -121,6 +121,14 @@ SpriteSheet::SpriteSheet(const Vec2i atlas_texture_extents, const TransposedUnif
 {
   SpriteSheet::update(atlas_texture_extents, region);
   TYL_ASSERT_FALSE(tile_uv_bounds_.empty());
+}
+
+SpriteSheet::SpriteSheet(std::vector<Rect2f>&& tile_uv_bounds) : tile_uv_bounds_{std::move(tile_uv_bounds)} {}
+
+SpriteSheet& SpriteSheet::operator=(std::vector<Rect2f>&& tile_uv_bounds)
+{
+  tile_uv_bounds_ = std::move(tile_uv_bounds);
+  return *this;
 }
 
 void SpriteSheet::update(const Vec2i atlas_texture_extents, const Rect2i& region_descriptor)

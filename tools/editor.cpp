@@ -27,16 +27,27 @@
 #include <entt/entt.hpp>
 
 // Tyl
-#include <tyl/common/alias.hpp>
-#include <tyl/common/assert.hpp>
-#include <tyl/common/dynamic_bitset.hpp>
-#include <tyl/common/reference.hpp>
-#include <tyl/common/vec.hpp>
+#include <tyl/debug/assert.hpp>
+#include <tyl/ecs/ecs.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/graphics/sprite/animation.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
+#include <tyl/math/vec.hpp>
+#include <tyl/serial/ecs/reader.hpp>
+#include <tyl/serial/ecs/reference.hpp>
+#include <tyl/serial/ecs/writer.hpp>
+#include <tyl/serial/graphics/device/texture.hpp>
+#include <tyl/serial/math/vec.hpp>
+#include <tyl/serialization/binary_archive.hpp>
+#include <tyl/serialization/file_stream.hpp>
+#include <tyl/serialization/json_archive.hpp>
+#include <tyl/serialization/named.hpp>
+#include <tyl/serialization/object.hpp>
+#include <tyl/serialization/packet.hpp>
+#include <tyl/utility/alias.hpp>
+#include <tyl/utility/dynamic_bitset.hpp>
 
 static void glfw_error_callback(int error, const char* description)
 {
@@ -59,7 +70,7 @@ static bool within(const ImVec2& delta, const float radius)
 
 struct TextureDisplayState
 {
-  entt::entity entity;
+  tyl::ecs::entity entity;
   tyl::Vec2i extents;
   float zoom_level;
   ImVec2 origin;
@@ -74,7 +85,7 @@ struct RegionEditState
   tyl::Vec2i subdivisions;
 };
 
-using TextureHandle = tyl::Reference<entt::entity, tyl::graphics::device::TextureHandle>;
+using TextureHandle = tyl::ecs::ref<tyl::graphics::device::Texture, tyl::graphics::device::TextureHandle>;
 
 static void draw(
   ImDrawList* const drawlist,
@@ -177,12 +188,27 @@ int main(int argc, char** argv)
 
   using namespace tyl::graphics;
 
-  entt::registry reg;
+  tyl::ecs::registry reg;
 
   ImVec2* editting_point = nullptr;
-  std::optional<entt::entity> active_new_region_id;
-  std::optional<entt::entity> active_editting_region_id;
+  std::optional<tyl::ecs::entity> active_new_region_id;
+  std::optional<tyl::ecs::entity> active_editting_region_id;
   std::optional<TextureDisplayState> edittor_state;
+
+
+  try
+  {
+    using namespace ::tyl::ecs;
+    using namespace ::tyl::serialization;
+    file_istream ifs{"/tmp/editor.bin"};
+    binary_iarchive ia{ifs};
+    ia >> named{"reg", reader<entity, device::Texture, tyl::Vec2i, TextureHandle>{reg}};
+    tyl::ecs::resolve_references<TextureHandle>(reg);
+  }
+  catch (const std::exception& ex)
+  {
+    std::fprintf(stderr, "%s : %s\n", "Failed to load: ", ex.what());
+  }
 
   bool disable_window_move = false;
   while (!glfwWindowShouldClose(window))
@@ -416,7 +442,7 @@ int main(int argc, char** argv)
          &local_mouse_pos,
          &editting_point,
          &active_editting_region_id,
-         &edittor = edittor_state.value()](const entt::entity region_id, auto& edit_state) {
+         &edittor = edittor_state.value()](const tyl::ecs::entity region_id, auto& edit_state) {
           draw(drawlist, screen_to_local, edit_state, edittor.zoom_level > 3.f);
 
           {
@@ -499,7 +525,7 @@ int main(int argc, char** argv)
 
           reg.view<sprite::AnimationState, sprite::AnimationFrames, sprite::AnimationProperties, tyl::Vec2f>().each(
             [&reg, &edittor_state](
-              const entt::entity ani_id,
+              const tyl::ecs::entity ani_id,
               auto& ani_state,
               const auto& ani_frames,
               const auto& ani_props,
@@ -546,6 +572,17 @@ int main(int argc, char** argv)
     glViewport(0, 0, x_size, y_size);
     glfwSwapBuffers(window);
   }
+
+  try
+  {
+    using namespace ::tyl::ecs;
+    using namespace ::tyl::serialization;
+    file_ostream ofs{"/tmp/editor.bin"};
+    binary_oarchive oa{ofs};
+    oa << named{"reg", writer<entity, device::Texture, tyl::Vec2i, TextureHandle>{reg}};
+  }
+  catch (const std::exception& ex)
+  {}
 
   return 0;
 }

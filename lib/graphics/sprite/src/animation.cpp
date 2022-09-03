@@ -5,7 +5,7 @@
  */
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/sprite/animation.hpp>
 #include <tyl/graphics/sprite/spritesheet.hpp>
 

@@ -11,7 +11,8 @@ cc_library(
   name="file_stream",
   hdrs=[
     "include/file_istream.hpp",
-    "include/file_ostream.hpp"
+    "include/file_ostream.hpp",
+    "include/file_stream.hpp"
   ],
   srcs=[
     "src/file_istream.cpp",
@@ -27,7 +28,8 @@ cc_library(
   name="mem_stream",
   hdrs=[
     "include/mem_istream.hpp",
-    "include/mem_ostream.hpp"
+    "include/mem_ostream.hpp",
+    "include/mem_stream.hpp"
   ],
   srcs=[
     "src/mem_istream.cpp",

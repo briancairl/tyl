@@ -12,11 +12,11 @@
 #include <gtest/gtest.h>
 
 // Tyl
+#include <tyl/serial/std/vector.hpp>
 #include <tyl/serialization/file_istream.hpp>
 #include <tyl/serialization/file_ostream.hpp>
 #include <tyl/serialization/json_iarchive.hpp>
 #include <tyl/serialization/json_oarchive.hpp>
-#include <tyl/serialization/types/std/vector.hpp>
 
 using namespace tyl::serialization;
 
@@ -49,48 +49,26 @@ static bool operator==(const TrivialNestedStruct& lhs, const TrivialNestedStruct
 namespace tyl::serialization
 {
 
-template <typename OArchive> struct save<OArchive, ::TrivialStruct>
+template <typename Archive> struct serialize<Archive, ::TrivialStruct>
 {
-  void operator()(OArchive& ar, const ::TrivialStruct& value)
+  void operator()(Archive& ar, ::TrivialStruct& value)
   {
-    ar << named{"x", value.x};
-    ar << named{"y", value.y};
-    ar << named{"z", value.z};
+    ar& named{"x", value.x};
+    ar& named{"y", value.y};
+    ar& named{"z", value.z};
   }
 };
 
-template <typename OArchive> struct save<OArchive, ::TrivialNestedStruct>
+template <typename Archive> struct serialize<Archive, ::TrivialNestedStruct>
 {
-  void operator()(OArchive& ar, const ::TrivialNestedStruct& value)
+  void operator()(Archive& ar, ::TrivialNestedStruct& value)
   {
-    ar << named{"label_1", value.label_1};
-    ar << named{"label_2", value.label_2};
-    ar << named{"first", value.first};
-    ar << named{"second", value.second};
+    ar& named{"label_1", value.label_1};
+    ar& named{"label_2", value.label_2};
+    ar& named{"first", value.first};
+    ar& named{"second", value.second};
   }
 };
-
-template <typename IArchive> struct load<IArchive, ::TrivialStruct>
-{
-  void operator()(IArchive& ar, ::TrivialStruct& value)
-  {
-    ar >> named{"x", value.x};
-    ar >> named{"y", value.y};
-    ar >> named{"z", value.z};
-  }
-};
-
-template <typename OArchive> struct load<OArchive, ::TrivialNestedStruct>
-{
-  void operator()(OArchive& ar, ::TrivialNestedStruct& value)
-  {
-    ar >> named{"label_1", value.label_1};
-    ar >> named{"label_2", value.label_2};
-    ar >> named{"first", value.first};
-    ar >> named{"second", value.second};
-  }
-};
-
 
 }  // namespace tyl::serialization
 
@@ -160,6 +138,45 @@ TEST(JSONIArchive, Primitive)
   }
 }
 
+
+TEST(JSONIArchive, BoolTrue)
+{
+  const bool target = true;
+
+  {
+    file_ostream ofs{"BoolTrue.json"};
+    json_oarchive oar{ofs};
+    ASSERT_NO_THROW((oar << named{"bool", target}));
+  }
+
+  {
+    file_istream ifs{"BoolTrue.json"};
+    json_iarchive iar{ifs};
+    bool read_value;
+    ASSERT_NO_THROW((iar >> named{"bool", read_value}));
+    ASSERT_EQ(target, read_value);
+  }
+}
+
+
+TEST(JSONIArchive, BoolFalse)
+{
+  const bool target = false;
+
+  {
+    file_ostream ofs{"BoolFalse.json"};
+    json_oarchive oar{ofs};
+    ASSERT_NO_THROW((oar << named{"bool", target}));
+  }
+
+  {
+    file_istream ifs{"BoolFalse.json"};
+    json_iarchive iar{ifs};
+    bool read_value;
+    ASSERT_NO_THROW((iar >> named{"bool", read_value}));
+    ASSERT_EQ(target, read_value);
+  }
+}
 
 TEST(JSONIArchive, TrivialStruct)
 {

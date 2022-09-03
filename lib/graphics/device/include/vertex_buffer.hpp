@@ -312,7 +312,12 @@ public:
     const std::size_t instance_count,
     const DrawMode mode = DrawMode::Triangles) const;
 
-  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::Triangles) const;
+
+  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const
+  {
+    VertexElementBuffer::draw(layout.length, mode);
+  }
 
   ~VertexElementBuffer();
 

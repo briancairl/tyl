@@ -2,40 +2,31 @@ cc_library(
   name="ecs",
   hdrs=[
     "include/ecs.hpp",
+    "include/reference.hpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/ecs",
   deps = [
+    "//lib/common/debug:assert",
     "@entt//:entt",
   ],
   visibility=["//visibility:public"]
 )
 
 cc_library(
-  name="serialization_impl",
+  name="ecs_serial",
   hdrs=[
-    "src/load.hpp",
-    "src/save.hpp",
+    "serial/reader.hpp",
+    "serial/writer.hpp",
+    "serial/reference.hpp",
   ],
-  strip_include_prefix="src",
-  include_prefix="tyl/ecs",
+  strip_include_prefix="serial",
+  include_prefix="tyl/serial/ecs",
   deps = [
     ":ecs",
-    "//lib/common:typestr",
+    "//lib/common/reflection:typestr",
     "//lib/serialization/archive",
-    "//lib/serialization/types/common",
-  ],
-  visibility=["//visibility:private"]
-)
-
-
-cc_library(
-  name="serialization",
-  hdrs=["include/serialization.hpp"],
-  strip_include_prefix="include",
-  include_prefix="tyl/ecs",
-  deps = [
-    ":serialization_impl",
+    "//lib/serialization/primitives",
   ],
   visibility=["//visibility:public"]
 )

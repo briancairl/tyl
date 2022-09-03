@@ -26,9 +26,26 @@ cc_binary(
 	name="vertex_buffer",
 	srcs=["vertex_buffer.cpp"],
 	deps=[
-		"//lib/common:assert",
+		"//lib/common/debug:assert",
 		"//lib/graphics/device",
 		"//lib/graphics/device/glad:glad",
 		"@glfw//:glfw",
+	]
+)
+
+cc_binary(
+	name="sprite_renderer",
+	srcs=["sprite_renderer.cpp"],
+	deps=[
+		"//lib/common/debug:assert",
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"//lib/graphics/host:image",
+		"//lib/graphics/systems:render_target",
+		"//lib/graphics/systems:sprite_renderer",
+		"@glfw//:glfw",
+	],
+	data=[
+		"texture-image.png"
 	]
 )

@@ -16,11 +16,23 @@
 // Tyl
 #include <tyl/serialization/iarchive.hpp>
 #include <tyl/serialization/istream.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
-#include <tyl/serialization/types/common/named.hpp>
 
 namespace tyl::serialization
 {
+
+template <typename ValueT> struct load_json_primitive
+{
+  static_assert(std::is_object_v<ValueT>);
+
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, ValueT& object)
+  {
+    ar.template eat<'{'>();
+    load<JSONArchiveT, ValueT>{}(ar, object);
+    ar.template eat<'}'>();
+  }
+};
 
 template <typename IStreamT> class json_iarchive : public iarchive<json_iarchive<IStreamT>>
 {
@@ -36,10 +48,17 @@ public:
 
   ~json_iarchive() { json_iarchive::eat<'}'>(); }
 
-  template <typename ValueT> constexpr json_iarchive& operator>>(ValueT& payload)
+  template <typename ValueT> constexpr json_iarchive& operator>>(ValueT& v)
   {
-    static_assert(!is_packet_v<ValueT>, "json_iarchive cannot serialize binary blobs");
-    return iarchive_base::operator>>(payload);
+    load_json_primitive<ValueT>{}(*this, v);
+    return *this;
+  }
+
+  template <typename ValueT> constexpr json_iarchive& operator>>(named<ValueT>& nv)
+  {
+    this->operator>>(label{nv.name});
+    this->operator>>(nv.value);
+    return *this;
   }
 
   template <typename IteratorT> constexpr json_iarchive& operator>>(sequence<IteratorT> sequence)
@@ -50,6 +69,7 @@ public:
   constexpr json_iarchive& operator>>(label l) { return iarchive_base::operator>>(l); }
 
   using iarchive_base::operator>>;
+  using iarchive_base::operator&;
 
 private:
   template <char TargetChar> void eat()
@@ -110,18 +130,6 @@ private:
 
 template <typename IStreamT> json_iarchive(istream<IStreamT>& os) -> json_iarchive<IStreamT>;
 
-template <typename ValueT> struct load_json_primitive
-{
-  static_assert(std::is_object_v<ValueT>);
-
-  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, ValueT& object)
-  {
-    ar.template eat<'{'>();
-    load<JSONArchiveT, ValueT>{}(ar, object);
-    ar.template eat<'}'>();
-  }
-};
-
 template <typename IStreamT, typename ValueT>
 struct load_impl<json_iarchive<IStreamT>, ValueT> : std::conditional_t<
                                                       /* if( cond  ) */ is_named_v<ValueT>,
@@ -165,9 +173,41 @@ struct load_json_numeric
 };
 
 /**
+ * @brief JSON output archive <code>bool</code> save implementation
+ */
+template <> struct load_json_primitive<bool>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, bool& v)
+  {
+    if (ar.is_->peek() == 'T')
+    {
+      static char buf[4];
+      ar.is_->read(buf, sizeof(buf));
+      v = true;
+    }
+    else if (ar.is_->peek() == 'F')
+    {
+      static char buf[5];
+      ar.is_->read(buf, sizeof(buf));
+      v = false;
+    }
+    else
+    {
+      throw std::runtime_error{"JSON is ill-formed. Error while reading bool type."};
+    }
+  }
+};
+
+/**
  * @brief JSON input archive <code>float</code> save implementation
  */
 template <> struct load_json_primitive<float> : load_json_numeric
+{};
+
+/**
+ * @brief JSON input archive <code>double</code> save implementation
+ */
+template <> struct load_json_primitive<double> : load_json_numeric
 {};
 
 /**
@@ -177,28 +217,44 @@ template <> struct load_json_primitive<int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code> longint</code> save implementation
+ * @brief JSON input archive <code>long int</code> save implementation
  */
 template <> struct load_json_primitive<long int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code>int</code> save implementation
+ * @brief JSON input archive <code>unsigned int</code> save implementation
  */
 template <> struct load_json_primitive<unsigned int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code>int</code> save implementation
+ * @brief JSON input archive <code>long unsigned int</code> save implementation
  */
 template <> struct load_json_primitive<long unsigned int> : load_json_numeric
 {};
 
 /**
- * @brief JSON input archive <code>double</code> save implementation
+ * @brief JSON input archive <code>unsigned char</code> save implementation
  */
-template <> struct load_json_primitive<double> : load_json_numeric
-{};
+template <> struct load_json_primitive<unsigned char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, unsigned char& v)
+  {
+    ar.is_->read(reinterpret_cast<void*>(&v), 1);
+  }
+};
+
+/**
+ * @brief JSON input archive <code>unsigned char</code> save implementation
+ */
+template <> struct load_json_primitive<char>
+{
+  template <typename JSONArchiveT> void operator()(JSONArchiveT& ar, char& v)
+  {
+    ar.is_->read(reinterpret_cast<void*>(&v), 1);
+  }
+};
 
 /**
  * @brief JSON input archive <code>std::string</code> save implementation
