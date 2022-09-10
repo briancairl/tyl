@@ -65,6 +65,23 @@ private:
   registry* const reg_;
 };
 
+/**
+ * @brief Retrieves components associated with a referenced entity
+ */
+template <typename... ComponentTs, typename ViewT, typename C, typename A>
+decltype(auto) get(ViewT&& view, const ref<C, A>& reference)
+{
+  return view.template get<ComponentTs...>(reference.guid());
+}
+
+/**
+ * @brief Retrieves component directly associated with a referenced entity
+ */
+template <typename ViewT, typename C, typename A> decltype(auto) deref(ViewT&& view, const ref<C, A>& reference)
+{
+  return view.template get<C>(reference.guid());
+}
+
 template <typename RefT> struct is_ref : std::false_type
 {};
 
