@@ -46,6 +46,16 @@ cc_library(
   srcs=["src/sprite_rendering.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
-  deps=[":common", ":render_target", ":sprite", ":sprite_animation", "//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/ecs", "//lib/serialization", "//lib/graphics/device"],
+  deps=[":common", ":render_target", ":sprite", ":sprite_animation", ":texture_management", "//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/ecs", "//lib/serialization", "//lib/graphics/device"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="texture_management",
+  hdrs=["include/texture_management.hpp"],
+  srcs=["src/texture_management.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/ecs", "//lib/serialization", "//lib/graphics/device", "//lib/graphics/host:image"],
   visibility=["//visibility:public"]
 )

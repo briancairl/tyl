@@ -140,12 +140,12 @@ void attach_sprite_renderer(ecs::registry& reg, const ecs::entity e, const Sprit
   attach_sprite_renderer_shader(reg, e);
 }
 
-ecs::entity create_sprite_renderer(ecs::registry& reg, const AtlasTextureReference& atlas_texture, const SpriteRendererOptions& options)
+ecs::entity create_sprite_renderer(ecs::registry& reg, const TextureReference& atlas_texture, const SpriteRendererOptions& options)
 {
   TYL_ASSERT_GT(options.capacity, 0UL);
 
   const auto e = reg.create();
-  reg.emplace<AtlasTextureReference>(e, atlas_texture);
+  reg.emplace<TextureReference>(e, atlas_texture);
   attach_sprite_renderer(reg, e, options);
 
   return e;
@@ -153,7 +153,7 @@ ecs::entity create_sprite_renderer(ecs::registry& reg, const AtlasTextureReferen
 
 void update_sprite_renderers(ecs::registry& reg, const RenderTarget2D& target)
 {
-  reg.view<SpriteRendererState, SpriteRendererOptions, VertexBuffer, AtlasTextureReference, device::Shader>().each(
+  reg.view<SpriteRendererState, SpriteRendererOptions, VertexBuffer, TextureReference, device::Shader>().each(
     [&target, &reg](auto& render_state, const auto& render_options, const auto& render_vertex_buffer, const auto& render_atlas_texture, const auto& render_shader)
     {
       // Bind texture to unit
