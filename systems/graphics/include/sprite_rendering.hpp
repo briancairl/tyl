@@ -9,6 +9,7 @@
 #include <tyl/ecs/ecs.hpp>
 #include <tyl/ecs/reference.hpp>
 #include <tyl/graphics/device/fwd.hpp>
+#include <tyl/graphics/texture_management.hpp>
 
 namespace tyl::graphics
 {
@@ -36,7 +37,7 @@ struct SpriteRendererState
  * @brief Creates a system which renders static/animated 2D sprites
  */
 ecs::entity
-create_sprite_renderer(ecs::registry& reg, const AtlasTextureReference& texture, const SpriteRendererOptions& options);
+create_sprite_renderer(ecs::registry& reg, const TextureReference& texture, const SpriteRendererOptions& options);
 
 /**
  * @brief Attaches components for a system which renders static/animated 2D sprites

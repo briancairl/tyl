@@ -65,16 +65,10 @@ int main(int argc, char** argv)
 
   tyl::ecs::registry reg;
 
-  // Upload texture data
-  const auto texture_guid = reg.create();
-  {
-    const auto texture_host = tyl::graphics::host::load("systems/graphics/test/sprite_renderer/spritesheet.png");
+  const auto atlas_texture = tyl::graphics::create_texture(
+    reg, {.path = "systems/graphics/test/sprite_renderer/spritesheet.png", .flip_vertically = false});
 
-    reg.emplace<tyl::Vec2i>(texture_guid, texture_host.height(), texture_host.width());
-    const auto& texture = reg.emplace<tyl::graphics::device::Texture>(texture_guid, texture_host);
-
-    tyl::graphics::create_sprite_renderer(reg, {texture_guid, texture}, {.capacity = 1000, .atlas_texture_unit = 0});
-  }
+  tyl::graphics::create_sprite_renderer(reg, atlas_texture, {.capacity = 1000, .atlas_texture_unit = 0});
 
   // Sprite 1
   {
@@ -82,7 +76,7 @@ int main(int argc, char** argv)
       reg,
       {0.f, 0.f},
       {1.f, 1.f},
-      {.atlas_texture_size_px = reg.get<tyl::Vec2i>(texture_guid),
+      {.atlas_texture_size_px = tyl::ecs::get<tyl::graphics::TextureSize>(reg, atlas_texture).v(),
        .subdivisions = {4, 1},
        .inner_padding_px = {0, 0},
        .area_px = {{0, 0}, {128, 48}},
@@ -98,7 +92,7 @@ int main(int argc, char** argv)
       reg,
       {-1.f, -1.f},
       {1.f, 1.f},
-      {.atlas_texture_size_px = reg.get<tyl::Vec2i>(texture_guid),
+      {.atlas_texture_size_px = tyl::ecs::get<tyl::graphics::TextureSize>(reg, atlas_texture).v(),
        .subdivisions = {4, 1},
        .inner_padding_px = {0, 0},
        .area_px = {{0, 0}, {128, 48}},
