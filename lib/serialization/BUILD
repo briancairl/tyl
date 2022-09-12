@@ -10,6 +10,6 @@ cc_library(
   name="serialization",
   hdrs=["serial.hpp"],
   include_prefix="tyl",
-  deps=["//lib/serialization/primitives"],
+  deps=["//lib/serialization/primitives", ":object"],
   visibility=["//visibility:public"]
 )

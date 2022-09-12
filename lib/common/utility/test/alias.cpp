@@ -12,6 +12,11 @@
 #include <gtest/gtest.h>
 
 // Tyl
+#include <tyl/serial/utility/alias.hpp>
+#include <tyl/serialization/binary_iarchive.hpp>
+#include <tyl/serialization/binary_oarchive.hpp>
+#include <tyl/serialization/mem_istream.hpp>
+#include <tyl/serialization/mem_ostream.hpp>
 #include <tyl/utility/alias.hpp>
 
 using namespace tyl;
@@ -55,4 +60,28 @@ TEST(Alias, ClassInequalityWithUnderlying)
 
   EXPECT_NE(str, std::string{"ok1"});
   EXPECT_NE(std::string{"ok1"}, str);
+}
+
+using namespace tyl::serialization;
+
+TEST(Alias, WriteThenRead)
+{
+  using LikeAFloat = alias<float, decltype("LikeAFloat"_tag)>;
+
+  mem_ostream oms;
+
+  LikeAFloat w_alias{-0.1234f};
+
+  {
+    binary_oarchive oar{oms};
+    ASSERT_NO_THROW(oar << w_alias);
+  }
+
+  {
+    mem_istream ims{std::move(oms)};
+    binary_iarchive iar{ims};
+    LikeAFloat r_alias;
+    ASSERT_NO_THROW(iar >> r_alias);
+    ASSERT_EQ(w_alias, r_alias);
+  }
 }

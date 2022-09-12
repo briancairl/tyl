@@ -36,6 +36,8 @@ template <typename T, typename Tag> struct alias
 {
   static_assert(is_alias_tag<Tag>());
 
+  alias() = default;
+
   template <typename... CTorArgs> explicit alias(CTorArgs&&... ctor_args) : value{std::forward<CTorArgs>(ctor_args)...}
   {}
 
