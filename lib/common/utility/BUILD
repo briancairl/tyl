@@ -1,5 +1,5 @@
 cc_library(
-  name="adaptors",
+  name="alias",
   hdrs=[
     "include/alias.hpp",
   ],
