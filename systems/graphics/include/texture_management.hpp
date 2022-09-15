@@ -13,6 +13,7 @@
 #include <tyl/ecs/reference.hpp>
 #include <tyl/graphics/device/fwd.hpp>
 #include <tyl/math/vec.hpp>
+#include <tyl/utility/alias.hpp>
 
 namespace tyl::graphics
 {
@@ -23,11 +24,7 @@ using TextureReference = ecs::ref<device::Texture, device::TextureHandle>;
 /**
  * @brief Size of a texture
  */
-struct TextureSize
-{
-  Vec2i size_px;
-  constexpr const auto& v() const { return size_px; }
-};
+using TextureSize = alias<Vec2i, decltype("TextureSize"_tag)>;
 
 /**
  * @brief Asset data for a texture source image
@@ -61,17 +58,10 @@ void reload_textures(ecs::registry& reg);
 // Tyl
 #include <tyl/serial.hpp>
 #include <tyl/serial/math/vec.hpp>
+#include <tyl/serial/utility/alias.hpp>
 
 namespace tyl::serialization
 {
-
-/**
- * @brief Archive-generic <code>::tyl::graphics::TextureSize</code> serialize implementation
- */
-template <typename ArchiveT> struct serialize<ArchiveT, ::tyl::graphics::TextureSize>
-{
-  void operator()(ArchiveT& ar, ::tyl::graphics::TextureSize& size) { ar& named{"size_px", size.size_px}; }
-};
 
 /**
  * @brief Archive-generic <code>::tyl::graphics::TextureSourceImageAssetData</code> serialize implementation
