@@ -26,7 +26,7 @@ cc_library(
   srcs=["src/sprite.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
-  deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/serialization", "//lib/ecs"],
+  deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/common/utility:alias", "//lib/common/utility:alias_serial", "//lib/serialization", "//lib/ecs"],
   visibility=["//visibility:public"]
 )
 
@@ -56,6 +56,6 @@ cc_library(
   srcs=["src/texture_management.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/graphics",
-  deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/ecs", "//lib/serialization", "//lib/graphics/device", "//lib/graphics/host:image"],
+  deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/common/utility:alias", "//lib/common/utility:alias_serial", "//lib/ecs", "//lib/serialization", "//lib/graphics/device", "//lib/graphics/host:image"],
   visibility=["//visibility:public"]
 )

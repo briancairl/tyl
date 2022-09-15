@@ -12,6 +12,7 @@
 #include <tyl/ecs/ecs.hpp>
 #include <tyl/math/rect.hpp>
 #include <tyl/math/size.hpp>
+#include <tyl/utility/alias.hpp>
 
 namespace tyl::graphics
 {
@@ -19,20 +20,17 @@ namespace tyl::graphics
 /**
  * @brief Position of sprite
  */
-struct SpritePosition
-{
-  Vec2f position;
-  constexpr const auto& v() const { return position; }
-};
+using SpritePosition = alias<Vec2f, decltype("SpritePosition"_tag)>;
 
 /**
  * @brief Size of sprite
  */
-struct SpriteSize
-{
-  Vec2f size;
-  constexpr const auto& v() const { return size; }
-};
+using SpriteSize = alias<Size2f, decltype("SpriteSize"_tag)>;
+
+/**
+ * @brief Lookup from ID to UV offset in an altas texture
+ */
+using SpriteSheetLookup = alias<std::vector<Rect2f>, decltype("SpriteSheetLookup"_tag)>;
 
 /**
  * @brief Options for dividing an atlas texture into sprite frames
@@ -44,16 +42,6 @@ struct SpriteSheetLookupOptions
   Vec2i inner_padding_px;
   Rect2i area_px;
   bool transpose = false;
-};
-
-/**
- * @brief Lookup from ID to UV offset in an altas texture
- */
-struct SpriteSheetLookup
-{
-  /// Bounds for tiles in texture UV coordinate space
-  std::vector<Rect2f> uv_bounds;
-  constexpr const auto& v() const { return uv_bounds; }
 };
 
 /**
@@ -88,6 +76,7 @@ void update_sprite(ecs::registry& reg, const ecs::entity e, const Rect2f& uv_bou
 #include <tyl/serial.hpp>
 #include <tyl/serial/math/rect.hpp>
 #include <tyl/serial/math/vec.hpp>
+#include <tyl/serial/utility/alias.hpp>
 
 namespace tyl::serialization
 {
@@ -104,36 +93,6 @@ template <typename ArchiveT> struct serialize<ArchiveT, ::tyl::graphics::SpriteS
     ar& named{"inner_padding_px", options.inner_padding_px};
     ar& named{"area_px", options.area_px};
     ar& named{"transpose", options.transpose};
-  }
-};
-
-/**
- * @brief Archive-generic <code>::tyl::graphics::SpritePosition</code> save implementation
- */
-template <typename ArchiveT> struct serialize<ArchiveT, ::tyl::graphics::SpritePosition>
-{
-  void operator()(ArchiveT& ar, ::tyl::graphics::SpritePosition& sprite_position)
-  {
-    ar& named{"position", sprite_position.position};
-  }
-};
-
-/**
- * @brief Archive-generic <code>::tyl::graphics::SpriteSize</code> save implementation
- */
-template <typename ArchiveT> struct serialize<ArchiveT, ::tyl::graphics::SpriteSize>
-{
-  void operator()(ArchiveT& ar, ::tyl::graphics::SpriteSize& sprite_size) { ar& named{"size", sprite_size.size}; }
-};
-
-/**
- * @brief Archive-generic <code>::tyl::graphics::SpriteSheetLookup</code> save implementation
- */
-template <typename ArchiveT> struct serialize<ArchiveT, ::tyl::graphics::SpriteSheetLookup>
-{
-  void operator()(ArchiveT& ar, ::tyl::graphics::SpriteSheetLookup& lookup)
-  {
-    ar& named{"uv_bounds", lookup.uv_bounds};
   }
 };
 

@@ -23,7 +23,7 @@ TextureReference load_texture(ecs::registry& reg, const ecs::entity e, const Tex
     {.channel_mode = host::ImageOptions::ChannelMode::Default,
      .flags = {.flip_vertically = asset_data.flip_vertically}});
 
-  reg.emplace<TextureSize>(e, Vec2i{texture_host.height(), texture_host.width()});
+  reg.emplace<TextureSize>(e, texture_host.height(), texture_host.width());
 
   const auto& texture = reg.emplace<device::Texture>(e, texture_host);
 
