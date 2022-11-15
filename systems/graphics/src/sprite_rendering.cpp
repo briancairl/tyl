@@ -82,10 +82,10 @@ const Rect2f& get_frame(const SpriteSheetLookup& frames, const SpriteAnimationSt
   TYL_ASSERT_LT(animation_state.progress, SpriteAnimationState::max_progress);
 
   // Since animation_state.progress in [0, 1), current_tile_index should be [0, frames.uv_bounds.size())
-  const std::size_t current_tile_index = frames.v().size() * animation_state.progress;
+  const std::size_t current_tile_index = frames->size() * animation_state.progress;
 
   // Get the bounds
-  return frames.v()[current_tile_index];
+  return (*frames)[current_tile_index];
 }
 
 }  // namespace anonymous
@@ -192,15 +192,15 @@ void update_sprite_renderers(ecs::registry& reg, const RenderTarget2D& target)
           {
             auto* const v_pos = position_begin + offset;
     
-            v_pos[0] = sprite_pos.position;
+            v_pos[0] = *sprite_pos;
 
-            v_pos[1].x() = sprite_pos.v().x();
-            v_pos[1].y() = sprite_pos.v().y() + sprite_size.v().y();
+            v_pos[1].x() = sprite_pos->x();
+            v_pos[1].y() = sprite_pos->y() + sprite_size->y();
 
-            v_pos[2] = sprite_pos.position + sprite_size.v();
+            v_pos[2] = *sprite_pos + *sprite_size;
 
-            v_pos[3].x() = sprite_pos.v().x() + sprite_size.v().x();
-            v_pos[3].y() = sprite_pos.v().y();
+            v_pos[3].x() = sprite_pos->x() + sprite_size->x();
+            v_pos[3].y() = sprite_pos->y();
           }
 
           // Set vertex texcoords

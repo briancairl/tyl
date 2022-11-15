@@ -44,6 +44,9 @@ template <typename T, typename Tag> struct alias
   constexpr operator T&() { return value; }
   constexpr operator const T&() const { return value; }
 
+  constexpr T& get() { return value; }
+  constexpr const T& get() const { return value; }
+
   constexpr T& operator*() { return value; }
   constexpr const T& operator*() const { return value; }
 
