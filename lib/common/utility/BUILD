@@ -29,6 +29,15 @@ cc_library(
 )
 
 cc_library(
+  name="bitfield",
+  hdrs=["include/bitfield.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/utility",
+  deps=[":bits"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="dynamic_bitset",
   hdrs=["include/dynamic_bitset.hpp",],
   strip_include_prefix="include",

@@ -10,3 +10,11 @@ gtest(
         "//lib/serialization/stream:mem_stream", ],
   visibility=["//visibility:public"],
 )
+
+gtest(
+  name="bitfield",
+  timeout = "short",
+  srcs=["bitfield.cpp"],
+  deps=["//lib/common/utility:bitfield"],
+  visibility=["//visibility:public"],
+)

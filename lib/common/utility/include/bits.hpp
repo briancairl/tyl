@@ -134,9 +134,14 @@ template <typename BlockT> constexpr bool is_one_hot(BlockT m) { return m and !(
 template <typename BlockT> constexpr BlockT count(const BlockT n) { return (n == 0) ? 0 : ((n & 1) + count(n >> 1)); }
 
 /**
- * @brief Returns \c true if any bit it set
+ * @brief Returns \c true if any bit is set
  */
 template <typename BlockT> constexpr bool any(BlockT&& mask) { return std::forward<BlockT>(mask) != 0; }
+
+/**
+ * @brief Returns \c true if no bits are set
+ */
+template <typename BlockT> constexpr bool none(BlockT&& mask) { return std::forward<BlockT>(mask) == 0; }
 
 /**
  * @brief Sets bit high in a \c BlockT block high at \c offset
