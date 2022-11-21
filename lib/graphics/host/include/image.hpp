@@ -35,7 +35,7 @@ struct ImageOptions
   struct
   {
     std::uint8_t flip_vertically : 1;
-  } flags = {};
+  } flags = {0};
 };
 
 /**
