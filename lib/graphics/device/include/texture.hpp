@@ -27,21 +27,61 @@ enum class TextureChannels
 };
 
 /**
- * @brief Texture data, downloaded to host
+ * @brief Non-owning texture data view
  */
-struct TextureHost
+struct TextureView
 {
 public:
-  inline auto* data() { return data_.get(); }
-  inline const auto* data() const { return data_.get(); }
+  /// Pointer to data
+  inline auto* data() { return data_; }
+
+  /// Pointer to data
+  inline const auto* data() const { return data_; }
+
+  /// Size of view, in bytes
   constexpr std::size_t size() const { return size_; }
+
+  /// Height of 2D texture, in pixels
   constexpr int height() const { return height_; }
+
+  /// Width of 2D texture, in pixels
   constexpr int width() const { return width_; }
+
+  /// Texture element type code
   constexpr TypeCode type() const { return typecode_; }
+
+  /// Number of channels per texture element
   constexpr TextureChannels channels() const { return channels_; }
 
-  inline bool valid() const { return static_cast<bool>(data_); }
+  TextureView(void* const data, const int h, const int w, const TypeCode typecode, const TextureChannels channels);
 
+  template <typename T> T* element(int i, int j) { return reinterpret_cast<T*>(data()) + i * width_ + j; }
+
+  template <typename T> const T* element(int i, int j) const
+  {
+    return reinterpret_cast<const T*>(data()) + i * width_ + j;
+  }
+
+protected:
+  TextureView() = default;
+
+  void* data_;
+  std::size_t size_;
+  int height_;
+  int width_;
+  TypeCode typecode_;
+  TextureChannels channels_;
+
+  friend class Texture;
+  friend class TextureHandle;
+};
+
+/**
+ * @brief Texture data, downloaded to host
+ */
+struct TextureHost : public TextureView
+{
+public:
   TextureHost(const TextureHandle& texture);
 
   TextureHost(
@@ -51,15 +91,14 @@ public:
     const TypeCode typecode,
     const TextureChannels channels);
 
+  inline bool valid() const { return static_cast<bool>(owned_); }
+
 private:
+  using TextureView::TextureView;
+
   TextureHost() = default;
 
-  std::unique_ptr<std::uint8_t[]> data_;
-  std::size_t size_;
-  int height_;
-  int width_;
-  TypeCode typecode_;
-  TextureChannels channels_;
+  std::unique_ptr<std::uint8_t[]> owned_;
 
   friend class Texture;
   friend class TextureHandle;
@@ -107,6 +146,11 @@ public:
 
   TextureHandle& operator=(TextureHandle&&);
   TextureHandle& operator=(const TextureHandle&) = default;
+
+  /**
+   * @brief Uploads new texture
+   */
+  void upload(const TextureView& texture_data, const TextureOptions& texture_options) const;
 
   /**
    * @brief Downloads texture to host
@@ -218,7 +262,7 @@ public:
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
 
-  explicit Texture(const TextureHost& texture_data, const TextureOptions& texture_options = TextureOptions{});
+  explicit Texture(const TextureView& texture_data, const TextureOptions& texture_options = TextureOptions{});
 
   ~Texture();
 
