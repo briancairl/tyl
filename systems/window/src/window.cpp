@@ -7,6 +7,7 @@
 // C++ Standard Library
 #include <cstdio>
 #include <exception>
+#include <tuple>
 
 // GLAD
 #include <glad/glad.h>
@@ -23,6 +24,7 @@ namespace
 {
 namespace glfw
 {
+
 void message_callback(int error, const char* description)
 {
   std::fprintf(stderr, "[GLFW][%.6d] : %s\n", error, description);
@@ -39,58 +41,49 @@ int init()
   return 0;
 }
 
-template <std::size_t Bit, typename BitFieldT, typename BlockT, std::size_t BlockCount, typename KeyCodeT>
+template <std::size_t Bit, typename KeyCodeT>
 void read_key_states(
   GLFWwindow* window,
-  bitfield<BitFieldT, BlockT, BlockCount>& pressed_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& released_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& repeat_bitfield,
+  Window::KeyStates& pressed,
+  Window::KeyStates& released,
+  Window::KeyStates& held,
   const KeyCodeT key_code)
 {
   const auto key_state = glfwGetKey(window, key_code);
-  pressed_bitfield.template set_to<Bit>(key_state == GLFW_PRESS);
-  released_bitfield.template set_to<Bit>(key_state == GLFW_RELEASE);
-  repeat_bitfield.template set_to<Bit>(key_state == GLFW_REPEAT);
+  pressed.set(Bit, key_state == GLFW_PRESS);
+  released.set(Bit, key_state == GLFW_RELEASE);
+  held.set(Bit, key_state == GLFW_REPEAT);
 }
 
-template <
-  typename BitFieldT,
-  typename BlockT,
-  std::size_t BlockCount,
-  typename KeyCodeTupleT,
-  std::size_t... BitOffsets>
+template <typename KeyCodeTupleT, std::size_t... BitOffsets>
 void read_many_key_states_impl(
   GLFWwindow* window,
-  bitfield<BitFieldT, BlockT, BlockCount>& pressed_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& released_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& repeat_bitfield,
+  Window::KeyStates& pressed,
+  Window::KeyStates& released,
+  Window::KeyStates& held,
   KeyCodeTupleT&& key_codes,
   std::integer_sequence<std::size_t, BitOffsets...> bit_offsets)
 {
   [[maybe_unused]] const auto _ =
     ((read_key_states<BitOffsets>(
-        window,
-        pressed_bitfield,
-        released_bitfield,
-        repeat_bitfield,
-        std::get<BitOffsets>(std::forward<KeyCodeTupleT>(key_codes))),
+        window, pressed, released, held, std::get<BitOffsets>(std::forward<KeyCodeTupleT>(key_codes))),
       0) +
      ...);
 }
 
-template <typename BitFieldT, typename BlockT, std::size_t BlockCount, typename... KeyCodeTs>
+template <typename... KeyCodeTs>
 void read_many_key_states(
   GLFWwindow* window,
-  bitfield<BitFieldT, BlockT, BlockCount>& pressed_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& released_bitfield,
-  bitfield<BitFieldT, BlockT, BlockCount>& repeat_bitfield,
+  Window::KeyStates& pressed,
+  Window::KeyStates& released,
+  Window::KeyStates& held,
   KeyCodeTs... key_codes)
 {
   read_many_key_states_impl(
     window,
-    pressed_bitfield,
-    released_bitfield,
-    repeat_bitfield,
+    pressed,
+    released,
+    held,
     std::forward_as_tuple(key_codes...),
     std::make_integer_sequence<std::size_t, sizeof...(KeyCodeTs)>{});
 }
@@ -166,14 +159,6 @@ bool Window::window_state_update()
     window_state_.key_pressed_flags,
     window_state_.key_pressed_flags,
     window_state_.key_released_flags,
-    GLFW_KEY_W,
-    GLFW_KEY_A,
-    GLFW_KEY_S,
-    GLFW_KEY_D,
-    GLFW_KEY_Q,
-    GLFW_KEY_E,
-    GLFW_KEY_Z,
-    GLFW_KEY_C,
     GLFW_KEY_0,
     GLFW_KEY_1,
     GLFW_KEY_2,
@@ -183,7 +168,11 @@ bool Window::window_state_update()
     GLFW_KEY_6,
     GLFW_KEY_7,
     GLFW_KEY_8,
-    GLFW_KEY_9);
+    GLFW_KEY_9,
+    GLFW_KEY_W,
+    GLFW_KEY_A,
+    GLFW_KEY_S,
+    GLFW_KEY_D);
 
   // Clear frame buffer
   glClearColor(0, 0, 0, 0);

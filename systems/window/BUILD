@@ -4,6 +4,6 @@ cc_library(
   srcs=["src/window.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/window",
-  deps=["@glfw//:glfw", "//lib/graphics/device/glad:glad", "//lib/common/utility:bitfield",],
+  deps=["@glfw//:glfw", "//lib/graphics/device/glad:glad", ],
   visibility=["//visibility:public"]
 )
