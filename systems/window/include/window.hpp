@@ -6,11 +6,9 @@
 #pragma once
 
 // C++ Standard Library
+#include <bitset>
 #include <cstdint>
 #include <utility>
-
-// Tyl
-#include <tyl/utility/bitfield.hpp>
 
 namespace tyl
 {
@@ -18,6 +16,29 @@ namespace tyl
 class Window
 {
 public:
+  using KeyStates = std::bitset<16>;
+
+  /**
+   * @brief Keyboard key codes
+   */
+  struct KeyCodes
+  {
+    static constexpr std::size_t n0 = 0;
+    static constexpr std::size_t n1 = 1;
+    static constexpr std::size_t n2 = 2;
+    static constexpr std::size_t n3 = 3;
+    static constexpr std::size_t n4 = 4;
+    static constexpr std::size_t n5 = 5;
+    static constexpr std::size_t n6 = 6;
+    static constexpr std::size_t n7 = 7;
+    static constexpr std::size_t n8 = 8;
+    static constexpr std::size_t n9 = 9;
+    static constexpr std::size_t W = 10;
+    static constexpr std::size_t A = 11;
+    static constexpr std::size_t S = 12;
+    static constexpr std::size_t D = 13;
+  };
+
   /**
    * @brief Stores a window's size in pixels
    */
@@ -46,28 +67,6 @@ public:
    */
   struct State
   {
-    struct KeyFlags : bitfield<KeyFlags, std::uint64_t, 1>
-    {
-      std::uint64_t w : 1;
-      std::uint64_t a : 1;
-      std::uint64_t s : 1;
-      std::uint64_t d : 1;
-      std::uint64_t q : 1;
-      std::uint64_t e : 1;
-      std::uint64_t z : 1;
-      std::uint64_t c : 1;
-      std::uint64_t num0 : 1;
-      std::uint64_t num1 : 1;
-      std::uint64_t num2 : 1;
-      std::uint64_t num3 : 1;
-      std::uint64_t num4 : 1;
-      std::uint64_t num5 : 1;
-      std::uint64_t num6 : 1;
-      std::uint64_t num7 : 1;
-      std::uint64_t num8 : 1;
-      std::uint64_t num9 : 1;
-    };
-
     /// Current window size, in pixels
     Size size;
 
@@ -81,18 +80,18 @@ public:
     Cursor cursor_position_normalized;
 
     /// Most recent key-pressed events represented as a bit-field
-    KeyFlags key_pressed_flags;
+    KeyStates key_pressed_flags;
 
     /// Most recent key-release events represented as a bit-field
-    KeyFlags key_released_flags;
+    KeyStates key_released_flags;
 
     /// Most recent key-held events represented as a bit-field
-    KeyFlags key_held_flags;
+    KeyStates key_held_flags;
   };
 
   struct Options
   {
-    struct Flags : bitfield<Flags, std::uint8_t, 1>
+    struct Flags
     {
       std::uint8_t enable_sticky_keys : 1;
       std::uint8_t enable_vsync : 1;
