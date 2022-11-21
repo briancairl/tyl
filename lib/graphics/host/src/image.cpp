@@ -1,11 +1,12 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file texture.cpp
+ * @file image.cpp
  */
 
 // C++ Standard Library
 #include <cstdint>
+#include <cstring>
 #include <sstream>
 #include <stdexcept>
 
@@ -90,12 +91,15 @@ device::TextureHost load(const char* path, const ImageOptions& options)
 
   const int c_resolved = (options.channel_mode == ImageOptions::ChannelMode::Default) ? c : c_forced;
 
-  return device::TextureHost{
-    std::unique_ptr<std::uint8_t[]>{image_data_ptr},
-    h,
-    w,
-    device::TypeCode::UInt8,
-    image_channel_count_to_mode(c_resolved)};
+  const std::size_t byte_count = h * w * c_resolved;
+
+  // TODO(bcairl) find a better way to do this; currently transferring image data to another allocated chunk
+  // of memory because we don't want to have to specify a custom deleter to std::unique_ptr
+  auto u_ptr = std::make_unique<std::uint8_t[]>(byte_count);
+  std::memcpy(u_ptr.get(), image_data_ptr, byte_count);
+  std::free(image_data_ptr);
+
+  return device::TextureHost{std::move(u_ptr), h, w, device::TypeCode::UInt8, image_channel_count_to_mode(c_resolved)};
 }
 
 }  // namespace tyl::graphics::host
