@@ -7,7 +7,6 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <memory>
 
 // Tyl
 #include <tyl/graphics/device/constants.hpp>
@@ -55,12 +54,26 @@ public:
 
   TextureView(void* const data, const int h, const int w, const TypeCode typecode, const TextureChannels channels);
 
+  TextureView(float* const data, const int h, const int w, const TextureChannels channels);
+
+  TextureView(std::uint8_t* const data, const int h, const int w, const TextureChannels channels);
+
+  TextureView(std::uint16_t* const data, const int h, const int w, const TextureChannels channels);
+
+  TextureView(std::uint32_t* const data, const int h, const int w, const TextureChannels channels);
+
   template <typename T> T* element(int i, int j) { return reinterpret_cast<T*>(data()) + i * width_ + j; }
 
   template <typename T> const T* element(int i, int j) const
   {
     return reinterpret_cast<const T*>(data()) + i * width_ + j;
   }
+
+  template <typename T> const T* begin() const { return reinterpret_cast<const T*>(data()); }
+
+  template <typename T> const T* end() const { return reinterpret_cast<const T*>(data()) + (width_ * height_); }
+
+  inline bool valid() const { return data_ != nullptr; }
 
 protected:
   TextureView() = default;
@@ -84,21 +97,14 @@ struct TextureHost : public TextureView
 public:
   TextureHost(const TextureHandle& texture);
 
-  TextureHost(
-    std::unique_ptr<std::uint8_t[]>&& data,
-    const int h,
-    const int w,
-    const TypeCode typecode,
-    const TextureChannels channels);
+  TextureHost(void* const data, const int h, const int w, const TypeCode typecode, const TextureChannels channels);
 
-  inline bool valid() const { return static_cast<bool>(owned_); }
+  ~TextureHost();
 
 private:
   using TextureView::TextureView;
 
   TextureHost() = default;
-
-  std::unique_ptr<std::uint8_t[]> owned_;
 
   friend class Texture;
   friend class TextureHandle;
@@ -150,7 +156,7 @@ public:
   /**
    * @brief Uploads new texture
    */
-  void upload(const TextureView& texture_data, const TextureOptions& texture_options) const;
+  void upload(const TextureView& texture_data, const TextureOptions& texture_options = TextureOptions{}) const;
 
   /**
    * @brief Downloads texture to host

@@ -71,7 +71,6 @@ http_archive(
     build_file="@//external:googletest.BUILD",
 )
 
-
 ## Python ##
 
 git_repository(
