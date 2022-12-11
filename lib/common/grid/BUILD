@@ -1,0 +1,10 @@
+cc_library(
+  name="kernel_op",
+  hdrs=[
+    "include/kernel_op.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/grid",
+  deps=[],
+  visibility=["//visibility:public"]
+)
