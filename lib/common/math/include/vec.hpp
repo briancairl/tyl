@@ -28,6 +28,7 @@ using Vec4f = Vec<float, 4>;
 using Mat2i = Mat<int, 2, 2>;
 using Mat3i = Mat<int, 3, 3>;
 using Mat4i = Mat<int, 4, 4>;
+using MatXi = Mat<int, Eigen::Dynamic, Eigen::Dynamic>;
 using Mat2f = Mat<float, 2, 2>;
 using Mat3f = Mat<float, 3, 3>;
 using Mat4f = Mat<float, 4, 4>;

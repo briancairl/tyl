@@ -279,7 +279,7 @@ int main(int argc, char const* argv[])
       fill_gradient_x(temperature, ts, te, [](const float t) { return 0.5f * (std::sin(t * 0.025f) + 1.f); });
       temperature -= curr_atm_moisture;
 
-      diffuse(curr_gnd_moisture, prev_gnd_moisture, heightmap, 0.1);
+      diffuse(curr_gnd_moisture, prev_gnd_moisture, heightmap, 0.25);
       diffuse(curr_atm_moisture, prev_atm_moisture);
       evaporate(curr_atm_moisture, curr_gnd_moisture, heightmap, temperature, 1e-3f, 0.175f);
       precipitate(curr_gnd_moisture, curr_atm_moisture, heightmap, temperature, 5e-1f);

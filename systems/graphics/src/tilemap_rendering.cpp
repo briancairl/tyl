@@ -1,23 +1,22 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file sprite_renderer.cpp
+ * @file tilemap_rendering.cpp
  */
 
 // Tyl
 #include <tyl/debug/assert.hpp>
+#include <tyl/graphics/common.hpp>
 #include <tyl/graphics/device/shader.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/device/vertex_buffer.hpp>
-#include <tyl/graphics/sprite/animation.hpp>
-#include <tyl/graphics/sprite/spritesheet.hpp>
-#include <tyl/graphics/systems/render_target.hpp>
-#include <tyl/graphics/systems/renderable.hpp>
-#include <tyl/graphics/systems/sprite_renderer.hpp>
+#include <tyl/graphics/render_target.hpp>
+#include <tyl/graphics/tilemap.hpp>
+#include <tyl/graphics/tilemap_rendering.hpp>
 #include <tyl/math/size.hpp>
 #include <tyl/math/vec.hpp>
 
-namespace tyl::graphics::systems
+namespace tyl::graphics
 {
 namespace  // anonymous
 {
@@ -30,7 +29,7 @@ struct VertexBuffer
   device::VertexAttributeBuffer<float> texcoord_buffer;
 };
 
-void attach_sprite_renderer_shader(ecs::registry& registry, const ecs::entity e)
+void attach_tilemap_renderer_shader(ecs::registry& registry, const ecs::entity e)
 {
   // clang-format off
   registry.emplace<device::Shader>(
@@ -75,17 +74,30 @@ void attach_sprite_renderer_shader(ecs::registry& registry, const ecs::entity e)
   );
 }
 
-} // namespace anonymous
+const Rect2f& get_frame(const TilemapSheetLookup& frames, const TilemapAnimationState& animation_state)
+{
+  // Should never be less than minimum progress value
+  TYL_ASSERT_GE(animation_state.progress, TilemapAnimationState::min_progress);
+  TYL_ASSERT_LT(animation_state.progress, TilemapAnimationState::max_progress);
 
-void attach_sprite_renderer(ecs::registry& reg, const ecs::entity e, const SpriteRendererOptions& options)
+  // Since animation_state.progress in [0, 1), current_tile_index should be [0, frames.uv_bounds.size())
+  const std::size_t current_tile_index = frames->size() * animation_state.progress;
+
+  // Get the bounds
+  return (*frames)[current_tile_index];
+}
+
+}  // namespace anonymous
+
+void attach_tilemap_renderer(ecs::registry& reg, const ecs::entity e, const TilemapRendererOptions& options)
 {
   TYL_ASSERT_GT(options.capacity, 0UL);
 
   // Add options/state
-  reg.emplace<SpriteRendererOptions>(e, options);
-  reg.emplace<SpriteRendererState>(e, 0UL);
+  reg.emplace<TilemapRendererOptions>(e, options);
+  reg.emplace<TilemapRendererState>(e, 0UL);
 
-  // Allocate VBOs for sprite rendering
+  // Allocate VBOs for tilemap rendering
   {
     auto [vb, element_buffer, position_buffer, texcoord_buffer] = device::VertexElementBuffer::create(
       device::VertexBuffer::BufferMode::Dynamic,
@@ -124,23 +136,23 @@ void attach_sprite_renderer(ecs::registry& reg, const ecs::entity e, const Sprit
   }
 
   // Create and attach a shader program
-  attach_sprite_renderer_shader(reg, e);
+  attach_tilemap_renderer_shader(reg, e);
 }
 
-ecs::entity create_sprite_renderer(ecs::registry& reg, const AtlasTextureReference& atlas_texture, const SpriteRendererOptions& options)
+ecs::entity create_tilemap_renderer(ecs::registry& reg, const TextureReference& atlas_texture, const TilemapRendererOptions& options)
 {
   TYL_ASSERT_GT(options.capacity, 0UL);
 
   const auto e = reg.create();
-  reg.emplace<AtlasTextureReference>(e, atlas_texture);
-  attach_sprite_renderer(reg, e, options);
+  reg.emplace<TextureReference>(e, atlas_texture);
+  attach_tilemap_renderer(reg, e, options);
 
   return e;
 }
 
-void update_sprite_renderers(ecs::registry& reg, const RenderTarget2D& target)
+void update_tilemap_renderers(ecs::registry& reg, const RenderTarget2D& target)
 {
-  reg.view<SpriteRendererState, SpriteRendererOptions, VertexBuffer, AtlasTextureReference, device::Shader>().each(
+  reg.view<TilemapRendererState, TilemapRendererOptions, VertexBuffer, TextureReference, device::Shader>().each(
     [&target, &reg](auto& render_state, const auto& render_options, const auto& render_vertex_buffer, const auto& render_atlas_texture, const auto& render_shader)
     {
       // Bind texture to unit
@@ -161,53 +173,38 @@ void update_sprite_renderers(ecs::registry& reg, const RenderTarget2D& target)
 
         render_state.size = 0;
 
-        // Render animated sprites
-        auto view = reg.view<tags::rendering_enabled, tyl::Vec2f, tyl::Size2f, sprite::AnimationFrames, sprite::AnimationState, sprite::AnimationProperties>();
+        // Render animated tilemaps
+        auto view = reg.view<tags::rendering_enabled, SpriteSheetLookup>();
         for (const auto e : view)
         {
-          if (render_state.size == render_options.capacity)
+          if (render_state.size + map.size() >= render_options.capacity)
           {
             break;
           }
 
           const std::size_t offset = render_state.size * 4UL;
 
-          const auto [pos, extents, ani_frames, ani_state, ani_props] =
-            view.get<tyl::Vec2f, tyl::Size2f, sprite::AnimationFrames, sprite::AnimationState, sprite::AnimationProperties>(e);
+          const auto [tile_lookup, map] = view.get<SpriteSheetLookup, MatXi>(e);
 
-          // Set vertex positions
+          for (int i = 0; i < map.rows(); ++i)
           {
-            auto* const v_pos = position_begin + offset;
-    
-            v_pos[0] = pos;
+            for (int j = 0; j < map.cols(); ++j, ++render_state.size)
+            {
+              const auto& uv_bounds = tile_lookup[map(i, j)];
 
-            v_pos[1].x() = pos.x();
-            v_pos[1].y() = pos.y() + extents.y();
+              auto* const v_tex = texcoord_begin + offset;
 
-            v_pos[2] = pos + extents;
+              v_tex[0].x() = uv_bounds.min().x();
+              v_tex[0].y() = uv_bounds.max().y();
 
-            v_pos[3].x() = pos.x() + extents.x();
-            v_pos[3].y() = pos.y();
+              v_tex[1] = uv_bounds.min();
+
+              v_tex[2].x() = uv_bounds.max().x();
+              v_tex[2].y() = uv_bounds.min().y();
+
+              v_tex[3] = uv_bounds.max();
+            }
           }
-
-          // Set vertex texcoords
-          {
-            const auto& uv_bounds = sprite::get_frame(ani_frames, ani_state);
-
-            auto* const v_tex = texcoord_begin + offset;
-
-            v_tex[0].x() = uv_bounds.min().x();
-            v_tex[0].y() = uv_bounds.max().y();
-
-            v_tex[1] = uv_bounds.min();
-
-            v_tex[2].x() = uv_bounds.max().x();
-            v_tex[2].y() = uv_bounds.min().y();
-
-            v_tex[3] = uv_bounds.max();
-          }
-
-          ++render_state.size;
         }
       }
 
@@ -216,4 +213,4 @@ void update_sprite_renderers(ecs::registry& reg, const RenderTarget2D& target)
   );
 }
 
-}  // namespace tyl::graphics::systems
+}  // namespace tyl::graphics

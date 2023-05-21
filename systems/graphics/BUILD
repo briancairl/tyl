@@ -59,3 +59,41 @@ cc_library(
   deps=["//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/common/utility:alias", "//lib/common/utility:alias_serial", "//lib/ecs", "//lib/serialization", "//lib/graphics/device", "//lib/graphics/host:image"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="tilemap",
+  hdrs=["include/tilemap.hpp"],
+  srcs=["src/tilemap.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[
+    "//lib/common/debug:assert",
+    "//lib/common/math:geometry",
+    "//lib/common/utility:alias",
+    "//lib/common/utility:alias_serial",
+    "//lib/ecs",
+    "//lib/serialization",
+    "//lib/graphics/device",
+    "//lib/graphics/host:image",
+    "//systems/graphics:tilemap"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="tilemap_rendering",
+  hdrs=["include/tilemap_rendering.hpp"],
+  srcs=["src/tilemap_rendering.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/graphics",
+  deps=[
+    ":common", 
+    ":render_target", 
+    ":tilemap",
+    ":texture_management",
+    "//lib/common/debug:assert",
+    "//lib/common/math:geometry",
+    "//lib/ecs",
+    "//lib/serialization",
+    "//lib/graphics/device"],
+  visibility=["//visibility:public"]
+)

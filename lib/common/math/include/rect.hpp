@@ -30,6 +30,11 @@ public:
   decltype(auto) min() const { return this->template head<2>(); }
   decltype(auto) max() const { return this->template tail<2>(); }
 
+  bool within(const Vec2T& query) const
+  {
+    return (min().array() <= query.array()).all() and (max().array() > query.array()).all();
+  }
+
   Vec2T extents() const { return Vec2T{max() - min()}; }
 };
 
