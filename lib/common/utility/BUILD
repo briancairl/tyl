@@ -15,3 +15,12 @@ cc_library(
   deps=[":bits"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="expected",
+  hdrs=["include/expected.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/utility",
+  deps=[":bits"],
+  visibility=["//visibility:public"]
+)
