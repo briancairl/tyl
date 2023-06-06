@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/graphics/device/fwd.hpp>
+#include <tyl/utility/expected.hpp>
 
 namespace tyl::graphics::host
 {
@@ -39,13 +40,72 @@ struct ImageOptions
 };
 
 /**
- * @brief Loads image from filesystem to image data on host
- *
- * @param path  path to image file
- * @param options  image loading options
- *
- * @return host-side texture data
+ * @brief Data about an image
  */
-[[nodiscard]] device::TextureHost load(const char* path, const ImageOptions& options = ImageOptions{});
+struct ImageMetaData
+{
+  /// Height of the image, in pixels
+  int height;
+  /// Width of the image, in pixels
+  int width;
+  /// Number of image channels
+  int channel_count;
+};
+
+/**
+ * @brief Error codes pertaining to Image
+ */
+enum class ImageErrorCode
+{
+  LOAD_FAILURE,
+};
+
+/**
+ * @brief Data about an image
+ */
+class Image
+{
+public:
+  Image(const Image& other) = delete;
+
+  Image(Image&& other);
+
+  Image(const ImageMetaData& meta_data, void* const data);
+
+  ~Image();
+
+  /**
+   * @brief Returns meta data about image
+   */
+  const ImageMetaData& meta() const noexcept { return meta_; }
+
+  /**
+   * @brief Creates a texture from an image
+   *
+   * @param image  path to image file
+   * @param options  image loading options
+   *
+   * @return image
+   */
+  device::TextureHost texture() const noexcept;
+
+  /**
+   * @brief Loads image from filesystem to image data on host
+   *
+   * @param path  path to image file
+   * @param options  image loading options
+   *
+   * @return image
+   */
+  [[nodiscard]] static tyl::expected<Image, ImageErrorCode>
+  load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
+
+private:
+  /// Meta data about an image
+  ImageMetaData meta_;
+
+  /// Pointer to image data
+  void* data_;
+};
 
 }  // namespace tyl::graphics::host

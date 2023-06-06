@@ -56,19 +56,3 @@ alias(
   actual=":graphics_impl__opengl",
   visibility=["//visibility:public"]
 )
-
-cc_library(
-  name="device_serial",
-  hdrs=[
-    "serial/shader.hpp",
-    "serial/texture.hpp",
-  ],
-  strip_include_prefix="serial",
-  include_prefix="tyl/serial/graphics/device",
-  deps=[
-    ":device",
-    "//lib/serialization:object",
-    "//lib/serialization/primitives"
-  ],
-  visibility=["//visibility:public"]
-)

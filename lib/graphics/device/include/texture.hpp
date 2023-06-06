@@ -92,7 +92,7 @@ protected:
 /**
  * @brief Texture data, downloaded to host
  */
-struct TextureHost : public TextureView
+class TextureHost : public TextureView
 {
 public:
   TextureHost(const TextureHandle& texture);
@@ -135,8 +135,6 @@ struct TextureOptions
     std::uint8_t unpack_alignment : 1;
     std::uint8_t generate_mip_map : 1;
   } flags = {1, 1};
-
-  TextureOptions() = default;
 };
 
 /**

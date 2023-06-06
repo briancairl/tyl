@@ -13,7 +13,7 @@ class ShaderHost;
 class Texture;
 class TextureHandle;
 class TextureHost;
-class TextureOptions;
+struct TextureOptions;
 class VertexAttributeDescriptor;
 class VertexBuffer;
 

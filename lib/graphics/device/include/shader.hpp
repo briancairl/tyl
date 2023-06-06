@@ -156,9 +156,6 @@ private:
 
   /// Device shader ID
   shader_id_t shader_id_;
-
-  /// Tracks if texture is bound to device
-  mutable bool is_bound_;
 };
 
 }  // namespace tyl::graphics::device
