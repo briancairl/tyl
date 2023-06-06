@@ -5,8 +5,10 @@ cc_binary(
 		"//lib/common/debug:assert",
 		"//lib/graphics/device",
 		"//lib/graphics/device/glad:glad",
+		"//lib/graphics/host:image",
 		"@entt//:entt",
 		"@glfw//:glfw",
 		"@imgui//:imgui",
+		"@imgui-file-dialogue"
 	]
 )
