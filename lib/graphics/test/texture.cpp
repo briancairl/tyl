@@ -149,24 +149,29 @@ int main(int argc, char** argv)
     }
   }
 
-  Shader shader{
-    ShaderSource::vertex(
-      R"VertexShader(
+  auto vertex_shader = ShaderSource::vertex(
+    R"VertexShader(
 
-      layout (location = 0) in vec2 vPos;
-      layout (location = 1) in vec2 vTexCoord;
+    layout (location = 0) in vec2 vPos;
+    layout (location = 1) in vec2 vTexCoord;
 
-      out vec2 fTexCoord;
+    out vec2 fTexCoord;
 
-      void main()
-      {
-        gl_Position = vec4(vPos, 0, 1);
-        fTexCoord = vTexCoord;
-      }
+    void main()
+    {
+      gl_Position = vec4(vPos, 0, 1);
+      fTexCoord = vTexCoord;
+    }
 
-      )VertexShader"),
-    ShaderSource::fragment(
-      R"FragmentShader(
+    )VertexShader");
+
+  if (!vertex_shader)
+  {
+    return 1;
+  }
+
+  auto fragment_shader = ShaderSource::fragment(
+    R"FragmentShader(
 
       out vec4 FragColor;
 
@@ -179,10 +184,17 @@ int main(int argc, char** argv)
         FragColor = texture(fTextureID, fTexCoord);
       }
 
-      )FragmentShader")};
+      )FragmentShader");
 
-  shader.bind();
-  shader.setInt("fTextureID", 1);
+  if (!fragment_shader)
+  {
+    return 1;
+  }
+
+  auto shader = Shader::create(*vertex_shader, *fragment_shader);
+
+  shader->bind();
+  shader->setInt("fTextureID", 1);
 
   while (!glfwWindowShouldClose(window))
   {

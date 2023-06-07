@@ -97,14 +97,13 @@ class TextureHost : public TextureView
 public:
   TextureHost(const TextureHandle& texture);
 
-  TextureHost(void* const data, const int h, const int w, const TypeCode typecode, const TextureChannels channels);
-
   ~TextureHost();
 
 private:
   using TextureView::TextureView;
 
   TextureHost() = default;
+  TextureHost(void* const data, const int h, const int w, const TypeCode typecode, const TextureChannels channels);
 
   friend class Texture;
   friend class TextureHandle;
@@ -266,7 +265,7 @@ public:
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
 
-  explicit Texture(const TextureView& texture_data, const TextureOptions& texture_options = TextureOptions{});
+  explicit Texture(const TextureView& texture_data, const TextureOptions& texture_options);
 
   ~Texture();
 

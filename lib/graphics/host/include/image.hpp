@@ -53,19 +53,19 @@ struct ImageMetaData
 };
 
 /**
- * @brief Error codes pertaining to Image
- */
-enum class ImageErrorCode
-{
-  LOAD_FAILURE,
-};
-
-/**
  * @brief Data about an image
  */
 class Image
 {
 public:
+  /**
+   * @brief Error codes pertaining to Image
+   */
+  enum class ErrorCode
+  {
+    LOAD_FAILURE,
+  };
+
   Image(const Image& other) = delete;
 
   Image(Image&& other);
@@ -87,7 +87,7 @@ public:
    *
    * @return image
    */
-  device::TextureHost texture() const noexcept;
+  device::Texture texture(const device::TextureOptions& options = {}) const noexcept;
 
   /**
    * @brief Loads image from filesystem to image data on host
@@ -97,7 +97,7 @@ public:
    *
    * @return image
    */
-  [[nodiscard]] static tyl::expected<Image, ImageErrorCode>
+  [[nodiscard]] static tyl::expected<Image, ErrorCode>
   load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
 
 private:

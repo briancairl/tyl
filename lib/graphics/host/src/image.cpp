@@ -35,17 +35,17 @@ int channel_mode_to_stbi_enum(const ImageOptions::ChannelMode mode)
   case ImageOptions::ChannelMode::Default:
     return 0;
   case ImageOptions::ChannelMode::Grey:
-    return 1;
+    return STBI_grey;
   case ImageOptions::ChannelMode::GreyA:
-    return 2;
+    return STBI_grey_alpha;
   case ImageOptions::ChannelMode::RGB:
-    return 3;
+    return STBI_rgb;
   case ImageOptions::ChannelMode::RGBA:
-    return 4;
+    return STBI_rgb_alpha;
   default:
     break;
   }
-  return 0;
+  return STBI_default;
 }
 
 device::TextureChannels image_channel_count_to_texture_mode(const int count)
@@ -80,21 +80,21 @@ Image::~Image()
   }
   else
   {
-    std::free(data_);
+    stbi_image_free(data_);
   }
 }
 
-device::TextureHost Image::texture() const noexcept
+device::Texture Image::texture(const device::TextureOptions& options) const noexcept
 {
-  return device::TextureHost{
-    data_,
+  return device::Texture{
     meta_.height,
     meta_.width,
-    device::TypeCode::UInt8,
-    image_channel_count_to_texture_mode(meta_.channel_count)};
+    static_cast<const std::uint8_t*>(data_),
+    image_channel_count_to_texture_mode(meta_.channel_count),
+    options};
 }
 
-tyl::expected<Image, ImageErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
+tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
 {
   // Set flag determining whether image should be flipped on load
   stbi_set_flip_vertically_on_load(options.flags.flip_vertically);
@@ -111,7 +111,7 @@ tyl::expected<Image, ImageErrorCode> Image::load(const char* path, const ImageOp
   // Check if image point is valid
   if (image_data_ptr == nullptr)
   {
-    return tyl::unexpected{ImageErrorCode::LOAD_FAILURE};
+    return tyl::unexpected{ErrorCode::LOAD_FAILURE};
   }
 
   // Resolve number of channels if channel count was forced with 'options'

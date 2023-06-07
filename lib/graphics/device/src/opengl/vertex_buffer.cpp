@@ -208,7 +208,7 @@ VertexElementBuffer::VertexElementBuffer(
   const std::size_t element_count,
   const std::size_t buffer_total_bytes,
   const BufferMode buffer_mode) :
-    VertexBuffer{buffer_total_bytes, buffer_mode}, ebo_{[element_count]() -> vertex_buffer_id_t {
+    VertexBuffer{buffer_total_bytes, buffer_mode}, ebo_{[]() -> vertex_buffer_id_t {
       GLuint id;
       glGenBuffers(1, &id);
       return id;

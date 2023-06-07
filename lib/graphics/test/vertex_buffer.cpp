@@ -149,9 +149,8 @@ int main(int argc, char** argv)
     });
   }
 
-  Shader shader{
-    ShaderSource::vertex(
-      R"VertexShader(
+  auto vertex_shader = ShaderSource::vertex(
+    R"VertexShader(
 
       layout (location = 0) in vec2 vPos;
       layout (location = 1) in vec4 vColor;
@@ -164,9 +163,15 @@ int main(int argc, char** argv)
         vFragColor = vColor;
       }
 
-      )VertexShader"),
-    ShaderSource::fragment(
-      R"FragmentShader(
+      )VertexShader");
+
+  if (!vertex_shader)
+  {
+    return 1;
+  }
+
+  auto fragment_shader = ShaderSource::fragment(
+    R"FragmentShader(
 
       out vec4 FragColor;
 
@@ -177,9 +182,16 @@ int main(int argc, char** argv)
         FragColor = vFragColor;
       }
 
-      )FragmentShader")};
+      )FragmentShader");
 
-  shader.bind();
+  if (!fragment_shader)
+  {
+    return 1;
+  }
+
+  auto shader = Shader::create(*vertex_shader, *fragment_shader);
+
+  shader->bind();
 
   while (!glfwWindowShouldClose(window))
   {
