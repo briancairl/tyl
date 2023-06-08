@@ -70,8 +70,6 @@ public:
 
   Image(Image&& other);
 
-  Image(const ImageMetaData& meta_data, void* const data);
-
   ~Image();
 
   /**
@@ -101,6 +99,8 @@ public:
   load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
 
 private:
+  Image(const ImageMetaData& meta_data, void* const data);
+
   /// Meta data about an image
   ImageMetaData meta_;
 
