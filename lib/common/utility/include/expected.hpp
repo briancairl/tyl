@@ -58,6 +58,11 @@ public:
 
   constexpr expected(ValueT&& value) : u_{std::in_place_type<ValueT>, std::move(value)} {}
 
+  template <typename T, typename... Args> constexpr T& emplace(Args&&... args)
+  {
+    return u_.template emplace<T>(std::forward<Args>(args)...);
+  }
+
   constexpr bool has_value() const noexcept { return std::holds_alternative<ValueT>(u_); }
   constexpr operator bool() const noexcept { return has_value(); }
 
