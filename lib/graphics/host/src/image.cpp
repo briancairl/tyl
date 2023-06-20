@@ -68,9 +68,9 @@ device::TextureChannels image_channel_count_to_texture_mode(const int count)
 
 }  // namespace anonymous
 
-Image::Image(const ImageMetaData& meta, void* const data) : meta_{meta}, data_{data} {}
+Image::Image(const ImageShape& shape, void* const data) : shape_{shape}, data_{data} {}
 
-Image::Image(Image&& other) : meta_{other.meta_}, data_{other.data_} { other.data_ = nullptr; }
+Image::Image(Image&& other) : shape_{other.shape_}, data_{other.data_} { other.data_ = nullptr; }
 
 Image::~Image()
 {
@@ -87,10 +87,10 @@ Image::~Image()
 device::Texture Image::texture(const device::TextureOptions& options) const noexcept
 {
   return device::Texture{
-    meta_.height,
-    meta_.width,
+    shape_.height,
+    shape_.width,
     static_cast<const std::uint8_t*>(data_),
-    image_channel_count_to_texture_mode(meta_.channel_count),
+    image_channel_count_to_texture_mode(shape_.channel_count),
     options};
 }
 
@@ -103,8 +103,8 @@ tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const Image
   const int channel_count_forced = channel_mode_to_stbi_enum(options.channel_mode);
 
   // Load image data and sizing
-  ImageMetaData meta;
-  auto* image_data_ptr = stbi_load(path, &meta.height, &meta.width, &meta.channel_count, channel_count_forced);
+  ImageShape shape;
+  auto* image_data_ptr = stbi_load(path, &shape.height, &shape.width, &shape.channel_count, channel_count_forced);
 
   static_assert(std::is_same<decltype(image_data_ptr), std::uint8_t*>(), "Image data not loaded as byte array");
 
@@ -117,10 +117,10 @@ tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const Image
   // Resolve number of channels if channel count was forced with 'options'
   if (options.channel_mode != ImageOptions::ChannelMode::Default)
   {
-    meta.channel_count = channel_count_forced;
+    shape.channel_count = channel_count_forced;
   }
 
-  return Image{meta, image_data_ptr};
+  return Image{shape, image_data_ptr};
 }
 
 }  // namespace tyl::graphics::host

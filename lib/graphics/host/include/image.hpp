@@ -1,7 +1,7 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file texture.hpp
+ * @file image.hpp
  */
 #pragma once
 
@@ -42,7 +42,7 @@ struct ImageOptions
 /**
  * @brief Data about an image
  */
-struct ImageMetaData
+struct ImageShape
 {
   /// Height of the image, in pixels
   int height;
@@ -75,7 +75,7 @@ public:
   /**
    * @brief Returns meta data about image
    */
-  const ImageMetaData& meta() const noexcept { return meta_; }
+  const ImageShape& shape() const noexcept { return shape_; }
 
   /**
    * @brief Creates a texture from an image
@@ -99,10 +99,10 @@ public:
   load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
 
 private:
-  Image(const ImageMetaData& meta_data, void* const data);
+  Image(const ImageShape& shape_data, void* const data);
 
   /// Meta data about an image
-  ImageMetaData meta_;
+  ImageShape shape_;
 
   /// Pointer to image data
   void* data_;
