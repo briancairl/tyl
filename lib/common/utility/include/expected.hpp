@@ -50,13 +50,13 @@ public:
   using value_type = ValueT;
   using error_type = ErrorT;
 
-  constexpr expected(const unexpected<ErrorT>& unexpected) : u_{std::in_place_type<ErrorT>, unexpected} {}
+  constexpr expected(const unexpected<ErrorT>& unexpected) : u_{std::in_place_type<ErrorT>, unexpected.error()} {}
 
   constexpr expected(unexpected<ErrorT>&& unexpected) : u_{std::in_place_type<ErrorT>, std::move(unexpected).error()} {}
 
   constexpr expected(const ValueT& value) : u_{std::in_place_type<ValueT>, value} {}
 
-  constexpr expected(ValueT&& value) : u_{std::in_place_type<ValueT>, std::move(value)} {}
+  constexpr expected(ValueT&& value) : u_{std::in_place_type<std::remove_reference_t<ValueT>>, std::move(value)} {}
 
   template <typename T, typename... Args> constexpr T& emplace(Args&&... args)
   {
