@@ -1,0 +1,19 @@
+cc_library(
+  name="typeinfo",
+  hdrs=["include/typeinfo.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/core/engine",
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+
+cc_library(
+  name="resource",
+  hdrs=["include/resource.hpp"],
+  srcs=["src/resource.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/core/engine",
+  deps=[":typeinfo", "//lib/common/utility:expected", "@entt",],
+  visibility=["//visibility:public"]
+)
