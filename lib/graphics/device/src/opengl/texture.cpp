@@ -154,10 +154,8 @@ void upload_gl_texture_2d(
   const TextureOptions& options,
   const TypeCode type)
 {
-
   TYL_ASSERT_GT(h, 0);
   TYL_ASSERT_GT(w, 0);
-  TYL_ASSERT_NON_NULL(data);
 
   // Original texture format
   const auto gl_original_cmode = channels_to_gl(channels);
@@ -193,12 +191,31 @@ texture_id_t create_gl_texture_2d(
 {
   const auto id = gen_gl_texture_2d(options);
 
+  TYL_ASSERT_NON_NULL(data);
+
   upload_gl_texture_2d(h, w, data, channels, options, type);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
   return id;
 }
+
+texture_id_t create_gl_empty_texture_2d(
+  const int h,
+  const int w,
+  const TextureChannels channels,
+  const TextureOptions& options,
+  const TypeCode type)
+{
+  const auto id = gen_gl_texture_2d(options);
+
+  upload_gl_texture_2d(h, w, nullptr, channels, options, type);
+
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  return id;
+}
+
 
 void download_gl_texture_options(TextureOptions& options)
 {
@@ -309,12 +326,17 @@ TextureHost::~TextureHost()
   }
 }
 
-TextureHandle::TextureHandle(TextureHandle&& other) : TextureHandle{other.texture_id_, other.typecode_}
+TextureHandle::TextureHandle(TextureHandle&& other) :
+    TextureHandle{other.texture_id_, other.typecode_, other.height_, other.width_}
 {
   other.typecode_ = TypeCode::Invalid;
+  other.height_ = 0;
+  other.width_ = 0;
 }
 
-TextureHandle::TextureHandle(const texture_id_t id, const TypeCode typecode) : texture_id_{id}, typecode_{typecode} {}
+TextureHandle::TextureHandle(const texture_id_t id, const TypeCode typecode, const int height, const int width) :
+    texture_id_{id}, typecode_{typecode}, height_{height}, width_{width}
+{}
 
 void TextureHandle::upload(const TextureView& texture_data, const TextureOptions& texture_options) const
 {
@@ -371,7 +393,7 @@ TextureHandle& TextureHandle::operator=(TextureHandle&& other)
   return *this;
 }
 
-void TextureHandle::bind(const index_t texture_index) const
+void TextureHandle::bind() const
 {
   TYL_ASSERT_NE(typecode_, TypeCode::Invalid);
 
@@ -383,6 +405,14 @@ void TextureHandle::bind(const index_t texture_index) const
       return texture_units;
     }(),
     texture_unit_count);
+
+  glBindTexture(GL_TEXTURE_2D, texture_id_);
+}
+
+
+void TextureHandle::bind(const index_t texture_index) const
+{
+  TextureHandle::bind();
 
   static constexpr GLenum S_texture_unit_lookup[texture_unit_count] = {
     GL_TEXTURE0,
@@ -404,7 +434,6 @@ void TextureHandle::bind(const index_t texture_index) const
   };
 
   glActiveTexture(S_texture_unit_lookup[texture_index]);
-  glBindTexture(GL_TEXTURE_2D, texture_id_);
 }
 
 void TextureHandle::unbind() const { TYL_ASSERT_NE(typecode_, TypeCode::Invalid); }
@@ -414,10 +443,19 @@ Texture::Texture(Texture&& other) : TextureHandle{std::move(static_cast<TextureH
 Texture::Texture(
   const int h,
   const int w,
+  const TypeCode type,
+  const TextureChannels channels,
+  const TextureOptions& options) :
+    TextureHandle{create_gl_empty_texture_2d(h, w, channels, options, type), type, h, w}
+{}
+
+Texture::Texture(
+  const int h,
+  const int w,
   const std::int8_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int8_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int8_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -426,7 +464,7 @@ Texture::Texture(
   const std::uint8_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint8_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint8_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -435,7 +473,7 @@ Texture::Texture(
   const std::int16_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int16_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int16_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -444,7 +482,7 @@ Texture::Texture(
   const std::uint16_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint16_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint16_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -453,7 +491,7 @@ Texture::Texture(
   const std::int32_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int32_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int32_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -462,7 +500,7 @@ Texture::Texture(
   const std::uint32_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint32_t>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint32_t>(), h, w}
 {}
 
 Texture::Texture(
@@ -471,7 +509,7 @@ Texture::Texture(
   const float* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<float>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<float>(), h, w}
 {}
 
 Texture::Texture(
@@ -480,7 +518,7 @@ Texture::Texture(
   const double* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<double>()}
+    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<double>(), h, w}
 {}
 
 Texture::Texture(const TextureView& texture_data, const TextureOptions& texture_options) :
@@ -492,7 +530,9 @@ Texture::Texture(const TextureView& texture_data, const TextureOptions& texture_
         texture_data.channels_,
         texture_options,
         texture_data.typecode_),
-      texture_data.typecode_}
+      texture_data.typecode_,
+      texture_data.height_,
+      texture_data.width_}
 {}
 
 Texture::~Texture()

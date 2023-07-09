@@ -186,7 +186,12 @@ public:
   [[nodiscard]] constexpr operator bool() const { return TextureHandle::valid(); }
 
   /**
-   * @brief Binds texture to a working texture unit
+   * @brief Sets texture to an active state
+   */
+  void bind() const;
+
+  /**
+   * @brief Sets texture to an active state and binds to a texture unit
    */
   void bind(const index_t texture_index) const;
 
@@ -195,14 +200,30 @@ public:
    */
   void unbind() const;
 
+  /**
+   * @brief Returns texture height
+   */
+  int height() const { return height_; }
+
+  /**
+   * @brief Returns texture height
+   */
+  int width() const { return width_; }
+
 protected:
-  explicit TextureHandle(const texture_id_t id, const TypeCode typecode);
+  TextureHandle(const texture_id_t id, const TypeCode typecode, const int height, const int width);
 
   /// Device texture ID
   texture_id_t texture_id_;
 
   /// Device texture data typecode
   TypeCode typecode_;
+
+  /// Texture height
+  int height_;
+
+  /// Texture width
+  int width_;
 };
 
 /**
@@ -216,6 +237,12 @@ class Texture : public TextureHandle
 {
 public:
   Texture(Texture&& other);
+  Texture(
+    const int h,
+    const int w,
+    const TypeCode type,
+    const TextureChannels mode = TextureChannels::R,
+    const TextureOptions& options = TextureOptions{});
   Texture(
     const int h,
     const int w,

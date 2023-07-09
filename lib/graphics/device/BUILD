@@ -10,6 +10,7 @@ cc_library(
     "include/fwd.hpp",
     "include/shader.hpp",
     "include/texture.hpp",
+    "include/target.hpp",
     "include/vertex_buffer.hpp",
   ],
   strip_include_prefix="include",
@@ -18,7 +19,7 @@ cc_library(
   visibility=["//visibility:private"]
 )
 
-### OpenAL implemenatation ###
+### OpenGL implemenatation ###
 
 cc_library(
   name="graphics_impl__opengl_internal",
@@ -43,6 +44,7 @@ cc_library(
   name="graphics_impl__opengl",
   srcs=[
     "src/opengl/shader.cpp",
+    "src/opengl/target.cpp",
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,
