@@ -10,7 +10,7 @@ cc_library(
     "include/fwd.hpp",
     "include/shader.hpp",
     "include/texture.hpp",
-    "include/target.hpp",
+    "include/render_target_texture.hpp",
     "include/vertex_buffer.hpp",
   ],
   strip_include_prefix="include",
@@ -44,7 +44,7 @@ cc_library(
   name="graphics_impl__opengl",
   srcs=[
     "src/opengl/shader.cpp",
-    "src/opengl/target.cpp",
+    "src/opengl/render_target_texture.cpp",
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,

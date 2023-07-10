@@ -27,6 +27,6 @@ static constexpr texture_id_t invalid_texture_id = 0;
 static constexpr vertex_buffer_id_t invalid_vertex_buffer_id = 0;
 
 /// Default render target
-static constexpr target_id_t default_target_id = 0;
+static constexpr frame_buffer_id_t default_frame_buffer_id = 0;
 
 }  // namespace tyl::graphics::device
