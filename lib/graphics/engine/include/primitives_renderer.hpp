@@ -38,7 +38,6 @@ public:
 
   ~PrimitivesRenderer();
 
-  // TODO(bcairl) support arbitrary render target specification (first argument?)
   void update(const entt::registry& reg);
 
 private:

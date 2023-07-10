@@ -41,7 +41,7 @@ void main()
 static constexpr const char* FragmentShaderSource =
   R"FragmentShader(
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
 
 in vec4 vFragColor;
 
@@ -182,7 +182,6 @@ PrimitivesRenderer::~PrimitivesRenderer() = default;
 
 tyl::expected<PrimitivesRenderer, PrimitivesRenderer::ErrorCode> PrimitivesRenderer::create(const Settings& settings)
 {
-
   if (auto vertex_shader = ShaderSource::vertex(VertexShaderSource); !vertex_shader)
   {
     return tyl::unexpected{ErrorCode::SHADER_CREATION_FAILURE_VERTEX};
