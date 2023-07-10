@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <iostream>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 
 // GLAD
@@ -32,12 +33,17 @@
 #include <entt/entt.hpp>
 
 // Tyl
+#include <tyl/core/engine/resource.hpp>
 #include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/debug.hpp>
+#include <tyl/graphics/device/render_target_texture.hpp>
 #include <tyl/graphics/device/texture.hpp>
+#include <tyl/graphics/engine/primitives_renderer.hpp>
+#include <tyl/graphics/engine/types.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/utility/expected.hpp>
 
+using namespace tyl::core;
 using namespace tyl::graphics;
 
 static void glfw_error_callback(int error, const char* description)
@@ -45,159 +51,36 @@ static void glfw_error_callback(int error, const char* description)
   std::fprintf(stderr, "%d : %s\n", error, description);
 }
 
-struct DefaultReferenceResolver
+struct TextureDisplayProperties
 {
-  template <typename T> constexpr T& operator()(T* p) const { return *p; }
+  static constexpr float kMinZoom = 0.1f;
+  static constexpr float kMaxZoom = 10.f;
+  float zoom = kMinZoom;
 };
 
-using reference_count_type = std::size_t;
-
-template <typename ReferenceT, typename ManagerT, typename ReferenceResolverT = DefaultReferenceResolver>
-class ReferenceCounted
+struct DefaultTextureLocator : resource::Texture::Locator
 {
-public:
-  ReferenceCounted() = default;
-
-  ReferenceCounted(const ReferenceCounted& other) :
-      ref_count_{other.ref_count_}, ref_{other.ref_}, ref_resolver_{other.ref_resolver_}
+  bool load(entt::registry& reg, const entt::entity id, const resource::Path& path) const override
   {
-    if (ref_count_ != nullptr)
+    auto image_or_error = host::Image::load(path.string().c_str());
+    if (image_or_error.has_value())
     {
-      ++(*ref_count_);
-    }
-  }
-
-  ReferenceCounted(ReferenceCounted&& other) :
-      ref_count_{other.ref_count_}, ref_{std::move(other.ref_)}, ref_resolver_{std::move(other.ref_resolver_)}
-  {
-    other.ref_count_ = nullptr;
-  }
-
-  ~ReferenceCounted()
-  {
-    if (ref_count_ == nullptr)
-    {
-      return;
+      reg.emplace<device::Texture>(id, image_or_error->texture());
+      reg.emplace<TextureDisplayProperties>(id, TextureDisplayProperties{});
+      return true;
     }
     else
     {
-      --(*ref_count_);
+      return false;
     }
   }
-
-  decltype(auto) operator*() { return ref_resolver_(ref_); }
-
-  decltype(auto) operator*() const { return ref_resolver_(ref_); }
-
-  void reset() { ref_count_ = nullptr; }
-
-  bool valid() const { return ref_count_ != nullptr; }
-
-  operator bool() const { return valid(); }
-
-  reference_count_type use_count() const { return *ref_count_; }
-
-private:
-  friend ManagerT;
-
-  ReferenceCounted(ReferenceT ref, reference_count_type* const ref_count, ReferenceResolverT ref_resolver = {}) :
-      ref_count_{ref_count}, ref_{ref}, ref_resolver_{ref_resolver}
-  {}
-
-  reference_count_type* ref_count_ = nullptr;
-  ReferenceT ref_;
-  ReferenceResolverT ref_resolver_;
-};
-
-
-class TextureManager
-{
-public:
-  using reference_type = ReferenceCounted<const device::Texture*, TextureManager>;
-
-  [[nodiscard]] reference_type
-  get(const std::filesystem::path& texture_path, const host::ImageOptions& options = {}, const bool try_reload = false)
-  {
-    auto [itr, was_added] = cache_.try_emplace(texture_path);
-
-    if (itr->second.texture.has_value())
-    {
-      // already populated
-    }
-    else if (!was_added and !try_reload)
-    {
-      return reference_type{};
-    }
-    else if (auto image_or_error = host::Image::load(texture_path.string().c_str(), options);
-             image_or_error.has_value())
-    {
-      itr->second.texture.emplace(image_or_error->texture());
-    }
-    return reference_type{std::addressof(*itr->second.texture), std::addressof(itr->second.use_count)};
-  }
-
-  [[nodiscard]] reference_type get(const std::filesystem::path& texture_path) const
-  {
-    if (auto itr = cache_.find(texture_path); itr == cache_.end() or itr->second.texture)
-    {
-      return reference_type{};
-    }
-    else
-    {
-      return reference_type{std::addressof(*itr->second.texture), std::addressof(itr->second.use_count)};
-    }
-  }
-
-  template <typename ObserverT> void for_each(ObserverT observer) const
-  {
-    for (const auto& [path, texture_data] : cache_)
-    {
-      if (texture_data.texture.has_value())
-      {
-        observer(path, texture_data.texture);
-      }
-    }
-  }
-
-  template <typename OnRemoveT> void prune(OnRemoveT on_remove)
-  {
-    for (auto itr = cache_.begin(); itr != cache_.end(); /*empty*/)
-    {
-      if (auto& [path, data] = *itr; data.use_count == 0)
-      {
-        on_remove(path);
-        itr = cache_.erase(itr);
-      }
-      else
-      {
-        ++itr;
-      }
-    }
-  }
-
-  void prune()
-  {
-    prune([]([[maybe_unused]] const auto& _) {});
-  }
-
-private:
-  struct TextureData
-  {
-    std::optional<device::Texture> texture;
-    mutable std::size_t use_count = 0;
-  };
-
-  struct HashPath
-  {
-    std::size_t operator()(const std::filesystem::path& p) const { return std::filesystem::hash_value(p); }
-  };
-
-  std::unordered_map<std::filesystem::path, TextureData, HashPath> cache_;
 };
 
 
 int main(int argc, char** argv)
 {
+  entt::locator<resource::Texture::Locator>::emplace<DefaultTextureLocator>();
+
   glfwSetErrorCallback(glfw_error_callback);
 
   if (!glfwInit())
@@ -256,7 +139,48 @@ int main(int argc, char** argv)
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  TextureManager textures;
+
+  entt::registry registry;
+  auto primitives_renderer = PrimitivesRenderer::create({.max_vertex_count = 100});
+
+  {
+    const auto id = registry.create();
+
+    registry.emplace<DrawType::LineStrip>(id);
+    registry.emplace<VertexColor>(id, 1.0f, 0.0f, 0.0f, 1.0f);
+
+    {
+      auto& vertices = registry.emplace<VertexList2D>(id);
+      vertices.emplace_back(+0.5f, +0.0f);
+      vertices.emplace_back(+0.5f, +0.5f);
+      vertices.emplace_back(-0.5f, -0.0f);
+      vertices.emplace_back(-0.5f, -0.5f);
+    }
+  }
+
+
+  {
+    const auto id = registry.create();
+
+    registry.emplace<DrawType::LineStrip>(id);
+    registry.emplace<VertexColor>(id, 1.0f, 0.0f, 1.0f, 1.0f);
+
+    {
+      auto& vertices = registry.emplace<VertexList2D>(id);
+      vertices.emplace_back(+0.8f, +0.0f);
+      vertices.emplace_back(+0.8f, +0.8f);
+      vertices.emplace_back(-0.8f, -0.0f);
+      vertices.emplace_back(-0.8f, -0.8f);
+    }
+  }
+
+
+  if (!primitives_renderer.has_value())
+  {
+    return 1;
+  }
+
+  auto rtt = device::RenderTargetTexture::create(500, 500);
 
   while (!glfwWindowShouldClose(window))
   {
@@ -265,32 +189,90 @@ int main(int argc, char** argv)
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    rtt->draw_to([&primitives_renderer, &registry](const int viewport_height, const int viewport_width) {
+      primitives_renderer->update(registry);
+    });
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("editor", nullptr, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollWithMouse));
+    ImGui::SetNextWindowPos(ImVec2{0, 0});
+    ImGui::Begin("editor", nullptr, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar));
 
-    if (ImGui::Button("Open File Dialog"))
+    const auto available_space = ImGui::GetContentRegionAvail();
+
+    if (ImGui::BeginMenuBar())
     {
-      ImGuiFileDialog::Instance()->OpenDialog("ChooseTextureSource", "Choose File", ".png,.jpg", ".");
+      if (ImGui::MenuItem("open"))
+      {
+        ImGuiFileDialog::Instance()->OpenDialog("AssetPicker", "Choose File", ".png,.jpg,.txt", ".");
+      }
+      ImGui::EndMenuBar();
     }
 
     // display
-    if (ImGuiFileDialog::Instance()->Display("ChooseTextureSource"))
+    if (ImGuiFileDialog::Instance()->Display("AssetPicker"))
     {
       // action if OK
       if (ImGuiFileDialog::Instance()->IsOk())
       {
-        const std::string file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
-        [[maybe_unused]] const auto _ = textures.get(file_path_name.c_str());
+        const std::filesystem::path file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
+        if (const auto id_or_error = resource::create(registry, file_path_name); !id_or_error.has_value())
+        {
+          std::cerr << id_or_error.error() << std::endl;
+        }
       }
 
       // close
       ImGuiFileDialog::Instance()->Close();
     }
 
-    textures.for_each([](const auto& path, const auto& texture) { ImGui::Text("%s", path.string().c_str()); });
+    ImGui::Image(
+      reinterpret_cast<void*>(rtt->texture().get_id()), ImVec2(rtt->texture().height(), rtt->texture().width()));
+
+    ImGui::Text("%s", "textures");
+    registry.view<resource::Texture::Tag, resource::Path, device::Texture, TextureDisplayProperties>().each(
+      [available_space,
+       &registry](const entt::entity guid, const auto& path, const auto& texture, auto& texture_display_properties) {
+        ImGui::PushID(path.string().c_str());
+        const bool should_delete = ImGui::Button("delete");
+        ImGui::SameLine();
+        ImGui::Text("%s", path.string().c_str());
+
+        ImGui::SliderFloat(
+          "zoom",
+          &texture_display_properties.zoom,
+          TextureDisplayProperties::kMinZoom,
+          TextureDisplayProperties::kMaxZoom);
+
+        ImGui::Text("guid: %d", static_cast<int>(guid));
+        ImGui::Text("size: %d x %d", texture.height(), texture.width());
+        if (should_delete)
+        {
+          resource::release(registry, path);
+        }
+        else
+        {
+          const float aspect_ratio = static_cast<float>(texture.height()) / static_cast<float>(texture.width());
+          const float display_height = available_space.x * texture_display_properties.zoom;
+          const float display_width = aspect_ratio * display_height;
+
+          constexpr bool kShowBorders = true;
+          constexpr float kMaxDisplayHeight = 400.f;
+
+          ImGui::BeginChild(
+            path.string().c_str(),
+            ImVec2{available_space.x, std::min(kMaxDisplayHeight, display_height)},
+            kShowBorders,
+            ImGuiWindowFlags_HorizontalScrollbar);
+          {
+            ImGui::Image(reinterpret_cast<void*>(texture.get_id()), ImVec2(display_width, display_height));
+          }
+          ImGui::EndChild();
+        }
+        ImGui::PopID();
+      });
 
     ImGui::End();
 
