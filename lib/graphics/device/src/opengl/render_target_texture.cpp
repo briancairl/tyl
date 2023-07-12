@@ -22,14 +22,18 @@ RenderTargetTexture::create(const int height, const int width, const Options& op
 {
   if (height < 1)
   {
-    return unexpected{ErrorCode::INVALID_MAX_HEIGHT};
+    return unexpected{ErrorCode::INVALID_TEXTURE_HEIGHT};
   }
   else if (width < 1)
   {
-    return unexpected{ErrorCode::INVALID_MAX_WIDTH};
+    return unexpected{ErrorCode::INVALID_TEXTURE_WIDTH};
   }
 
   Texture texture{height, width, options.texture_depth, device::TextureChannels::RGBA};
+  if (texture.get_id() == invalid_texture_id)
+  {
+    return unexpected{ErrorCode::TEXTURE_CREATION_FAILURE};
+  }
 
   // Create a new frame buffer
   frame_buffer_id_t frame_buffer_id = 0;
@@ -60,7 +64,7 @@ RenderTargetTexture::create(const int height, const int width, const Options& op
   {
     return RenderTargetTexture{std::move(texture), frame_buffer_id, depth_buffer_id};
   }
-  return unexpected{ErrorCode::SETUP_FAILURE};
+  return unexpected{ErrorCode::DEVICE_CONFIGURATION_FAILURE};
 }
 
 void RenderTargetTexture::bind() const

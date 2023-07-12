@@ -40,10 +40,10 @@ public:
    */
   enum class ErrorCode
   {
-    SETUP_FAILURE,
-    INVALID_TEXTURE,
-    INVALID_MAX_HEIGHT,
-    INVALID_MAX_WIDTH,
+    DEVICE_CONFIGURATION_FAILURE,
+    TEXTURE_CREATION_FAILURE,
+    INVALID_TEXTURE_HEIGHT,
+    INVALID_TEXTURE_WIDTH,
   };
 
   static expected<RenderTargetTexture, ErrorCode>
