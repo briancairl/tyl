@@ -190,7 +190,7 @@ int main(int argc, char** argv)
     glClear(GL_COLOR_BUFFER_BIT);
 
     rtt->draw_to([&primitives_renderer, &registry](const int viewport_height, const int viewport_width) {
-      primitives_renderer->update(registry);
+      primitives_renderer->draw(registry);
     });
 
     ImGui_ImplOpenGL3_NewFrame();

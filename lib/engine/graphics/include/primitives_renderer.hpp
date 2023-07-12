@@ -38,7 +38,7 @@ public:
 
   ~PrimitivesRenderer();
 
-  void update(const entt::registry& reg);
+  void draw(const entt::registry& reg);
 
 private:
   class Impl;

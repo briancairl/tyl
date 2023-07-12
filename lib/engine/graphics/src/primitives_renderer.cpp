@@ -203,6 +203,6 @@ tyl::expected<PrimitivesRenderer, PrimitivesRenderer::ErrorCode> PrimitivesRende
 
 PrimitivesRenderer::PrimitivesRenderer(std::unique_ptr<Impl>&& impl) : impl_{std::move(impl)} {}
 
-void PrimitivesRenderer::update(const entt::registry& registry) { impl_->run(registry); }
+void PrimitivesRenderer::draw(const entt::registry& registry) { impl_->run(registry); }
 
 }  // namespace tyl::engine::graphics
