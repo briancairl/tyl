@@ -43,7 +43,7 @@
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/utility/expected.hpp>
 
-using namespace tyl::core;
+using namespace tyl::engine;
 using namespace tyl::graphics;
 
 static void glfw_error_callback(int error, const char* description)
@@ -58,9 +58,9 @@ struct TextureDisplayProperties
   float zoom = kMinZoom;
 };
 
-struct DefaultTextureLocator : resource::Texture::Locator
+struct DefaultTextureLocator : core::resource::Texture::Locator
 {
-  bool load(entt::registry& reg, const entt::entity id, const resource::Path& path) const override
+  bool load(entt::registry& reg, const entt::entity id, const core::resource::Path& path) const override
   {
     auto image_or_error = host::Image::load(path.string().c_str());
     if (image_or_error.has_value())
@@ -79,7 +79,7 @@ struct DefaultTextureLocator : resource::Texture::Locator
 
 int main(int argc, char** argv)
 {
-  entt::locator<resource::Texture::Locator>::emplace<DefaultTextureLocator>();
+  entt::locator<core::resource::Texture::Locator>::emplace<DefaultTextureLocator>();
 
   glfwSetErrorCallback(glfw_error_callback);
 
@@ -141,16 +141,16 @@ int main(int argc, char** argv)
 
 
   entt::registry registry;
-  auto primitives_renderer = PrimitivesRenderer::create({.max_vertex_count = 100});
+  auto primitives_renderer = graphics::PrimitivesRenderer::create({.max_vertex_count = 100});
 
   {
     const auto id = registry.create();
 
-    registry.emplace<DrawType::LineStrip>(id);
-    registry.emplace<VertexColor>(id, 1.0f, 0.0f, 0.0f, 1.0f);
+    registry.emplace<graphics::DrawType::LineStrip>(id);
+    registry.emplace<graphics::VertexColor>(id, 1.0f, 0.0f, 0.0f, 1.0f);
 
     {
-      auto& vertices = registry.emplace<VertexList2D>(id);
+      auto& vertices = registry.emplace<graphics::VertexList2D>(id);
       vertices.emplace_back(+0.5f, +0.0f);
       vertices.emplace_back(+0.5f, +0.5f);
       vertices.emplace_back(-0.5f, -0.0f);
@@ -162,11 +162,11 @@ int main(int argc, char** argv)
   {
     const auto id = registry.create();
 
-    registry.emplace<DrawType::LineStrip>(id);
-    registry.emplace<VertexColor>(id, 1.0f, 0.0f, 1.0f, 1.0f);
+    registry.emplace<graphics::DrawType::LineStrip>(id);
+    registry.emplace<graphics::VertexColor>(id, 1.0f, 0.0f, 1.0f, 1.0f);
 
     {
-      auto& vertices = registry.emplace<VertexList2D>(id);
+      auto& vertices = registry.emplace<graphics::VertexList2D>(id);
       vertices.emplace_back(+0.8f, +0.0f);
       vertices.emplace_back(+0.8f, +0.8f);
       vertices.emplace_back(-0.8f, -0.0f);
@@ -218,7 +218,7 @@ int main(int argc, char** argv)
       if (ImGuiFileDialog::Instance()->IsOk())
       {
         const std::filesystem::path file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
-        if (const auto id_or_error = resource::create(registry, file_path_name); !id_or_error.has_value())
+        if (const auto id_or_error = core::resource::create(registry, file_path_name); !id_or_error.has_value())
         {
           std::cerr << id_or_error.error() << std::endl;
         }
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
       reinterpret_cast<void*>(rtt->texture().get_id()), ImVec2(rtt->texture().height(), rtt->texture().width()));
 
     ImGui::Text("%s", "textures");
-    registry.view<resource::Texture::Tag, resource::Path, device::Texture, TextureDisplayProperties>().each(
+    registry.view<core::resource::Texture::Tag, core::resource::Path, device::Texture, TextureDisplayProperties>().each(
       [available_space,
        &registry](const entt::entity guid, const auto& path, const auto& texture, auto& texture_display_properties) {
         ImGui::PushID(path.string().c_str());
@@ -250,7 +250,7 @@ int main(int argc, char** argv)
         ImGui::Text("size: %d x %d", texture.height(), texture.width());
         if (should_delete)
         {
-          resource::release(registry, path);
+          core::resource::release(registry, path);
         }
         else
         {

@@ -15,10 +15,9 @@
 #include <entt/entt.hpp>
 
 // Tyl
-#include <tyl/core/engine/typeinfo.hpp>
 #include <tyl/utility/expected.hpp>
 
-namespace tyl::core::resource
+namespace tyl::engine::core::resource
 {
 
 using Path = std::filesystem::path;
@@ -76,4 +75,4 @@ void release(entt::registry& reg, const Path& path);
 
 void reload(entt::registry& reg, const ReloadErrorCallback& error_callback = nullptr);
 
-}  // namespace tyl::core::resource
+}  // namespace tyl::engine::core::resource

@@ -12,7 +12,7 @@
 // Tyl
 #include <tyl/core/engine/resource.hpp>
 
-namespace tyl::core::resource
+namespace tyl::engine::core::resource
 {
 namespace
 {
@@ -112,22 +112,22 @@ std::ostream& operator<<(std::ostream& os, const ErrorCode error_code)
   switch (error_code)
   {
   case ErrorCode::UNAVAILABLE: {
-    return os << "tyl::core::resource::ErrorCode::UNAVAILABLE";
+    return os << "tyl::engine::core::resource::ErrorCode::UNAVAILABLE";
   }
   case ErrorCode::LOAD_FAILED: {
-    return os << "tyl::core::resource::ErrorCode::LOAD_FAILED";
+    return os << "tyl::engine::core::resource::ErrorCode::LOAD_FAILED";
   }
   case ErrorCode::LOCATOR_NOT_IMPLEMENTED: {
-    return os << "tyl::core::resource::ErrorCode::LOCATOR_NOT_IMPLEMENTED";
+    return os << "tyl::engine::core::resource::ErrorCode::LOCATOR_NOT_IMPLEMENTED";
   }
   case ErrorCode::UNKNOWN_LOCATOR_TYPE: {
-    return os << "tyl::core::resource::ErrorCode::UNKNOWN_LOCATOR_TYPE";
+    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_LOCATOR_TYPE";
   }
   case ErrorCode::UNKNOWN_EXTENSION: {
-    return os << "tyl::core::resource::ErrorCode::UNKNOWN_EXTENSION";
+    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_EXTENSION";
   }
   }
-  return os << "tyl::core::resource::ErrorCode::*";
+  return os << "tyl::engine::core::resource::ErrorCode::*";
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
@@ -135,16 +135,16 @@ std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
   switch (type_code)
   {
   case TypeCode::AUDIO: {
-    return os << "tyl::core::resource::TypeCode::AUDIO";
+    return os << "tyl::engine::core::resource::TypeCode::AUDIO";
   }
   case TypeCode::TEXTURE: {
-    return os << "tyl::core::resource::TypeCode::TEXTURE";
+    return os << "tyl::engine::core::resource::TypeCode::TEXTURE";
   }
   case TypeCode::TEXT: {
-    return os << "tyl::core::resource::TypeCode::TEXT";
+    return os << "tyl::engine::core::resource::TypeCode::TEXT";
   }
   }
-  return os << "tyl::core::resource::TypeCode::*";
+  return os << "tyl::engine::core::resource::TypeCode::*";
 }
 
 expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type)
@@ -228,4 +228,4 @@ void reload(entt::registry& reg, const ReloadErrorCallback& error_callback)
   });
 }
 
-}  // namespace tyl::core::resource
+}  // namespace tyl::engine::core::resource

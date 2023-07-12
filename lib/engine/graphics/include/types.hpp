@@ -11,7 +11,7 @@
 // Tyl
 #include <tyl/math/vec.hpp>
 
-namespace tyl::graphics
+namespace tyl::engine::graphics
 {
 
 struct DrawType
@@ -29,4 +29,4 @@ using VertexColorList = std::vector<Vec4f>;
 using VertexList2D = std::vector<Vec2f>;
 using VertexList3D = std::vector<Vec3f>;
 
-}  // namespace tyl::graphics
+}  // namespace tyl::engine::graphics

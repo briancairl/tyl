@@ -14,7 +14,7 @@
 // Tyl
 #include <tyl/utility/expected.hpp>
 
-namespace tyl::graphics
+namespace tyl::engine::graphics
 {
 
 class PrimitivesRenderer
@@ -46,4 +46,4 @@ private:
   explicit PrimitivesRenderer(std::unique_ptr<Impl>&& impl);
 };
 
-}  // namespace tyl::graphics
+}  // namespace tyl::engine::graphics

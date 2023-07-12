@@ -16,7 +16,7 @@
 
 using namespace tyl::graphics::device;
 
-namespace tyl::graphics
+namespace tyl::engine::graphics
 {
 
 namespace
@@ -205,4 +205,4 @@ PrimitivesRenderer::PrimitivesRenderer(std::unique_ptr<Impl>&& impl) : impl_{std
 
 void PrimitivesRenderer::update(const entt::registry& registry) { impl_->run(registry); }
 
-}  // namespace tyl::graphics
+}  // namespace tyl::engine::graphics

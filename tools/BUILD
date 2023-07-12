@@ -3,11 +3,11 @@ cc_binary(
 	srcs=["editor.cpp"],
 	deps=[
 		"//lib/common/debug:assert",
-		"//lib/core/engine:resource",
 		"//lib/graphics/device",
 		"//lib/graphics/device/glad:glad",
 		"//lib/graphics/host:image",
-		"//lib/graphics/engine:primitives_renderer",
+		"//lib/engine/core:resource",
+		"//lib/engine/graphics:primitives_renderer",
 		"@entt//:entt",
 		"@glfw//:glfw",
 		"@imgui//:imgui",
