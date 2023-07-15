@@ -16,19 +16,24 @@
 namespace tyl::graphics::device
 {
 
-
 /**
  * @brief RenderTargetTexture creation options
  */
 struct RenderTargetTextureOptions
 {
+  /// Enables depth-testing buffer
   bool enable_depth_testing = false;
-  bool enable_alpha = true;
+  /// Specifies number of channels for color buffer
+  TextureChannels texture_channels = TextureChannels::RGBA;
+  /// Texture element data type
   TypeCode texture_depth = TypeCode::UInt8;
 };
 
 /**
- * @brief Render target texture
+ * @brief Intermediate memory buffer (texture) for rendering
+ *
+ * Can be used in place of RenderTargetBuffer (back/screen buffer) for rendering to an intermediate
+ * memory buffer.
  */
 class RenderTargetTexture
 {
@@ -46,14 +51,13 @@ public:
     INVALID_TEXTURE_WIDTH,
   };
 
-  static expected<RenderTargetTexture, ErrorCode>
+  [[nodiscard]] static expected<RenderTargetTexture, ErrorCode>
   create(const int height, const int width, const Options& options = {});
 
   template <typename DrawToTextureT> void draw_to(DrawToTextureT draw_to_texture)
   {
     RenderTargetTexture::bind();
     draw_to_texture(target_texture_.height(), target_texture_.width());
-    RenderTargetTexture::unbind();
   }
 
   const Texture& texture() const { return target_texture_; }
@@ -65,8 +69,6 @@ public:
 private:
   void bind() const;
 
-  void unbind() const;
-
   RenderTargetTexture(const RenderTargetTexture&) = delete;
 
   RenderTargetTexture(
@@ -74,8 +76,13 @@ private:
     const frame_buffer_id_t frame_buffer_id,
     const std::optional<frame_buffer_id_t> depth_buffer_id);
 
+  /// Target texture
   Texture target_texture_;
+
+  /// Frame buffer ID
   frame_buffer_id_t frame_buffer_id_;
+
+  /// Depth buffer ID
   std::optional<frame_buffer_id_t> depth_buffer_id_;
 };
 

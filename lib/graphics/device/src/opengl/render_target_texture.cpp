@@ -29,7 +29,7 @@ RenderTargetTexture::create(const int height, const int width, const Options& op
     return unexpected{ErrorCode::INVALID_TEXTURE_WIDTH};
   }
 
-  Texture texture{height, width, options.texture_depth, device::TextureChannels::RGBA};
+  Texture texture{height, width, options.texture_depth, options.texture_channels};
   if (texture.get_id() == invalid_texture_id)
   {
     return unexpected{ErrorCode::TEXTURE_CREATION_FAILURE};
@@ -71,9 +71,17 @@ void RenderTargetTexture::bind() const
 {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
   glViewport(0, 0, target_texture_.height(), target_texture_.width());
-}
 
-void RenderTargetTexture::unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, default_frame_buffer_id); }
+  if (depth_buffer_id_.has_value())
+  {
+    glClearDepth(0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  }
+  else
+  {
+    glClear(GL_COLOR_BUFFER_BIT);
+  }
+}
 
 RenderTargetTexture::RenderTargetTexture(
   Texture&& texture,

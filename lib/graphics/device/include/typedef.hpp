@@ -26,4 +26,13 @@ using frame_buffer_id_t = unsigned;
 /// ID type used for vertex_buffers, ideally identical to the graphics API ID
 using vertex_buffer_id_t = unsigned;
 
+/// RGBA color type
+struct Color
+{
+  float r = 0.0f;
+  float g = 0.0f;
+  float b = 0.0f;
+  float a = 0.0f;
+};
+
 }  // namespace tyl::graphics::device
