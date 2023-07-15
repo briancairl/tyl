@@ -18,18 +18,18 @@ namespace tyl::graphics::device
 {
 
 expected<RenderTargetTexture, RenderTargetTexture::ErrorCode>
-RenderTargetTexture::create(const int height, const int width, const Options& options)
+RenderTargetTexture::create(const Shape2D& shape, const Options& options)
 {
-  if (height < 1)
+  if (shape.height < 1)
   {
     return unexpected{ErrorCode::INVALID_TEXTURE_HEIGHT};
   }
-  else if (width < 1)
+  else if (shape.width < 1)
   {
     return unexpected{ErrorCode::INVALID_TEXTURE_WIDTH};
   }
 
-  Texture texture{height, width, options.texture_depth, options.texture_channels};
+  Texture texture{shape, options.texture_depth, options.texture_channels};
   if (texture.get_id() == invalid_texture_id)
   {
     return unexpected{ErrorCode::TEXTURE_CREATION_FAILURE};
@@ -56,7 +56,7 @@ RenderTargetTexture::create(const int height, const int width, const Options& op
     depth_buffer_id.emplace();
     glGenRenderbuffers(1, &(*depth_buffer_id));
     glBindRenderbuffer(GL_RENDERBUFFER, (*depth_buffer_id));
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, texture.width(), texture.height());
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, texture.shape().width, texture.shape().height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, (*depth_buffer_id));
   }
 
@@ -70,7 +70,7 @@ RenderTargetTexture::create(const int height, const int width, const Options& op
 void RenderTargetTexture::bind() const
 {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_id_);
-  glViewport(0, 0, target_texture_.height(), target_texture_.width());
+  glViewport(0, 0, target_texture_.shape().height, target_texture_.shape().width);
 
   if (depth_buffer_id_.has_value())
   {

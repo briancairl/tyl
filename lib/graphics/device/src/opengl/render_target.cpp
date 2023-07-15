@@ -20,18 +20,17 @@ namespace tyl::graphics::device
 
 static std::atomic_flag RenderTarget__is_active{false};
 
-expected<RenderTarget, RenderTarget::ErrorCode>
-RenderTarget::create(const int height, const int width, const Options& options)
+expected<RenderTarget, RenderTarget::ErrorCode> RenderTarget::create(const Shape2D& shape, const Options& options)
 {
   if (RenderTarget__is_active.test_and_set())
   {
     return unexpected{ErrorCode::ALREADY_ACTIVE};
   }
-  else if (height < 1)
+  else if (shape.height < 1)
   {
     return unexpected{ErrorCode::INVALID_HEIGHT};
   }
-  else if (width < 1)
+  else if (shape.width < 1)
   {
     return unexpected{ErrorCode::INVALID_WIDTH};
   }
@@ -45,13 +44,13 @@ RenderTarget::create(const int height, const int width, const Options& options)
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  return RenderTarget{height, width, options};
+  return RenderTarget{shape, options};
 }
 
 void RenderTarget::bind() const
 {
   glBindFramebuffer(GL_FRAMEBUFFER, default_frame_buffer_id);
-  glViewport(0, 0, height_, width_);
+  glViewport(0, 0, shape_.height, shape_.width);
 
   if (options_.enable_depth_testing)
   {
@@ -66,20 +65,13 @@ void RenderTarget::bind() const
   glClearColor(options_.clear_color.r, options_.clear_color.g, options_.clear_color.b, options_.clear_color.a);
 }
 
-RenderTarget::RenderTarget(const int height, const int width, const Options& options) :
-    height_{height}, width_{width}, options_{options}
-{}
+RenderTarget::RenderTarget(const Shape2D& shape, const Options& options) : shape_{shape}, options_{options} {}
 
-RenderTarget::RenderTarget(RenderTarget&& other) :
-    height_{other.height_}, width_{other.width_}, options_{other.options_}
-{
-  other.height_ = 0;
-  other.width_ = 0;
-}
+RenderTarget::RenderTarget(RenderTarget&& other) : shape_{other.shape_}, options_{other.options_} { other.shape_ = {}; }
 
 RenderTarget::~RenderTarget()
 {
-  if (height_ > 0)
+  if (shape_.height > 0)
   {
     RenderTarget__is_active.clear();
   }

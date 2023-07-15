@@ -87,8 +87,7 @@ Image::~Image()
 device::Texture Image::texture(const device::TextureOptions& options) const noexcept
 {
   return device::Texture{
-    shape_.height,
-    shape_.width,
+    shape_,
     static_cast<const std::uint8_t*>(data_),
     image_channel_count_to_texture_mode(shape_.channel_count),
     options};

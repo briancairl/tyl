@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/graphics/device/fwd.hpp>
+#include <tyl/graphics/device/typedef.hpp>
 #include <tyl/utility/expected.hpp>
 
 namespace tyl::graphics::host
@@ -42,12 +43,8 @@ struct ImageOptions
 /**
  * @brief Data about an image
  */
-struct ImageShape
+struct ImageShape : device::Shape2D
 {
-  /// Height of the image, in pixels
-  int height;
-  /// Width of the image, in pixels
-  int width;
   /// Number of image channels
   int channel_count;
 };

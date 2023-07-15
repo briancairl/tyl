@@ -147,15 +147,14 @@ texture_id_t gen_gl_texture_2d(const TextureOptions& options)
 }
 
 void upload_gl_texture_2d(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const void* const data,
   const TextureChannels channels,
   const TextureOptions& options,
   const TypeCode type)
 {
-  TYL_ASSERT_GT(h, 0);
-  TYL_ASSERT_GT(w, 0);
+  TYL_ASSERT_GT(shape.height, 0);
+  TYL_ASSERT_GT(shape.width, 0);
 
   // Original texture format
   const auto gl_original_cmode = channels_to_gl(channels);
@@ -167,8 +166,8 @@ void upload_gl_texture_2d(
     GL_TEXTURE_2D,
     0,
     gl_original_cmode,
-    h,
-    w,
+    shape.height,
+    shape.width,
     0,
     gl_storage_cmode,
     to_gl_typecode(type),
@@ -182,8 +181,7 @@ void upload_gl_texture_2d(
 
 template <typename PtrT>
 texture_id_t create_gl_texture_2d(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const PtrT* const data,
   const TextureChannels channels,
   const TextureOptions& options,
@@ -193,7 +191,7 @@ texture_id_t create_gl_texture_2d(
 
   TYL_ASSERT_NON_NULL(data);
 
-  upload_gl_texture_2d(h, w, data, channels, options, type);
+  upload_gl_texture_2d(shape, data, channels, options, type);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -201,15 +199,14 @@ texture_id_t create_gl_texture_2d(
 }
 
 texture_id_t create_gl_empty_texture_2d(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const TextureChannels channels,
   const TextureOptions& options,
   const TypeCode type)
 {
   const auto id = gen_gl_texture_2d(options);
 
-  upload_gl_texture_2d(h, w, nullptr, channels, options, type);
+  upload_gl_texture_2d(shape, nullptr, channels, options, type);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -245,20 +242,20 @@ void download_gl_texture_options(TextureOptions& options)
 }
 
 std::tuple<void*, std::size_t>
-download_gl_texture_image(int& h, int& w, TextureChannels& channels, const TypeCode& typecode)
+download_gl_texture_image(Shape2D& shape, TextureChannels& channels, const TypeCode& typecode)
 {
   static constexpr GLint MIP_LEVEL = 0;
 
   {
     GLint v;
     glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_WIDTH, &v);
-    h = v;
+    shape.height = v;
   }
 
   {
     GLint v;
     glGetTexLevelParameteriv(GL_TEXTURE_2D, MIP_LEVEL, GL_TEXTURE_HEIGHT, &v);
-    w = v;
+    shape.width = v;
   }
 
   {
@@ -267,7 +264,7 @@ download_gl_texture_image(int& h, int& w, TextureChannels& channels, const TypeC
     channels = channels_from_gl(v);
   }
 
-  const std::size_t bytes = (h * w) * byte_count(typecode) * channels_to_count(channels);
+  const std::size_t bytes = (shape.height * shape.width) * byte_count(typecode) * channels_to_count(channels);
 
   void* const data = std::malloc(bytes);
   glGetTexImage(GL_TEXTURE_2D, MIP_LEVEL, channels_to_gl(channels), to_gl_typecode(typecode), data);
@@ -279,43 +276,40 @@ download_gl_texture_image(int& h, int& w, TextureChannels& channels, const TypeC
 
 TextureView::TextureView(
   void* const data,
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const TypeCode typecode,
   const TextureChannels channels) :
     data_{data},
-    size_{(h * w) * byte_count(typecode) * channels_to_count(channels)},
-    height_{h},
-    width_{w},
+    size_{(shape.height * shape.width) * byte_count(typecode) * channels_to_count(channels)},
+    shape_{shape},
     typecode_{typecode},
     channels_{channels}
 {}
 
-TextureView::TextureView(std::uint8_t* const data, const int h, const int w, const TextureChannels channels) :
-    TextureView{reinterpret_cast<void*>(data), h, w, typecode<std::uint8_t>(), channels}
+TextureView::TextureView(std::uint8_t* const data, const Shape2D& shape, const TextureChannels channels) :
+    TextureView{reinterpret_cast<void*>(data), shape, typecode<std::uint8_t>(), channels}
 {}
 
-TextureView::TextureView(std::uint16_t* const data, const int h, const int w, const TextureChannels channels) :
-    TextureView{reinterpret_cast<void*>(data), h, w, typecode<std::uint16_t>(), channels}
+TextureView::TextureView(std::uint16_t* const data, const Shape2D& shape, const TextureChannels channels) :
+    TextureView{reinterpret_cast<void*>(data), shape, typecode<std::uint16_t>(), channels}
 {}
 
-TextureView::TextureView(std::uint32_t* const data, const int h, const int w, const TextureChannels channels) :
-    TextureView{reinterpret_cast<void*>(data), h, w, typecode<std::uint32_t>(), channels}
+TextureView::TextureView(std::uint32_t* const data, const Shape2D& shape, const TextureChannels channels) :
+    TextureView{reinterpret_cast<void*>(data), shape, typecode<std::uint32_t>(), channels}
 {}
 
-TextureView::TextureView(float* const data, const int h, const int w, const TextureChannels channels) :
-    TextureView{reinterpret_cast<void*>(data), h, w, typecode<float>(), channels}
+TextureView::TextureView(float* const data, const Shape2D& shape, const TextureChannels channels) :
+    TextureView{reinterpret_cast<void*>(data), shape, typecode<float>(), channels}
 {}
 
 TextureHost::TextureHost(const TextureHandle& texture) : TextureHost{texture.download()} {}
 
 TextureHost::TextureHost(
   void* const data,
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const TypeCode typecode,
   const TextureChannels channels) :
-    TextureView{data, h, w, typecode, channels}
+    TextureView{data, shape, typecode, channels}
 {}
 
 TextureHost::~TextureHost()
@@ -326,16 +320,14 @@ TextureHost::~TextureHost()
   }
 }
 
-TextureHandle::TextureHandle(TextureHandle&& other) :
-    TextureHandle{other.texture_id_, other.typecode_, other.height_, other.width_}
+TextureHandle::TextureHandle(TextureHandle&& other) : TextureHandle{other.texture_id_, other.typecode_, other.shape_}
 {
   other.typecode_ = TypeCode::Invalid;
-  other.height_ = 0;
-  other.width_ = 0;
+  other.shape_ = {};
 }
 
-TextureHandle::TextureHandle(const texture_id_t id, const TypeCode typecode, const int height, const int width) :
-    texture_id_{id}, typecode_{typecode}, height_{height}, width_{width}
+TextureHandle::TextureHandle(const texture_id_t id, const TypeCode typecode, const Shape2D& shape) :
+    texture_id_{id}, typecode_{typecode}, shape_{shape}
 {}
 
 void TextureHandle::upload(const TextureView& texture_data, const TextureOptions& texture_options) const
@@ -344,12 +336,7 @@ void TextureHandle::upload(const TextureView& texture_data, const TextureOptions
 
   glBindTexture(GL_TEXTURE_2D, this->get_id());
   upload_gl_texture_2d(
-    texture_data.height(),
-    texture_data.width(),
-    texture_data.data(),
-    texture_data.channels(),
-    texture_options,
-    texture_data.type());
+    texture_data.shape(), texture_data.data(), texture_data.channels(), texture_options, texture_data.type());
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -362,7 +349,7 @@ TextureHost TextureHandle::download() const
   glBindTexture(GL_TEXTURE_2D, texture_id_);
 
   std::tie(texture_host.data_, texture_host.size_) =
-    download_gl_texture_image(texture_host.height_, texture_host.width_, texture_host.channels_, typecode_);
+    download_gl_texture_image(texture_host.shape_, texture_host.channels_, typecode_);
 
   texture_host.typecode_ = typecode_;
 
@@ -380,7 +367,7 @@ TextureHost TextureHandle::download(TextureOptions& options) const
   download_gl_texture_options(options);
 
   std::tie(texture_host.data_, texture_host.size_) =
-    download_gl_texture_image(texture_host.height_, texture_host.width_, texture_host.channels_, typecode_);
+    download_gl_texture_image(texture_host.shape_, texture_host.channels_, typecode_);
 
   texture_host.typecode_ = typecode_;
 
@@ -441,98 +428,87 @@ void TextureHandle::unbind() const { TYL_ASSERT_NE(typecode_, TypeCode::Invalid)
 Texture::Texture(Texture&& other) : TextureHandle{std::move(static_cast<TextureHandle&&>(other))} {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const TypeCode type,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_empty_texture_2d(h, w, channels, options, type), type, h, w}
+    TextureHandle{create_gl_empty_texture_2d(shape, channels, options, type), type, shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::int8_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int8_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::int8_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::uint8_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint8_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::uint8_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::int16_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int16_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::int16_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::uint16_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint16_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::uint16_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::int32_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::int32_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::int32_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const std::uint32_t* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<std::uint32_t>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<std::uint32_t>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const float* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<float>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<float>(), shape}
 {}
 
 Texture::Texture(
-  const int h,
-  const int w,
+  const Shape2D& shape,
   const double* const data,
   const TextureChannels channels,
   const TextureOptions& options) :
-    TextureHandle{create_gl_texture_2d(h, w, data, channels, options), typecode<double>(), h, w}
+    TextureHandle{create_gl_texture_2d(shape, data, channels, options), typecode<double>(), shape}
 {}
 
 Texture::Texture(const TextureView& texture_data, const TextureOptions& texture_options) :
     TextureHandle{
       create_gl_texture_2d<std::uint8_t>(
-        texture_data.height_,
-        texture_data.width_,
+        texture_data.shape_,
         reinterpret_cast<const std::uint8_t*>(texture_data.data_),
         texture_data.channels_,
         texture_options,
         texture_data.typecode_),
       texture_data.typecode_,
-      texture_data.height_,
-      texture_data.width_}
+      texture_data.shape_}
 {}
 
 Texture::~Texture()

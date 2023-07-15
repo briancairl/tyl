@@ -42,20 +42,19 @@ public:
     INVALID_WIDTH,
   };
 
-  [[nodiscard]] static expected<RenderTarget, ErrorCode>
-  create(const int height, const int width, const Options& options = {});
+  [[nodiscard]] static expected<RenderTarget, ErrorCode> create(const Shape2D& shape, const Options& options = {});
 
   template <typename ResizeBufferFnT, typename DrawToBufferT>
   void draw_to(ResizeBufferFnT resize_buffer, DrawToBufferT draw_to_buffer)
   {
     RenderTarget::bind();
-    resize_buffer(height_, width_);
-    draw_to_buffer(static_cast<const int>(height_), static_cast<const int>(width_));
+    resize_buffer(shape_);
+    draw_to_buffer(static_cast<const Shape2D&>(shape_));
   }
 
   template <typename DrawToBufferT> void draw_to(DrawToBufferT&& draw_to_buffer)
   {
-    draw_to([]([[maybe_unused]] int h, [[maybe_unused]] int w) {}, std::forward<DrawToBufferT>(draw_to_buffer));
+    draw_to([]([[maybe_unused]] const Shape2D& shape) {}, std::forward<DrawToBufferT>(draw_to_buffer));
   }
 
   RenderTarget(RenderTarget&& other);
@@ -67,12 +66,10 @@ private:
 
   RenderTarget(const RenderTarget&) = delete;
 
-  RenderTarget(const int height, const int width, const Options& options);
+  RenderTarget(const Shape2D& shape, const Options& options);
 
-  /// Current back buffer viewport height
-  int height_;
-  /// Current back buffer viewport width
-  int width_;
+  /// Current back buffer viewport extents
+  Shape2D shape_;
   /// Back buffer options
   Options options_;
 };

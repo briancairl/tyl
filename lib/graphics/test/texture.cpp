@@ -76,7 +76,7 @@ int main(int argc, char** argv)
   // clang-format on
 
   // Upload texture data
-  const Texture texture{4, 2, ColorBytes, TextureChannels::RGBA};
+  const Texture texture{{4, 2}, ColorBytes, TextureChannels::RGBA};
 
   // Download texture data
   TextureOptions texture_options;

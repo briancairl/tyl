@@ -52,12 +52,12 @@ public:
   };
 
   [[nodiscard]] static expected<RenderTargetTexture, ErrorCode>
-  create(const int height, const int width, const Options& options = {});
+  create(const Shape2D& shape, const Options& options = {});
 
   template <typename DrawToTextureT> void draw_to(DrawToTextureT draw_to_texture)
   {
     RenderTargetTexture::bind();
-    draw_to_texture(target_texture_.height(), target_texture_.width());
+    draw_to_texture(target_texture_.shape());
   }
 
   const Texture& texture() const { return target_texture_; }
