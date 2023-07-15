@@ -36,6 +36,7 @@
 #include <tyl/core/engine/resource.hpp>
 #include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/debug.hpp>
+#include <tyl/graphics/device/render_target.hpp>
 #include <tyl/graphics/device/render_target_texture.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/engine/primitives_renderer.hpp>
@@ -105,8 +106,8 @@ int main(int argc, char** argv)
   // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
 
-  int x_size = 2000;
-  int y_size = 1000;
+  constexpr int x_size = 2000;
+  constexpr int y_size = 1000;
 
   // Create window with graphics context
   GLFWwindow* window = glfwCreateWindow(x_size, y_size, "editor", NULL, NULL);
@@ -135,10 +136,6 @@ int main(int argc, char** argv)
   // Setup Platform/Renderer bindings
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 
   entt::registry registry;
   auto primitives_renderer = graphics::PrimitivesRenderer::create({.max_vertex_count = 100});
@@ -180,110 +177,109 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  auto rtt = device::RenderTargetTexture::create(500, 500);
+  auto rt = device::RenderTarget::create({x_size, y_size});
+
+  auto rtt = device::RenderTargetTexture::create({500, 500});
 
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
 
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
+    rtt->draw_to(
+      [&primitives_renderer, &registry](const auto& viewport_shape) { primitives_renderer->draw(registry); });
 
-    rtt->draw_to([&primitives_renderer, &registry](const int viewport_height, const int viewport_width) {
-      primitives_renderer->draw(registry);
-    });
+    rt->draw_to(
+      [window](auto& viewport_shape) { glfwGetFramebufferSize(window, &viewport_shape.height, &viewport_shape.width); },
+      [&](const auto& viewport_shape) {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+        ImGui::SetNextWindowPos(ImVec2{0, 0});
+        ImGui::Begin("editor", nullptr, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar));
 
-    ImGui::SetNextWindowPos(ImVec2{0, 0});
-    ImGui::Begin("editor", nullptr, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar));
+        const auto available_space = ImGui::GetContentRegionAvail();
 
-    const auto available_space = ImGui::GetContentRegionAvail();
-
-    if (ImGui::BeginMenuBar())
-    {
-      if (ImGui::MenuItem("open"))
-      {
-        ImGuiFileDialog::Instance()->OpenDialog("AssetPicker", "Choose File", ".png,.jpg,.txt", ".");
-      }
-      ImGui::EndMenuBar();
-    }
-
-    // display
-    if (ImGuiFileDialog::Instance()->Display("AssetPicker"))
-    {
-      // action if OK
-      if (ImGuiFileDialog::Instance()->IsOk())
-      {
-        const std::filesystem::path file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
-        if (const auto id_or_error = core::resource::create(registry, file_path_name); !id_or_error.has_value())
+        if (ImGui::BeginMenuBar())
         {
-          std::cerr << id_or_error.error() << std::endl;
-        }
-      }
-
-      // close
-      ImGuiFileDialog::Instance()->Close();
-    }
-
-    ImGui::Image(
-      reinterpret_cast<void*>(rtt->texture().get_id()), ImVec2(rtt->texture().height(), rtt->texture().width()));
-
-    ImGui::Text("%s", "textures");
-    registry.view<core::resource::Texture::Tag, core::resource::Path, device::Texture, TextureDisplayProperties>().each(
-      [available_space,
-       &registry](const entt::entity guid, const auto& path, const auto& texture, auto& texture_display_properties) {
-        ImGui::PushID(path.string().c_str());
-        const bool should_delete = ImGui::Button("delete");
-        ImGui::SameLine();
-        ImGui::Text("%s", path.string().c_str());
-
-        ImGui::SliderFloat(
-          "zoom",
-          &texture_display_properties.zoom,
-          TextureDisplayProperties::kMinZoom,
-          TextureDisplayProperties::kMaxZoom);
-
-        ImGui::Text("guid: %d", static_cast<int>(guid));
-        ImGui::Text("size: %d x %d", texture.height(), texture.width());
-        if (should_delete)
-        {
-          core::resource::release(registry, path);
-        }
-        else
-        {
-          const float aspect_ratio = static_cast<float>(texture.height()) / static_cast<float>(texture.width());
-          const float display_height = available_space.x * texture_display_properties.zoom;
-          const float display_width = aspect_ratio * display_height;
-
-          constexpr bool kShowBorders = true;
-          constexpr float kMaxDisplayHeight = 400.f;
-
-          ImGui::BeginChild(
-            path.string().c_str(),
-            ImVec2{available_space.x, std::min(kMaxDisplayHeight, display_height)},
-            kShowBorders,
-            ImGuiWindowFlags_HorizontalScrollbar);
+          if (ImGui::MenuItem("open"))
           {
-            ImGui::Image(reinterpret_cast<void*>(texture.get_id()), ImVec2(display_width, display_height));
+            ImGuiFileDialog::Instance()->OpenDialog("AssetPicker", "Choose File", ".png,.jpg,.txt", ".");
           }
-          ImGui::EndChild();
+          ImGui::EndMenuBar();
         }
-        ImGui::PopID();
+
+        // display
+        if (ImGuiFileDialog::Instance()->Display("AssetPicker"))
+        {
+          // action if OK
+          if (ImGuiFileDialog::Instance()->IsOk())
+          {
+            const std::filesystem::path file_path_name = ImGuiFileDialog::Instance()->GetFilePathName();
+            if (const auto id_or_error = core::resource::create(registry, file_path_name); !id_or_error.has_value())
+            {
+              std::cerr << id_or_error.error() << std::endl;
+            }
+          }
+
+          // close
+          ImGuiFileDialog::Instance()->Close();
+        }
+
+        ImGui::Image(
+          reinterpret_cast<void*>(rtt->texture().get_id()),
+          ImVec2(rtt->texture().shape().height, rtt->texture().shape().width));
+
+        ImGui::Text("%s", "textures");
+        registry.view<core::resource::Texture::Tag, core::resource::Path, device::Texture, TextureDisplayProperties>()
+          .each([available_space, &registry](
+                  const entt::entity guid, const auto& path, const auto& texture, auto& texture_display_properties) {
+            ImGui::PushID(path.string().c_str());
+            const bool should_delete = ImGui::Button("delete");
+            ImGui::SameLine();
+            ImGui::Text("%s", path.string().c_str());
+
+            ImGui::SliderFloat(
+              "zoom",
+              &texture_display_properties.zoom,
+              TextureDisplayProperties::kMinZoom,
+              TextureDisplayProperties::kMaxZoom);
+
+            ImGui::Text("guid: %d", static_cast<int>(guid));
+            ImGui::Text("size: %d x %d", texture.shape().height, texture.shape().width);
+            if (should_delete)
+            {
+              core::resource::release(registry, path);
+            }
+            else
+            {
+              const float aspect_ratio =
+                static_cast<float>(texture.shape().height) / static_cast<float>(texture.shape().width);
+              const float display_height = available_space.x * texture_display_properties.zoom;
+              const float display_width = aspect_ratio * display_height;
+
+              constexpr bool kShowBorders = true;
+              constexpr float kMaxDisplayHeight = 400.f;
+
+              ImGui::BeginChild(
+                path.string().c_str(),
+                ImVec2{available_space.x, std::min(kMaxDisplayHeight, display_height)},
+                kShowBorders,
+                ImGuiWindowFlags_HorizontalScrollbar);
+              {
+                ImGui::Image(reinterpret_cast<void*>(texture.get_id()), ImVec2(display_width, display_height));
+              }
+              ImGui::EndChild();
+            }
+            ImGui::PopID();
+          });
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
       });
-
-    ImGui::End();
-
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    glfwGetFramebufferSize(window, &x_size, &y_size);
-    glViewport(0, 0, x_size, y_size);
     glfwSwapBuffers(window);
   }
-
-
   return 0;
 }
