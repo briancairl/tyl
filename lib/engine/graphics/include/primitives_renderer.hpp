@@ -12,6 +12,7 @@
 #include <entt/entt.hpp>
 
 // Tyl
+#include <tyl/engine/graphics/camera.hpp>
 #include <tyl/utility/expected.hpp>
 
 namespace tyl::engine::graphics
@@ -32,13 +33,13 @@ public:
     std::size_t max_vertex_count;
   };
 
-  static tyl::expected<PrimitivesRenderer, ErrorCode> create(const Settings& settings);
+  [[nodiscard]] static tyl::expected<PrimitivesRenderer, ErrorCode> create(const Settings& settings);
 
   PrimitivesRenderer(PrimitivesRenderer&&) = default;
 
   ~PrimitivesRenderer();
 
-  void draw(const entt::registry& reg);
+  void draw(const TopDownCamera2D& camera, const entt::registry& reg);
 
 private:
   class Impl;

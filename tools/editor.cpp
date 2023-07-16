@@ -35,12 +35,12 @@
 // Tyl
 #include <tyl/core/engine/resource.hpp>
 #include <tyl/debug/assert.hpp>
+#include <tyl/engine/graphics/primitives_renderer.hpp>
+#include <tyl/engine/graphics/types.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/render_target.hpp>
 #include <tyl/graphics/device/render_target_texture.hpp>
 #include <tyl/graphics/device/texture.hpp>
-#include <tyl/graphics/engine/primitives_renderer.hpp>
-#include <tyl/graphics/engine/types.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/utility/expected.hpp>
 
@@ -179,14 +179,20 @@ int main(int argc, char** argv)
 
   auto rt = device::RenderTarget::create({x_size, y_size});
 
-  auto rtt = device::RenderTargetTexture::create({500, 500});
+  auto rtt = device::RenderTargetTexture::create({500, 200});
 
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
 
-    rtt->draw_to(
-      [&primitives_renderer, &registry](const auto& viewport_shape) { primitives_renderer->draw(registry); });
+    rtt->draw_to([&primitives_renderer, &registry](const auto& viewport_shape) {
+      const graphics::TopDownCamera2D camera{
+        .translation = {2.f, 5.f},
+        .scaling = 2.f,
+        .aspect_ratio = static_cast<float>(viewport_shape.height) / static_cast<float>(viewport_shape.width),
+      };
+      primitives_renderer->draw(camera, registry);
+    });
 
     rt->draw_to(
       [window](auto& viewport_shape) { glfwGetFramebufferSize(window, &viewport_shape.height, &viewport_shape.width); },

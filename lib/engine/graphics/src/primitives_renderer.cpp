@@ -9,10 +9,10 @@
 #include <type_traits>
 
 // Tyl
+#include <tyl/engine/graphics/primitives_renderer.hpp>
+#include <tyl/engine/graphics/types.hpp>
 #include <tyl/graphics/device/shader.hpp>
 #include <tyl/graphics/device/vertex_buffer.hpp>
-#include <tyl/graphics/engine/primitives_renderer.hpp>
-#include <tyl/graphics/engine/types.hpp>
 
 using namespace tyl::graphics::device;
 
@@ -29,10 +29,11 @@ layout (location = 0) in vec3 vPos;
 layout (location = 1) in vec4 vColor;
 
 out vec4 vFragColor;
+uniform mat3 uCameraTransform;
 
 void main()
 {
-  gl_Position = vec4(vPos, 1);
+  gl_Position = vec4(uCameraTransform * vPos, 1);
   vFragColor = vColor;
 }
 
@@ -161,9 +162,13 @@ class PrimitivesRenderer::Impl
 public:
   Impl(Shader&& shader, DrawingVertexBuffer&& vb) : shader_{std::move(shader)}, vb_{std::move(vb)} {}
 
-  void run(const entt::registry& registry)
+  void run(const TopDownCamera2D& camera, const entt::registry& registry)
   {
+    const auto camera_matrix = to_camera_matrix(camera);
+
     shader_.bind();
+    shader_.setMat3("uCameraTransform", camera_matrix.data());
+
     const auto set_vertex_from_2d = [](auto& dst, const auto& src) {
       dst.template head<2>() = src;
       dst[2] = 0.f;
@@ -203,6 +208,9 @@ tyl::expected<PrimitivesRenderer, PrimitivesRenderer::ErrorCode> PrimitivesRende
 
 PrimitivesRenderer::PrimitivesRenderer(std::unique_ptr<Impl>&& impl) : impl_{std::move(impl)} {}
 
-void PrimitivesRenderer::draw(const entt::registry& registry) { impl_->run(registry); }
+void PrimitivesRenderer::draw(const TopDownCamera2D& camera, const entt::registry& registry)
+{
+  impl_->run(camera, registry);
+}
 
 }  // namespace tyl::engine::graphics
