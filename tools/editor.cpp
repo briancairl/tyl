@@ -179,24 +179,48 @@ int main(int argc, char** argv)
 
   auto rt = device::RenderTarget::create({x_size, y_size});
 
-  auto rtt = device::RenderTargetTexture::create({500, 200});
+  auto rtt = device::RenderTargetTexture::create({200, 200});
+
+  graphics::TopDownCamera2D camera{
+    .translation = {-0.0f, 0.0f},
+    .scaling = 5.0f,
+  };
 
   while (!glfwWindowShouldClose(window))
   {
     glfwPollEvents();
 
-    rtt->draw_to([&primitives_renderer, &registry](const auto& viewport_shape) {
-      const graphics::TopDownCamera2D camera{
-        .translation = {2.f, 5.f},
-        .scaling = 2.f,
-        .aspect_ratio = static_cast<float>(viewport_shape.height) / static_cast<float>(viewport_shape.width),
-      };
-      primitives_renderer->draw(camera, registry);
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_W))
+    {
+      camera.translation.y() += 0.1;
+    }
+
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_S))
+    {
+      camera.translation.y() -= 0.1;
+    }
+
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_A))
+    {
+      camera.translation.x() += 0.1;
+    }
+
+    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_D))
+    {
+      camera.translation.x() -= 0.1;
+    }
+
+    rtt->draw_to([&camera, &primitives_renderer, &registry](const auto& viewport_shape) {
+      primitives_renderer->draw(
+        graphics::to_camera_matrix(camera, viewport_shape.height, viewport_shape.width), registry);
     });
 
     rt->draw_to(
       [window](auto& viewport_shape) { glfwGetFramebufferSize(window, &viewport_shape.height, &viewport_shape.width); },
       [&](const auto& viewport_shape) {
+        primitives_renderer->draw(
+          graphics::to_camera_matrix(camera, viewport_shape.height, viewport_shape.width), registry);
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -234,7 +258,9 @@ int main(int argc, char** argv)
 
         ImGui::Image(
           reinterpret_cast<void*>(rtt->texture().get_id()),
-          ImVec2(rtt->texture().shape().height, rtt->texture().shape().width));
+          ImVec2(rtt->texture().shape().height, rtt->texture().shape().width),
+          {0, 1},
+          {1, 0});
 
         ImGui::Text("%s", "textures");
         registry.view<core::resource::Texture::Tag, core::resource::Path, device::Texture, TextureDisplayProperties>()
