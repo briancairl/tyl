@@ -162,16 +162,14 @@ class PrimitivesRenderer::Impl
 public:
   Impl(Shader&& shader, DrawingVertexBuffer&& vb) : shader_{std::move(shader)}, vb_{std::move(vb)} {}
 
-  void run(const TopDownCamera2D& camera, const entt::registry& registry)
+  void run(const CameraMatrix2D& camera_matrix, const entt::registry& registry)
   {
-    const auto camera_matrix = to_camera_matrix(camera);
-
     shader_.bind();
     shader_.setMat3("uCameraTransform", camera_matrix.data());
 
     const auto set_vertex_from_2d = [](auto& dst, const auto& src) {
       dst.template head<2>() = src;
-      dst[2] = 0.f;
+      dst[2] = 1.f;
     };
     draw_primitive_with_single_color<VertexList2D, DrawType::LineList>(vb_, registry, set_vertex_from_2d);
     draw_primitive_with_single_color<VertexList2D, DrawType::LineStrip>(vb_, registry, set_vertex_from_2d);
@@ -208,9 +206,9 @@ tyl::expected<PrimitivesRenderer, PrimitivesRenderer::ErrorCode> PrimitivesRende
 
 PrimitivesRenderer::PrimitivesRenderer(std::unique_ptr<Impl>&& impl) : impl_{std::move(impl)} {}
 
-void PrimitivesRenderer::draw(const TopDownCamera2D& camera, const entt::registry& registry)
+void PrimitivesRenderer::draw(const CameraMatrix2D& camera_matrix, const entt::registry& registry)
 {
-  impl_->run(camera, registry);
+  impl_->run(camera_matrix, registry);
 }
 
 }  // namespace tyl::engine::graphics

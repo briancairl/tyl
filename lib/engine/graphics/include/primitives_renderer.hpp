@@ -39,7 +39,7 @@ public:
 
   ~PrimitivesRenderer();
 
-  void draw(const TopDownCamera2D& camera, const entt::registry& reg);
+  void draw(const CameraMatrix2D& camera_matrix, const entt::registry& reg);
 
 private:
   class Impl;
