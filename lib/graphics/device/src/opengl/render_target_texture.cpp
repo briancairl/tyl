@@ -83,6 +83,8 @@ void RenderTargetTexture::bind() const
   }
 }
 
+void RenderTargetTexture::unbind() const { glBindFramebuffer(GL_FRAMEBUFFER, default_frame_buffer_id); }
+
 RenderTargetTexture::RenderTargetTexture(
   Texture&& texture,
   const frame_buffer_id_t frame_buffer_id,

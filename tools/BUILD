@@ -4,12 +4,11 @@ cc_binary(
 	deps=[
 		"//lib/common/debug:assert",
 		"//lib/graphics/device",
-		"//lib/graphics/device/glad:glad",
 		"//lib/graphics/host:image",
+		"//lib/engine/core:app",
 		"//lib/engine/core:resource",
 		"//lib/engine/graphics:primitives_renderer",
 		"@entt//:entt",
-		"@glfw//:glfw",
 		"@imgui//:imgui",
 		"@imgui-file-dialogue"
 	]

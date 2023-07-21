@@ -5,8 +5,9 @@
  */
 
 // C++ Standard Library
-#include <atomic>
-#include <variant>
+#include <mutex>
+#include <thread>
+#include <unordered_set>
 
 // Tyl
 #include <tyl/debug/assert.hpp>
@@ -17,14 +18,26 @@
 
 namespace tyl::graphics::device
 {
-
-static std::atomic_flag RenderTarget__is_active{false};
-
-expected<RenderTarget, RenderTarget::ErrorCode> RenderTarget::create(const Shape2D& shape, const Options& options)
+namespace
 {
-  if (RenderTarget__is_active.test_and_set())
+
+std::mutex RenderTarget_active_context_mutex;
+std::unordered_set<void*> RenderTarget_active_contexts;
+
+}  // namespace
+
+expected<RenderTarget, RenderTarget::ErrorCode>
+RenderTarget::create(void* const context, const Shape2D& shape, const Options& options)
+{
+  if (context == nullptr)
   {
-    return unexpected{ErrorCode::ALREADY_ACTIVE};
+    return unexpected{ErrorCode::CONTEXT_INVALID};
+  }
+
+  std::lock_guard lock{RenderTarget_active_context_mutex};
+  if (RenderTarget_active_contexts.count(context) > 0)
+  {
+    return unexpected{ErrorCode::CONTEXT_IN_USE};
   }
   else if (shape.height < 1)
   {
@@ -44,7 +57,7 @@ expected<RenderTarget, RenderTarget::ErrorCode> RenderTarget::create(const Shape
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  return RenderTarget{shape, options};
+  return RenderTarget{context, shape, options};
 }
 
 void RenderTarget::bind() const
@@ -65,15 +78,26 @@ void RenderTarget::bind() const
   glClearColor(options_.clear_color.r, options_.clear_color.g, options_.clear_color.b, options_.clear_color.a);
 }
 
-RenderTarget::RenderTarget(const Shape2D& shape, const Options& options) : shape_{shape}, options_{options} {}
+RenderTarget::RenderTarget(void* const context, const Shape2D& shape, const Options& options) :
+    context_{context}, shape_{shape}, options_{options}
+{}
 
-RenderTarget::RenderTarget(RenderTarget&& other) : shape_{other.shape_}, options_{other.options_} { other.shape_ = {}; }
+RenderTarget::RenderTarget(RenderTarget&& other) :
+    context_{other.context_}, shape_{other.shape_}, options_{other.options_}
+{
+  other.context_ = nullptr;
+}
 
 RenderTarget::~RenderTarget()
 {
-  if (shape_.height > 0)
+  if (context_ == nullptr)
   {
-    RenderTarget__is_active.clear();
+    return;
+  }
+  else
+  {
+    std::lock_guard lock{RenderTarget_active_context_mutex};
+    RenderTarget_active_contexts.erase(context_);
   }
 }
 

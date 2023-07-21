@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 // Tyl
-#include <tyl/core/engine/resource.hpp>
+#include <tyl/engine/core/resource.hpp>
 
 namespace tyl::engine::core::resource
 {

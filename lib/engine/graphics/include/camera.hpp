@@ -19,9 +19,9 @@ struct TopDownCamera2D
 
 using CameraMatrix2D = Mat3f;
 
-inline Mat3f to_camera_matrix(const TopDownCamera2D& camera, const float viewport_height, const float viewport_width)
+inline Mat3f to_camera_matrix(const TopDownCamera2D& camera, const Vec2f viewport_size)
 {
-  const float rxx = camera.scaling * viewport_height / viewport_width;
+  const float rxx = camera.scaling * viewport_size.y() / viewport_size.x();
   const float ryy = camera.scaling;
   const float dx = camera.translation.x();
   const float dy = camera.translation.y();

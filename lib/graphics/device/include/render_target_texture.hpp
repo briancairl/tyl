@@ -58,6 +58,7 @@ public:
   {
     RenderTargetTexture::bind();
     draw_to_texture(target_texture_.shape());
+    RenderTargetTexture::unbind();
   }
 
   const Texture& texture() const { return target_texture_; }
@@ -68,6 +69,7 @@ public:
 
 private:
   void bind() const;
+  void unbind() const;
 
   RenderTargetTexture(const RenderTargetTexture&) = delete;
 

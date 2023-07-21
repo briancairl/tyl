@@ -36,13 +36,14 @@ public:
    */
   enum class ErrorCode
   {
-    ALREADY_ACTIVE,
-    DEVICE_CONFIGURATION_FAILURE,
+    CONTEXT_INVALID,
+    CONTEXT_IN_USE,
     INVALID_HEIGHT,
-    INVALID_WIDTH,
+    INVALID_WIDTH
   };
 
-  [[nodiscard]] static expected<RenderTarget, ErrorCode> create(const Shape2D& shape, const Options& options = {});
+  [[nodiscard]] static expected<RenderTarget, ErrorCode>
+  create(void* const context, const Shape2D& shape, const Options& options = {});
 
   template <typename ResizeBufferFnT, typename DrawToBufferT>
   void draw_to(ResizeBufferFnT resize_buffer, DrawToBufferT draw_to_buffer)
@@ -57,6 +58,11 @@ public:
     draw_to([]([[maybe_unused]] const Shape2D& shape) {}, std::forward<DrawToBufferT>(draw_to_buffer));
   }
 
+  /**
+   * @brief Returns current render buffer target shape
+   */
+  const Shape2D& shape() const { return shape_; }
+
   RenderTarget(RenderTarget&& other);
 
   ~RenderTarget();
@@ -66,8 +72,10 @@ private:
 
   RenderTarget(const RenderTarget&) = delete;
 
-  RenderTarget(const Shape2D& shape, const Options& options);
+  RenderTarget(void* const context, const Shape2D& shape, const Options& options);
 
+  /// Unique render context pointer (typtically to a window back-buffer)
+  void* context_;
   /// Current back buffer viewport extents
   Shape2D shape_;
   /// Back buffer options
