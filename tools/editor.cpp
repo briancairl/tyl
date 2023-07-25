@@ -99,7 +99,7 @@ int main(int argc, char** argv)
   }
 
 
-  {
+  auto& manipulated_point = [&registry]() -> tyl::Vec2f& {
     const auto id = registry.create();
 
     registry.emplace<graphics::DrawType::LineStrip>(id);
@@ -112,7 +112,8 @@ int main(int argc, char** argv)
       vertices.emplace_back(-0.8f, -0.0f);
       vertices.emplace_back(-0.8f, -0.8f);
     }
-  }
+    return registry.get<graphics::VertexList2D>(id).back();
+  }();
 
 
   auto rtt = device::RenderTargetTexture::create({200, 200});
@@ -125,32 +126,44 @@ int main(int argc, char** argv)
 
   graphics::TopDownCamera2D camera{
     .translation = {-0.0f, 0.0f},
-    .scaling = 5.0f,
+    .scaling = 1.0f,
   };
 
 
   const auto update_callback = [&](const tyl::engine::core::App::State& app_state) {
-    if (app_state.key_info.W.is_held())
-    {
-      camera.translation.y() += 0.1;
-    }
+    using Key = tyl::engine::core::KeyInfo;
 
-    if (app_state.key_info.S.is_held())
-    {
-      camera.translation.y() -= 0.1;
-    }
+    camera.scaling -= app_state.cursor_scroll[0] * 0.1f;
+    camera.scaling = std::max(0.1f, camera.scaling);
 
-    if (app_state.key_info.A.is_held())
+    if (app_state.key_info[Key::W].is_held())
     {
       camera.translation.x() += 0.1;
     }
 
-    if (app_state.key_info.D.is_held())
+    if (app_state.key_info[Key::S].is_held())
     {
       camera.translation.x() -= 0.1;
     }
 
-    primitives_renderer->draw(graphics::to_camera_matrix(camera, app_state.window_size.cast<float>()), registry);
+    if (app_state.key_info[Key::A].is_held() || app_state.cursor_scroll[1] > 0)
+    {
+      camera.translation.y() += 0.1;
+    }
+
+    if (app_state.key_info[Key::D].is_held() || app_state.cursor_scroll[1] < 0)
+    {
+      camera.translation.y() -= 0.1;
+    }
+
+    const tyl::Mat3f cmat_inv = graphics::to_camera_inverse_matrix(camera, app_state.window_size.cast<float>());
+    const tyl::Mat3f cmat = cmat_inv.inverse();
+
+    const tyl::Vec2f cursor_position_cmat =
+      cmat_inv.block<2, 2>(0, 0) * app_state.cursor_position_normalized + cmat_inv.col(2).head<2>();
+    manipulated_point = cursor_position_cmat;
+
+    primitives_renderer->draw(cmat, registry);
 
     ImGui::SetNextWindowPos(ImVec2{0, 0});
     ImGui::Begin("editor", nullptr, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar));

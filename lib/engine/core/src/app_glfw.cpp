@@ -1,7 +1,9 @@
 // C++ Standard Library
+#include <algorithm>
 #include <atomic>
 #include <cstdio>
 #include <ostream>
+#include <unordered_map>
 
 // GLAD
 #include <glad/glad.h>
@@ -17,7 +19,9 @@
 #include <imgui_internal.h>
 
 // Tyl
+#include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/app.hpp>
+#include <tyl/engine/core/clock.hpp>
 
 namespace tyl::engine::core
 {
@@ -84,7 +88,7 @@ void glfw_get_key_state(KeyState& previous, GLFWwindow* const window, const int 
     }
     else if (previous.is_released())
     {
-      previous.code = KeyState::NONE;
+      previous.reset();
     }
     else
     {
@@ -93,7 +97,7 @@ void glfw_get_key_state(KeyState& previous, GLFWwindow* const window, const int 
     break;
   }
   default: {
-    previous.code = KeyState::NONE;
+    previous.reset();
     break;
   }
   }
@@ -107,6 +111,89 @@ constexpr const char* glsl_version = "#version 150";
 // GL 3.0 + GLSL 130
 constexpr const char* glsl_version = "#version 130";  // 3.0+ only
 #endif
+
+struct WindowCallbackData
+{
+  Vec2f scroll_wheel_direction;
+  Clock::time_point scroll_wheel_last_time_point;
+  std::vector<std::filesystem::path> drag_and_drop_paths;
+};
+
+std::unordered_map<GLFWwindow*, WindowCallbackData> glfw_window_callback_data;
+
+void glfw_window_scroll_callback(GLFWwindow* const window, double xoffset, double yoffset)
+{
+  auto it = glfw_window_callback_data.find(window);
+  TYL_ASSERT_NE(it, glfw_window_callback_data.end());
+  it->second.scroll_wheel_direction[0] = yoffset;
+  it->second.scroll_wheel_direction[1] = xoffset;
+  it->second.scroll_wheel_last_time_point = Clock::now();
+}
+
+void glfw_window_drag_and_drop_callback(GLFWwindow* const window, int path_count, const char* paths[])
+{
+  auto it = glfw_window_callback_data.find(window);
+  TYL_ASSERT_NE(it, glfw_window_callback_data.end());
+
+  it->second.drag_and_drop_paths.reserve(path_count);
+  std::transform(
+    paths,
+    paths + path_count,
+    std::back_inserter(it->second.drag_and_drop_paths),
+    [](const char* path_cstr) -> std::filesystem::path { return std::filesystem::path{path_cstr}; });
+}
+
+bool glfw_window_set_callbacks(GLFWwindow* const window)
+{
+  if (glfwSetScrollCallback(window, glfw_window_scroll_callback) != nullptr)
+  {
+    return false;
+  }
+  else if (glfwSetDropCallback(window, glfw_window_drag_and_drop_callback) != nullptr)
+  {
+    return false;
+  }
+  else
+  {
+    return true;
+  }
+}
+
+WindowCallbackData& get_glfw_window_callback_data(GLFWwindow* const window)
+{
+  auto it = glfw_window_callback_data.find(window);
+  TYL_ASSERT_NE(it, glfw_window_callback_data.end());
+  return it->second;
+}
+
+constexpr int kGLFWKeyCodes[KeyInfo::kKeyCount] = {
+  GLFW_KEY_1,
+  GLFW_KEY_2,
+  GLFW_KEY_3,
+  GLFW_KEY_4,
+  GLFW_KEY_5,
+  GLFW_KEY_6,
+  GLFW_KEY_7,
+  GLFW_KEY_8,
+  GLFW_KEY_9,
+  GLFW_KEY_0,
+  GLFW_KEY_Q,
+  GLFW_KEY_W,
+  GLFW_KEY_E,
+  GLFW_KEY_A,
+  GLFW_KEY_S,
+  GLFW_KEY_D,
+  GLFW_KEY_Z,
+  GLFW_KEY_X,
+  GLFW_KEY_C,
+  GLFW_KEY_SPACE,
+  GLFW_KEY_LEFT_SHIFT,
+  GLFW_KEY_RIGHT_SHIFT,
+  GLFW_KEY_LEFT_CONTROL,
+  GLFW_KEY_RIGHT_CONTROL,
+  GLFW_KEY_LEFT_ALT,
+  GLFW_KEY_RIGHT_ALT,
+};
 
 }  // namespace
 
@@ -147,6 +234,10 @@ expected<App, App::ErrorCode> App::create(const Options& options)
     glfwCreateWindow(options.initial_window_height, options.initial_window_width, options.window_title, NULL, NULL);
 
   if (window == nullptr)
+  {
+    return unexpected{ErrorCode::WINDOW_CREATION_FAILURE};
+  }
+  else if (!glfw_window_set_callbacks(window))
   {
     return unexpected{ErrorCode::WINDOW_CREATION_FAILURE};
   }
@@ -193,7 +284,12 @@ App::App(void* const window_handle, ImGuiContext* const imgui_context) :
       .key_info = {},
       .imgui_context = imgui_context},
     window_handle_{window_handle}
-{}
+{
+  glfw_window_callback_data.emplace(
+    std::piecewise_construct,
+    std::forward_as_tuple(reinterpret_cast<GLFWwindow*>(window_handle_)),
+    std::forward_as_tuple());
+}
 
 App::~App()
 {
@@ -209,7 +305,10 @@ App::~App()
       --imgui_contexts_active;
     }
     ImGui::DestroyContext(window_state_.imgui_context);
-    glfwDestroyWindow(reinterpret_cast<GLFWwindow*>(window_handle_));
+
+    auto* const glfw_window_handle = reinterpret_cast<GLFWwindow*>(window_handle_);
+    glfwDestroyWindow(glfw_window_handle);
+    glfw_window_callback_data.erase(glfw_window_handle);
   }
 }
 
@@ -227,19 +326,40 @@ bool App::update_start()
   {
     glfwPollEvents();
 
-    glfw_get_key_state(window_state_.key_info.W, glfw_window_handle, GLFW_KEY_W);
-    glfw_get_key_state(window_state_.key_info.S, glfw_window_handle, GLFW_KEY_S);
-    glfw_get_key_state(window_state_.key_info.A, glfw_window_handle, GLFW_KEY_A);
-    glfw_get_key_state(window_state_.key_info.D, glfw_window_handle, GLFW_KEY_D);
+    const auto now_time_point = Clock::now();
 
+    auto& callback_data = get_glfw_window_callback_data(glfw_window_handle);
+
+    // Scan for states of all keys of interest
+    for (std::size_t i = 0; i < KeyInfo::kKeyCount; ++i)
+    {
+      glfw_get_key_state(window_state_.key_info.state[i], glfw_window_handle, kGLFWKeyCodes[i]);
+    }
+
+    // Get current cursor position on screen
     {
       double xpos, ypos;
       glfwGetCursorPos(glfw_window_handle, &xpos, &ypos);
-      window_state_.cursor_position[0] = xpos;
-      window_state_.cursor_position[1] = ypos;
-      window_state_.cursor_position_normalized =
-        (window_state_.cursor_position.array() / window_state_.window_size.cast<float>().array());
+      window_state_.cursor_position << xpos, ypos;
     }
+
+    // Get current cursose position in graphics viewport space
+    {
+      window_state_.cursor_position_normalized =
+        (1.0f - 2.f * window_state_.cursor_position.array() / window_state_.window_size.cast<float>().array());
+      window_state_.cursor_position_normalized[0] = -window_state_.cursor_position_normalized[0];
+    }
+
+    // Reset horizontal/vertical scroll state
+    if (const auto delta = now_time_point - callback_data.scroll_wheel_last_time_point;
+        delta > std::chrono::milliseconds(20))
+    {
+      callback_data.scroll_wheel_direction.setZero();
+    }
+    window_state_.cursor_scroll = callback_data.scroll_wheel_direction;
+
+    // Set drag and drop paths
+    window_state_.drag_and_drop_paths = std::move(callback_data.drag_and_drop_paths);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 0);
@@ -262,8 +382,9 @@ void App::update_end()
   glfwGetFramebufferSize(glfw_window_handle, &x_size, &y_size);
   glViewport(0, 0, x_size, y_size);
   glfwSwapBuffers(glfw_window_handle);
-  window_state_.window_size[0] = y_size;
-  window_state_.window_size[1] = x_size;
+  window_state_.window_size[0] = x_size;
+  window_state_.window_size[1] = y_size;
+  window_state_.drag_and_drop_paths.clear();
 }
 
 }  // namespace tyl::engine::core

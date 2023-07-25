@@ -7,7 +7,9 @@
 
 // C++ Standard Library
 #include <cctype>
+#include <filesystem>
 #include <iosfwd>
+#include <vector>
 
 // ImGui
 #include <imgui.h>
@@ -31,29 +33,68 @@ struct KeyState
 
   Code code = NONE;
 
+  constexpr void reset() { code = NONE; }
   constexpr bool is_none() const { return code == NONE; }
   constexpr bool is_released() const { return code == RELEASED; }
   constexpr bool is_pressed() const { return code == PRESSED; }
   constexpr bool is_held() const { return code == HELD; }
   constexpr bool is_down() const { return is_pressed() or is_held(); }
   constexpr bool is_up() const { return is_released() or is_none(); }
+
+  KeyState& operator=(const KeyState& other) = default;
+
+  KeyState& operator=(const KeyState::Code code)
+  {
+    this->code = code;
+    return *this;
+  };
 };
 
 struct KeyInfo
 {
-  KeyState Q;
-  KeyState W;
-  KeyState E;
-  KeyState A;
-  KeyState S;
-  KeyState D;
-  KeyState Z;
-  KeyState X;
-  KeyState C;
-  KeyState ARROW_UP;
-  KeyState ARROW_DOWN;
-  KeyState ARROW_L;
-  KeyState ARROW_R;
+  enum KeyCode
+  {
+    NUM1,
+    NUM2,
+    NUM3,
+    NUM4,
+    NUM5,
+    NUM6,
+    NUM7,
+    NUM8,
+    NUM9,
+    NUM0,
+    Q,
+    W,
+    E,
+    A,
+    S,
+    D,
+    Z,
+    X,
+    C,
+    SPACE,
+    L_SHIFT,
+    R_SHIFT,
+    L_CTRL,
+    R_CTRL,
+    L_ALT,
+    R_ALT,
+    _KEY_COUNT,
+  };
+
+  static constexpr auto kKeyCount = static_cast<std::size_t>(_KEY_COUNT);
+
+  constexpr KeyState& operator[](const KeyCode key) { return state[static_cast<std::size_t>(key)]; }
+  constexpr const KeyState& operator[](const KeyCode key) const { return state[static_cast<std::size_t>(key)]; }
+
+  constexpr auto* begin() { return state; }
+  constexpr auto* end() { return state + kKeyCount; }
+
+  constexpr const auto* begin() const { return state; }
+  constexpr const auto* end() const { return state + kKeyCount; }
+
+  KeyState state[kKeyCount];
 };
 
 struct AppOptions
@@ -74,6 +115,8 @@ public:
     Vec2i window_size;
     Vec2f cursor_position;
     Vec2f cursor_position_normalized;
+    Vec2f cursor_scroll;
+    std::vector<std::filesystem::path> drag_and_drop_paths;
     KeyInfo key_info;
     ImGuiContext* imgui_context;
   };

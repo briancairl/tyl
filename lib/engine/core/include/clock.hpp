@@ -11,6 +11,6 @@
 namespace tyl::engine::core
 {
 
-using clock = std::chrono::steady_clock;
+using Clock = std::chrono::steady_clock;
 
 }  // namespace tyl::engine::core

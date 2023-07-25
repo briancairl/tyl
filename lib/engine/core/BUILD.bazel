@@ -23,6 +23,6 @@ cc_library(
   srcs=["src/app_glfw.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/core",
-  deps=[":clock", "//lib/common/utility:expected", "//lib/common/math:geometry", "@entt", "//lib/graphics/device/glad:glad", "@glfw//:glfw", "@imgui//:imgui",],
+  deps=[":clock", "//lib/common/utility:expected",  "//lib/common/debug:assert", "//lib/common/math:geometry", "@entt", "//lib/graphics/device/glad:glad", "@glfw//:glfw", "@imgui//:imgui",],
   visibility=["//visibility:public"]
 )
