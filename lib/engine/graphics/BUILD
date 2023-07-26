@@ -25,6 +25,6 @@ cc_library(
   srcs=["src/primitives_renderer.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/graphics",
-  deps=[":camera", ":types", "@entt", "//lib/graphics/device"],
+  deps=[":camera", ":types", "@entt", "//lib/graphics/device", "//lib/common/utility:expected"],
   visibility=["//visibility:public"]
 )
