@@ -8,8 +8,9 @@ cc_binary(
 		"//lib/engine/core:app",
 		"//lib/engine/core:resource",
 		"//lib/engine/graphics:primitives_renderer",
+		"//lib/engine/widgets:tileset_creator",
+		"//lib/engine/widgets:asset_manager",
 		"@entt//:entt",
 		"@imgui//:imgui",
-		"@imgui-file-dialogue"
 	]
 )

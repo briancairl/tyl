@@ -22,6 +22,7 @@
 #include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/app.hpp>
 #include <tyl/engine/core/clock.hpp>
+#include <tyl/engine/core/drag_and_drop.hpp>
 
 namespace tyl::engine::core
 {
@@ -312,7 +313,7 @@ App::~App()
   }
 }
 
-bool App::update_start()
+bool App::update_start(entt::registry& reg)
 {
   auto* glfw_window_handle = reinterpret_cast<GLFWwindow*>(window_handle_);
   glfwMakeContextCurrent(glfw_window_handle);
@@ -359,7 +360,24 @@ bool App::update_start()
     window_state_.cursor_scroll = callback_data.scroll_wheel_direction;
 
     // Set drag and drop paths
-    window_state_.drag_and_drop_paths = std::move(callback_data.drag_and_drop_paths);
+    {
+      auto* const data = [&reg] {
+        auto& ctx = reg.ctx();
+        if (auto* const data = ctx.find<DragAndDropData>(); data == nullptr)
+        {
+          return &ctx.emplace<DragAndDropData>();
+        }
+        else
+        {
+          return data;
+        }
+      }();
+      if (!callback_data.drag_and_drop_paths.empty())
+      {
+        data->drop_location = ImGui::GetMousePos();
+        data->paths = std::move(callback_data.drag_and_drop_paths);
+      }
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0, 0, 0, 0);
@@ -384,7 +402,6 @@ void App::update_end()
   glfwSwapBuffers(glfw_window_handle);
   window_state_.window_size[0] = x_size;
   window_state_.window_size[1] = y_size;
-  window_state_.drag_and_drop_paths.clear();
 }
 
 }  // namespace tyl::engine::core

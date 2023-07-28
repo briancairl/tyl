@@ -14,6 +14,9 @@
 // ImGui
 #include <imgui.h>
 
+// Entt
+#include <entt/entt.hpp>
+
 // Tyl
 #include <tyl/math/vec.hpp>
 #include <tyl/utility/expected.hpp>
@@ -116,7 +119,6 @@ public:
     Vec2f cursor_position;
     Vec2f cursor_position_normalized;
     Vec2f cursor_scroll;
-    std::vector<std::filesystem::path> drag_and_drop_paths;
     KeyInfo key_info;
     ImGuiContext* imgui_context;
   };
@@ -136,9 +138,9 @@ public:
 
   [[nodiscard]] static expected<App, ErrorCode> create(const Options& settings);
 
-  template <typename UpdateStateCallbackT> bool update(UpdateStateCallbackT update_callback)
+  template <typename UpdateStateCallbackT> bool update(entt::registry& reg, UpdateStateCallbackT update_callback)
   {
-    if (App::update_start())
+    if (App::update_start(reg))
     {
       update_callback(window_state_);
     }
@@ -151,7 +153,7 @@ public:
   };
 
 private:
-  bool update_start();
+  bool update_start(entt::registry& reg);
   void update_end();
 
   App(void* const window_handle, ImGuiContext* const imgui_context);
