@@ -32,6 +32,7 @@
 #include <tyl/engine/graphics/primitives_renderer.hpp>
 #include <tyl/engine/graphics/types.hpp>
 #include <tyl/engine/widgets/asset_manager.hpp>
+#include <tyl/engine/widgets/drag_and_drop.hpp>
 #include <tyl/engine/widgets/tileset_creator.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/render_target.hpp>
@@ -153,11 +154,21 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto drag_and_drop = widgets::DragAndDrop::create({});
+  if (!drag_and_drop.has_value())
+  {
+    return 1;
+  }
+
+
   const auto update_callback = [&](const tyl::engine::core::App::State& app_state) {
     using Key = tyl::engine::core::KeyInfo;
 
-    camera.scaling -= app_state.cursor_scroll[0] * 0.1f;
-    camera.scaling = std::max(0.1f, camera.scaling);
+    if (app_state.cursor_scroll.is_valid())
+    {
+      camera.scaling -= app_state.cursor_scroll.get()[0] * 0.1f;
+      camera.scaling = std::max(0.1f, camera.scaling);
+    }
 
     if (app_state.key_info[Key::W].is_held())
     {
@@ -169,12 +180,12 @@ int main(int argc, char** argv)
       camera.translation.x() -= 0.1;
     }
 
-    if (app_state.key_info[Key::A].is_held() || app_state.cursor_scroll[1] > 0)
+    if (app_state.key_info[Key::A].is_held())
     {
       camera.translation.y() += 0.1;
     }
 
-    if (app_state.key_info[Key::D].is_held() || app_state.cursor_scroll[1] < 0)
+    if (app_state.key_info[Key::D].is_held())
     {
       camera.translation.y() -= 0.1;
     }
@@ -189,6 +200,7 @@ int main(int argc, char** argv)
     primitives_renderer->draw(cmat, registry);
     tileset_creator->update(app_state.imgui_context, registry);
     asset_manager->update(app_state.imgui_context, registry);
+    drag_and_drop->update(app_state.imgui_context, registry);
 
     return true;
   };

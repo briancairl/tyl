@@ -60,7 +60,7 @@ LoadedResourceMap& get_loaded_resource_map(entt::registry& reg)
 }
 
 template <typename ResourceT>
-std::optional<ErrorCode> load(entt::registry& reg, const entt::entity id, const Path& path)
+std::optional<OnCreateErrorCode> load(entt::registry& reg, const entt::entity id, const Path& path)
 {
   using TagType = typename ResourceT::Tag;
   using LocatorType = typename ResourceT::Locator;
@@ -68,7 +68,7 @@ std::optional<ErrorCode> load(entt::registry& reg, const entt::entity id, const 
 
   if (!entt::locator<LocatorType>::has_value())
   {
-    return ErrorCode::LOCATOR_NOT_IMPLEMENTED;
+    return OnCreateErrorCode::LOCATOR_NOT_IMPLEMENTED;
   }
   else if (entt::locator<LocatorType>::value().load(reg, id, path))
   {
@@ -79,11 +79,12 @@ std::optional<ErrorCode> load(entt::registry& reg, const entt::entity id, const 
   }
   else
   {
-    return ErrorCode::LOAD_FAILED;
+    return OnCreateErrorCode::LOAD_FAILED;
   }
 }
 
-std::optional<ErrorCode> load_any(entt::registry& reg, const entt::entity id, const Path& path, const TypeCode type)
+std::optional<OnCreateErrorCode>
+load_any(entt::registry& reg, const entt::entity id, const Path& path, const TypeCode type)
 {
   // clang-format off
   switch (type)
@@ -102,32 +103,35 @@ std::optional<ErrorCode> load_any(entt::registry& reg, const entt::entity id, co
     }
   }
   // clang-format on
-  return ErrorCode::UNKNOWN_LOCATOR_TYPE;
+  return OnCreateErrorCode::UNKNOWN_LOCATOR_TYPE;
 }
 
 }  // namespace
 
-std::ostream& operator<<(std::ostream& os, const ErrorCode error_code)
+std::ostream& operator<<(std::ostream& os, const OnCreateErrorCode error_code)
 {
   switch (error_code)
   {
-  case ErrorCode::UNAVAILABLE: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNAVAILABLE";
+  case OnCreateErrorCode::UNAVAILABLE: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::UNAVAILABLE";
   }
-  case ErrorCode::LOAD_FAILED: {
-    return os << "tyl::engine::core::resource::ErrorCode::LOAD_FAILED";
+  case OnCreateErrorCode::EXISTS: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::EXISTS";
   }
-  case ErrorCode::LOCATOR_NOT_IMPLEMENTED: {
-    return os << "tyl::engine::core::resource::ErrorCode::LOCATOR_NOT_IMPLEMENTED";
+  case OnCreateErrorCode::LOAD_FAILED: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::LOAD_FAILED";
   }
-  case ErrorCode::UNKNOWN_LOCATOR_TYPE: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_LOCATOR_TYPE";
+  case OnCreateErrorCode::LOCATOR_NOT_IMPLEMENTED: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::LOCATOR_NOT_IMPLEMENTED";
   }
-  case ErrorCode::UNKNOWN_EXTENSION: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_EXTENSION";
+  case OnCreateErrorCode::UNKNOWN_LOCATOR_TYPE: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::UNKNOWN_LOCATOR_TYPE";
+  }
+  case OnCreateErrorCode::UNKNOWN_EXTENSION: {
+    return os << "tyl::engine::core::resource::OnCreateErrorCode::UNKNOWN_EXTENSION";
   }
   }
-  return os << "tyl::engine::core::resource::ErrorCode::*";
+  return os << "tyl::engine::core::resource::OnCreateErrorCode::*";
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
@@ -147,17 +151,17 @@ std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
   return os << "tyl::engine::core::resource::TypeCode::*";
 }
 
-expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type)
+expected<entt::entity, OnCreateErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type)
 {
   auto& rm = get_loaded_resource_map(reg);
 
   if (const auto itr = rm.find(path); itr != rm.end())
   {
-    return itr->second;
+    return unexpected{OnCreateErrorCode::EXISTS};
   }
   else if (!std::filesystem::exists(path))
   {
-    return unexpected{ErrorCode::UNAVAILABLE};
+    return unexpected{OnCreateErrorCode::UNAVAILABLE};
   }
 
   const auto id = reg.create();
@@ -173,7 +177,7 @@ expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, 
   return id;
 }
 
-expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path)
+expected<entt::entity, OnCreateErrorCode> create(entt::registry& reg, const Path& path)
 {
   if (const auto type_code_opt = resolve_type(path); type_code_opt.has_value())
   {
@@ -181,11 +185,11 @@ expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path)
   }
   else
   {
-    return unexpected{ErrorCode::UNKNOWN_EXTENSION};
+    return unexpected{OnCreateErrorCode::UNKNOWN_EXTENSION};
   }
 }
 
-expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path)
+expected<entt::entity, OnCreateErrorCode> get(entt::registry& reg, const Path& path)
 {
   auto& rm = get_loaded_resource_map(reg);
   if (const auto itr = rm.find(path); itr != rm.end())
@@ -194,18 +198,29 @@ expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path)
   }
   else
   {
-    return unexpected{ErrorCode::UNAVAILABLE};
+    return unexpected{OnCreateErrorCode::UNAVAILABLE};
   }
 }
 
-void release(entt::registry& reg, const Path& path)
+bool release(entt::registry& reg, const Path& path)
 {
   auto& rm = get_loaded_resource_map(reg);
   if (const auto itr = rm.find(path); itr != rm.end())
   {
     reg.destroy(itr->second);
     rm.erase(itr);
+    return true;
   }
+  return false;
+}
+
+bool release(entt::registry& reg, const entt::entity id)
+{
+  if (reg.valid(id))
+  {
+    return release(reg, reg.get<Path>(id));
+  }
+  return false;
 }
 
 void reload(entt::registry& reg, const ReloadErrorCallback& error_callback)

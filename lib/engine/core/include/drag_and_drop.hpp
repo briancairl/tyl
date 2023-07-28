@@ -14,7 +14,6 @@ namespace tyl::engine::core
 
 struct DragAndDropData
 {
-  ImVec2 drop_location;
   std::vector<std::filesystem::path> paths;
 };
 

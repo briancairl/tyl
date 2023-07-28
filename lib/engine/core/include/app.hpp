@@ -7,17 +7,13 @@
 
 // C++ Standard Library
 #include <cctype>
-#include <filesystem>
 #include <iosfwd>
-#include <vector>
-
-// ImGui
-#include <imgui.h>
 
 // Entt
 #include <entt/entt.hpp>
 
 // Tyl
+#include <tyl/engine/core/clock.hpp>
 #include <tyl/math/vec.hpp>
 #include <tyl/utility/expected.hpp>
 
@@ -108,22 +104,25 @@ struct AppOptions
   bool enable_vsync = true;
 };
 
+struct AppState
+{
+  Clock::Time now = Clock::Time::min();
+  Vec2i window_size = Vec2i::Zero();
+  Vec2f cursor_position = Vec2f::Zero();
+  Vec2f cursor_position_normalized = Vec2f::Zero();
+  Stamped<Vec2f> cursor_scroll = {};
+  KeyInfo key_info = {};
+  entt::registry* registry = nullptr;
+  ImGuiContext* imgui_context = nullptr;
+};
+
 class App
 {
 public:
   using Options = AppOptions;
+  using State = AppState;
 
-  struct State
-  {
-    Vec2i window_size;
-    Vec2f cursor_position;
-    Vec2f cursor_position_normalized;
-    Vec2f cursor_scroll;
-    KeyInfo key_info;
-    ImGuiContext* imgui_context;
-  };
-
-  enum class ErrorCode
+  enum class OnCreateErrorCode
   {
     APPLICATION_BACKEND_INITIALIZATION_FAILURE,
     GRAPHICS_BACKEND_INITIALIZATION_FAILURE,
@@ -136,32 +135,32 @@ public:
 
   ~App();
 
-  [[nodiscard]] static expected<App, ErrorCode> create(const Options& settings);
+  [[nodiscard]] static expected<App, OnCreateErrorCode> create(const Options& settings);
 
-  template <typename UpdateStateCallbackT> bool update(entt::registry& reg, UpdateStateCallbackT update_callback)
+  template <typename UpdateStateCallbackT> bool update(entt::registry& registry, UpdateStateCallbackT update_callback)
   {
-    if (App::update_start(reg))
+    if (App::update_start(registry))
     {
-      update_callback(window_state_);
+      update_callback(*window_state_);
     }
     else
     {
       return false;
     }
-    App::update_end();
+    App::update_end(registry);
     return true;
   };
 
 private:
-  bool update_start(entt::registry& reg);
-  void update_end();
+  bool update_start(entt::registry& registry);
+  void update_end(entt::registry& registry);
 
-  App(void* const window_handle, ImGuiContext* const imgui_context);
+  App(void* const window_handle, std::unique_ptr<State>&& window_state);
 
-  State window_state_ = {};
+  std::unique_ptr<State> window_state_ = {};
   void* window_handle_ = nullptr;
 };
 
-std::ostream& operator<<(std::ostream& os, const App::ErrorCode error_code);
+std::ostream& operator<<(std::ostream& os, const App::OnCreateErrorCode error_code);
 
 }  // namespace tyl::engine::core

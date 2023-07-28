@@ -10,6 +10,7 @@ cc_binary(
 		"//lib/engine/graphics:primitives_renderer",
 		"//lib/engine/widgets:tileset_creator",
 		"//lib/engine/widgets:asset_manager",
+		"//lib/engine/widgets:drag_and_drop",
 		"@entt//:entt",
 		"@imgui//:imgui",
 	]

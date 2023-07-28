@@ -24,3 +24,12 @@ cc_library(
   deps=[],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="entt",
+  hdrs=["include/entt.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/utility",
+  deps=["@entt"],
+  visibility=["//visibility:public"]
+)

@@ -21,10 +21,10 @@
 #include <ImGuiFileDialog.h>
 
 // Tyl
-#include <tyl/engine/core/drag_and_drop.hpp>
 #include <tyl/engine/core/resource.hpp>
 #include <tyl/engine/widgets/asset_manager.hpp>
 #include <tyl/graphics/device/texture.hpp>
+#include <tyl/utility/entt.hpp>
 
 namespace tyl::engine::widgets
 {
@@ -64,7 +64,7 @@ template <typename TagT> void preview_controls(entt::registry& registry)
       [&registry](const entt::entity guid, const auto& properties) {
         if (properties.is_selected)
         {
-          registry.destroy(guid);
+          core::resource::release(registry, guid);
         }
       });
   }
@@ -220,22 +220,9 @@ public:
 
   void update(entt::registry& registry)
   {
-    // Set drag and drop paths
-    auto* const draw_and_drop_data = [&registry]() -> core::DragAndDropData* {
-      auto& ctx = registry.ctx();
-      if (auto* const data = ctx.find<core::DragAndDropData>(); data == nullptr or data->paths.empty())
-      {
-        return nullptr;
-      }
-      else
-      {
-        return data;
-      }
-    }();
-
     if (ImGui::BeginMenuBar())
     {
-      if (ImGui::MenuItem("open") and draw_and_drop_data == nullptr)
+      if (ImGui::MenuItem("open"))
       {
         static constexpr int kInfiniteSelections = 0;
         ImGuiFileDialog::Instance()->OpenDialog(
@@ -244,21 +231,7 @@ public:
       ImGui::EndMenuBar();
     }
 
-    if (draw_and_drop_data != nullptr)
-    {
-      for (const auto& file_path_name : draw_and_drop_data->paths)
-      {
-        // TODO(perf) do loading in another thread
-        // TODO(qol) show loading progress bar
-        if (const auto id_or_error = core::resource::create(registry, file_path_name); !id_or_error.has_value())
-        {
-          std::ostringstream oss;
-          oss << "Error loading [" << file_path_name << "]: " << id_or_error.error();
-          last_errors_.emplace_back(oss.str());
-        }
-      }
-    }
-    else if (ImGuiFileDialog::Instance()->Display("#AssetPicker"))
+    if (ImGuiFileDialog::Instance()->Display("#AssetPicker"))
     {
       if (ImGuiFileDialog::Instance()->IsOk())
       {
