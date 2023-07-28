@@ -84,7 +84,7 @@ public:
               ImVec2{kPreviewWidth, kPreviewHeight},
               /*show_borders=*/true,
               ImGuiWindowFlags_None);
-            ImGui::TextWrapped("%s", text.c_str());
+            ImGui::Text("%s", text.c_str());
             ImGui::EndChild();
           }
         }
@@ -105,7 +105,7 @@ private:
         {
           static constexpr int kInfiniteSelections = 0;
           ImGuiFileDialog::Instance()->OpenDialog(
-            "#AssetPicker", "Choose File", ".txt,.glsl", ".", kInfiniteSelections);
+            "#AssetPicker", "Choose File", ".txt,.glsl,.h*", ".", kInfiniteSelections);
         }
 
         if (ImGui::MenuItem("delete"))
