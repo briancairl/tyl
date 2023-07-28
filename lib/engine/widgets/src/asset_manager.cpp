@@ -79,6 +79,9 @@ struct TexturePreviewPanelProperties
 
 void available_texture_preview_panel(entt::registry& registry, TexturePreviewPanelProperties& panel)
 {
+  static constexpr float kPreviewHeightMin = 100.0;
+  static constexpr float kPreviewHeightMax = 500.0;
+  static constexpr float kPreviewHeightStep = 10.0;
   static constexpr float kPanelSize = 300;
 
   if (!ImGui::CollapsingHeader("available textures"))
@@ -98,7 +101,7 @@ void available_texture_preview_panel(entt::registry& registry, TexturePreviewPan
     if (panel.show_previews)
     {
       ImGui::SameLine();
-      ImGui::SliderFloat("height", &panel.preview_height, 100.0f, 500.0f);
+      ImGui::SliderFloat("height", &panel.preview_height, kPreviewHeightMin, kPreviewHeightMax);
     }
 
     preview_controls<core::resource::Texture::Tag>(registry);
@@ -145,6 +148,17 @@ void available_texture_preview_panel(entt::registry& registry, TexturePreviewPan
         });
     }
     ImGui::EndChild();
+    if (ImGui::IsItemHovered())
+    {
+      if (const auto scroll = ImGui::GetIO().MouseWheel; scroll > 0.f)
+      {
+        panel.preview_height = std::min(panel.preview_height + kPreviewHeightStep, kPreviewHeightMax);
+      }
+      else if (scroll < 0.f)
+      {
+        panel.preview_height = std::max(panel.preview_height - kPreviewHeightStep, kPreviewHeightMin);
+      }
+    }
     ImGui::PopID();
   }
   ImGui::EndChild();

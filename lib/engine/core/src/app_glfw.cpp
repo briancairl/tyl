@@ -311,7 +311,8 @@ App::~App()
 
 bool App::update_start(entt::registry& registry)
 {
-  auto* glfw_window_handle = reinterpret_cast<GLFWwindow*>(window_handle_);
+  auto* const glfw_window_handle = reinterpret_cast<GLFWwindow*>(window_handle_);
+
   glfwMakeContextCurrent(glfw_window_handle);
 
   ImGui::SetCurrentContext(window_state_->imgui_context);
@@ -347,7 +348,11 @@ bool App::update_start(entt::registry& registry)
     }
 
     // Reset horizontal/vertical scroll state
-    if (const auto dt = window_state_->now - window_state_->cursor_scroll.stamp(); dt > Clock::millis(20))
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
+    {
+      window_state_->cursor_scroll.reset();
+    }
+    else if (const auto dt = window_state_->now - window_state_->cursor_scroll.stamp(); dt > Clock::millis(20))
     {
       window_state_->cursor_scroll.reset();
     }
