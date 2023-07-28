@@ -1,14 +1,12 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file tileset_creator.hpp
+ * @file text_manager.hpp
  */
 #pragma once
 
 // C++ Standard Library
-#include <filesystem>
 #include <memory>
-#include <vector>
 
 // Entt
 #include <entt/fwd.hpp>
@@ -22,7 +20,12 @@
 namespace tyl::engine::widgets
 {
 
-class AssetManager
+struct TextAssetManagerOptions
+{
+  const char* name = "Text Assets";
+};
+
+class TextAssetManager
 {
 public:
   enum class OnCreateErrorCode
@@ -30,21 +33,22 @@ public:
 
   };
 
-  struct Options
-  {};
+  using Options = TextAssetManagerOptions;
 
-  [[nodiscard]] static tyl::expected<AssetManager, OnCreateErrorCode> create(const Options& options);
+  [[nodiscard]] static tyl::expected<TextAssetManager, OnCreateErrorCode> create(const Options& options);
 
-  AssetManager(AssetManager&&) = default;
+  TextAssetManager(TextAssetManager&&) = default;
 
-  ~AssetManager();
+  ~TextAssetManager();
 
   void update(ImGuiContext* const imgui_ctx, entt::registry& reg);
 
 private:
+  Options options_;
+
   class Impl;
   std::unique_ptr<Impl> impl_;
-  explicit AssetManager(std::unique_ptr<Impl>&& impl);
+  TextAssetManager(const Options& options, std::unique_ptr<Impl>&& impl);
 };
 
 }  // namespace tyl::engine::widgets

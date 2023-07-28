@@ -1,10 +1,20 @@
 cc_library(
-  name="asset_manager",
-  hdrs=["include/asset_manager.hpp"],
-  srcs=["src/asset_manager.cpp"],
+  name="texture_asset_manager",
+  hdrs=["include/texture_asset_manager.hpp"],
+  srcs=["src/texture_asset_manager.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
   deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/graphics/device", "//lib/common/utility:entt"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="text_asset_manager",
+  hdrs=["include/text_asset_manager.hpp"],
+  srcs=["src/text_asset_manager.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/widgets",
+  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/common/utility:entt"],
   visibility=["//visibility:public"]
 )
 

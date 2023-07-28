@@ -31,8 +31,9 @@
 #include <tyl/engine/core/resource.hpp>
 #include <tyl/engine/graphics/primitives_renderer.hpp>
 #include <tyl/engine/graphics/types.hpp>
-#include <tyl/engine/widgets/asset_manager.hpp>
 #include <tyl/engine/widgets/drag_and_drop.hpp>
+#include <tyl/engine/widgets/text_asset_manager.hpp>
+#include <tyl/engine/widgets/texture_asset_manager.hpp>
 #include <tyl/engine/widgets/tileset_creator.hpp>
 #include <tyl/graphics/device/debug.hpp>
 #include <tyl/graphics/device/render_target.hpp>
@@ -148,8 +149,14 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  auto asset_manager = widgets::AssetManager::create({});
-  if (!asset_manager.has_value())
+  auto texture_asset_manager = widgets::TextureAssetManager::create({});
+  if (!texture_asset_manager.has_value())
+  {
+    return 1;
+  }
+
+  auto text_asset_manager = widgets::TextAssetManager::create({});
+  if (!text_asset_manager.has_value())
   {
     return 1;
   }
@@ -199,7 +206,8 @@ int main(int argc, char** argv)
 
     primitives_renderer->draw(cmat, registry);
     tileset_creator->update(app_state.imgui_context, registry);
-    asset_manager->update(app_state.imgui_context, registry);
+    texture_asset_manager->update(app_state.imgui_context, registry);
+    text_asset_manager->update(app_state.imgui_context, registry);
     drag_and_drop->update(app_state.imgui_context, registry);
 
     return true;
