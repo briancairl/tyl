@@ -31,8 +31,9 @@ namespace tyl::engine::widgets
 namespace
 {
 
-constexpr float kPreviewWidthMin = 50.0;
-constexpr float kPreviewWidthMax = 250.0;
+constexpr float kPreviewDimMin = 50.0;
+constexpr float kPreviewDimMax = 250.0;
+
 
 struct PreviewState
 {
@@ -43,18 +44,25 @@ struct PreviewState
 struct WidgetProperties
 {
   bool show_previews = true;
-  float preview_width = kPreviewWidthMin;
-  ImVec2 preview_icon_dimensions = {};
+  ImVec2 preview_icon_dimensions = {kPreviewDimMin, kPreviewDimMin};
 };
 
-ImVec2 compute_image_dimensions(const graphics::device::Shape2D& shape, const float max_width)
+ImVec2 compute_icon_dimensions(const graphics::device::Shape2D& shape, const ImVec2& max_dimensions)
 {
   const float ratio = static_cast<float>(shape.width) / static_cast<float>(shape.height);
-  const float height = ratio * max_width;
-  return ImVec2{max_width, height};
+  const float height = ratio * max_dimensions.x;
+  if (height < max_dimensions.y)
+  {
+    return ImVec2{max_dimensions.x, height};
+  }
+  else
+  {
+    const float down_scaling = max_dimensions.y / height;
+    return ImVec2{down_scaling * max_dimensions.x, down_scaling * height};
+  }
 }
 
-float compute_centering_offset_y(const float available_y, const float inner_y) { return 0.5 * (available_y - inner_y); }
+float compute_centering_offset(const float available_y, const float inner_y) { return 0.5 * (available_y - inner_y); }
 
 }  // namespace
 
@@ -82,14 +90,11 @@ public:
   }
 
 private:
-  void recompute_icon_dimensions(entt::registry& registry)
+  void recompute_icon_dimensions(entt::registry& registry) const
   {
-    properties_.preview_icon_dimensions = ImVec2{0, 0};
     registry.template view<core::resource::Texture::Tag, graphics::device::Texture, PreviewState>().each(
       [&](const entt::entity id, const auto& texture, auto& state) {
-        state.dimensions = compute_image_dimensions(texture.shape(), properties_.preview_width);
-        properties_.preview_icon_dimensions.x = std::max(properties_.preview_icon_dimensions.x, state.dimensions.x);
-        properties_.preview_icon_dimensions.y = std::max(properties_.preview_icon_dimensions.y, state.dimensions.y);
+        state.dimensions = compute_icon_dimensions(texture.shape(), properties_.preview_icon_dimensions);
       });
   }
 
@@ -112,7 +117,7 @@ private:
 
   void handle_previews(entt::registry& registry)
   {
-    const float x_offset_spacing = std::max(5.f, properties_.preview_width * 0.1f);
+    const float x_offset_spacing = std::max(5.f, properties_.preview_icon_dimensions.x * 0.1f);
     const auto available_space = ImGui::GetContentRegionAvail();
     registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
       [&, drawlist = ImGui::GetWindowDrawList()](
@@ -140,8 +145,9 @@ private:
 
         {
           const ImVec2 lower_pos{
-            pos.x + x_offset_spacing,
-            pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, state.dimensions.y)};
+            pos.x + compute_centering_offset(properties_.preview_icon_dimensions.x, state.dimensions.x) +
+              x_offset_spacing,
+            pos.y + compute_centering_offset(properties_.preview_icon_dimensions.y, state.dimensions.y)};
           drawlist->AddImage(
             reinterpret_cast<void*>(texture.get_id()),
             lower_pos,
@@ -153,9 +159,9 @@ private:
         {
           const ImVec2 lower_pos{
             pos.x + x_offset_spacing,
-            pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, ImGui::GetTextLineHeight())};
+            pos.y + compute_centering_offset(properties_.preview_icon_dimensions.y, ImGui::GetTextLineHeight())};
           drawlist->AddText(
-            lower_pos + ImVec2{state.dimensions.x + x_offset_spacing, 0.f},
+            lower_pos + ImVec2{properties_.preview_icon_dimensions.x + x_offset_spacing, 0.f},
             IM_COL32_WHITE,
             path.filename().string().c_str());
         }
@@ -233,8 +239,8 @@ private:
         ImGui::Checkbox("show previews", &properties_.show_previews);
         if (properties_.show_previews)
         {
-          should_recompute_icon_dimensions =
-            ImGui::SliderFloat("width", &properties_.preview_width, kPreviewWidthMin, kPreviewWidthMax);
+          should_recompute_icon_dimensions = ImGui::SliderFloat2(
+            "size", reinterpret_cast<float*>(&properties_.preview_icon_dimensions), kPreviewDimMin, kPreviewDimMax);
         }
         ImGui::EndMenu();
       }
