@@ -34,6 +34,11 @@ public:
 
   void update(entt::registry& registry)
   {
+    ImGui::BeginChild(
+      "#DragAndDropArea",
+      ImVec2{0, 0},
+      /*show_borders=*/!texture_id_.has_value(),
+      ImGuiWindowFlags_None);
     if (!texture_id_.has_value())
     {
       ImGui::Text("%s", "To start, drop a texture here!");
@@ -41,7 +46,6 @@ public:
     else if (!registry.valid(*texture_id_))
     {
       texture_id_.reset();
-      return;
     }
     else
     {
@@ -54,6 +58,7 @@ public:
         ImVec4(1, 1, 1, 1),
         ImVec4(0, 0, 0, 0));
     }
+    ImGui::EndChild();
 
     if (!ImGui::BeginDragDropTarget())
     {
