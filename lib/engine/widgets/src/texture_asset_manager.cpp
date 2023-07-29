@@ -88,7 +88,7 @@ public:
           }
 
           ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
-          if (ImGui::IsItemClicked())
+          if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
           {
             state.is_selected = !state.is_selected;
           }
