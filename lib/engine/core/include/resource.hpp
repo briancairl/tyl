@@ -22,7 +22,7 @@ namespace tyl::engine::core::resource
 
 using Path = std::filesystem::path;
 
-enum class OnCreateErrorCode
+enum class ErrorCode
 {
   UNAVAILABLE,
   EXISTS,
@@ -32,7 +32,7 @@ enum class OnCreateErrorCode
   UNKNOWN_EXTENSION,
 };
 
-std::ostream& operator<<(std::ostream& os, const OnCreateErrorCode error_code);
+std::ostream& operator<<(std::ostream& os, const ErrorCode error_code);
 
 enum class TypeCode
 {
@@ -64,18 +64,17 @@ struct Texture final : Resource<Texture, TypeCode::TEXTURE>
 struct Text final : Resource<Text, TypeCode::TEXT>
 {};
 
-expected<entt::entity, OnCreateErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type);
+expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type);
 
-expected<entt::entity, OnCreateErrorCode> create(entt::registry& reg, const Path& path);
+expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path);
 
-expected<entt::entity, OnCreateErrorCode> get(entt::registry& reg, const Path& path);
+expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path);
 
 bool release(entt::registry& reg, const Path& path);
 
 bool release(entt::registry& reg, const entt::entity);
 
-using ReloadErrorCallback =
-  std::function<void(entt::registry& reg, const entt::entity, const Path&, const OnCreateErrorCode)>;
+using ReloadErrorCallback = std::function<void(entt::registry& reg, const entt::entity, const Path&, const ErrorCode)>;
 
 void reload(entt::registry& reg, const ReloadErrorCallback& error_callback = nullptr);
 

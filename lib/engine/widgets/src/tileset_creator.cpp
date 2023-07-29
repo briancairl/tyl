@@ -6,6 +6,7 @@
 
 // C++ Standard Library
 #include <memory>
+#include <optional>
 
 // Entt
 #include <entt/entt.hpp>
@@ -16,6 +17,7 @@
 #include <imgui_internal.h>
 
 // Tyl
+#include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/resource.hpp>
 #include <tyl/engine/widgets/tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -23,75 +25,59 @@
 namespace tyl::engine::widgets
 {
 namespace
-{
-
-struct TextureDisplayProperties
-{
-  static constexpr float kMinZoom = 0.1f;
-  static constexpr float kMaxZoom = 10.f;
-  float zoom = kMinZoom;
-};
-
-void show_available_textures(entt::registry& registry, const ImVec2& available_space)
-{
-  // Add view state to all available texture resources
-  registry.view<core::resource::Texture::Tag>(entt::exclude<TextureDisplayProperties>)
-    .each([&registry](const entt::entity guid) { registry.emplace<TextureDisplayProperties>(guid); });
-
-  // Display available textures
-  ImGui::Text("%s", "available textures");
-  registry
-    .view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, TextureDisplayProperties>()
-    .each([&available_space](
-            const entt::entity guid, const auto& path, const auto& texture, auto& texture_display_properties) {
-      ImGui::PushID(path.string().c_str());
-      {
-        ImGui::Text("%s", path.string().c_str());
-
-        ImGui::SliderFloat(
-          "zoom",
-          &texture_display_properties.zoom,
-          TextureDisplayProperties::kMinZoom,
-          TextureDisplayProperties::kMaxZoom);
-
-        ImGui::Text("guid: %d", static_cast<int>(guid));
-        ImGui::Text("size: %d x %d", texture.shape().height, texture.shape().width);
-
-        const float aspect_ratio =
-          static_cast<float>(texture.shape().height) / static_cast<float>(texture.shape().width);
-        const float display_height = available_space.x * texture_display_properties.zoom;
-        const float display_width = aspect_ratio * display_height;
-
-        constexpr bool kShowBorders = true;
-        constexpr float kMaxDisplayHeight = 400.f;
-
-        ImGui::BeginChild(
-          path.string().c_str(),
-          ImVec2{available_space.x, std::min(kMaxDisplayHeight, display_height)},
-          kShowBorders,
-          ImGuiWindowFlags_HorizontalScrollbar);
-        {
-          ImGui::Image(reinterpret_cast<void*>(texture.get_id()), ImVec2(display_width, display_height));
-        }
-        ImGui::EndChild();
-      }
-      ImGui::PopID();
-    });
-}
-
-}  // namespace
+{}  // namespace
 
 class TilesetCreator::Impl
 {
 public:
   Impl() {}
 
-  void update(entt::registry& registry, const ImVec2& available_space)
+  void update(entt::registry& registry)
   {
-    show_available_textures(registry, available_space);
+    if (!texture_id_.has_value())
+    {
+      ImGui::Text("%s", "To start, drop a texture here!");
+    }
+    else if (!registry.valid(*texture_id_))
+    {
+      texture_id_.reset();
+      return;
+    }
+    else
+    {
+      const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
+      ImGui::Image(
+        reinterpret_cast<void*>(texture.get_id()),
+        ImVec2(texture.shape().height, texture.shape().width),
+        ImVec2(0, 0),
+        ImVec2(1, 1),
+        ImVec4(1, 1, 1, 1),
+        ImVec4(0, 0, 0, 0));
+    }
+
+    if (!ImGui::BeginDragDropTarget())
+    {
+      return;
+    }
+    else if (const auto* const payload = ImGui::AcceptDragDropPayload("_TEXTURE_ASSET", /*cond = */ 0);
+             payload != nullptr)
+    {
+      const core::resource::Path asset_path{
+        std::string_view{reinterpret_cast<char*>(payload->Data), static_cast<std::size_t>(payload->DataSize)}};
+      if (auto guid_or_error = core::resource::get(registry, asset_path); guid_or_error.has_value())
+      {
+        texture_id_.emplace(std::move(guid_or_error).value());
+      }
+      else
+      {
+        // TODO(qol) handle error
+      }
+    }
+    ImGui::EndDragDropTarget();
   }
 
 private:
+  std::optional<entt::entity> texture_id_;
 };
 
 TilesetCreator::~TilesetCreator() = default;
@@ -108,7 +94,7 @@ void TilesetCreator::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
   ImGui::SetCurrentContext(imgui_ctx);
   if (ImGui::Begin("TilesetCreator", nullptr, ImGuiWindowFlags_None))
   {
-    impl_->update(reg, ImGui::GetContentRegionAvail());
+    impl_->update(reg);
   }
   ImGui::End();
 }
