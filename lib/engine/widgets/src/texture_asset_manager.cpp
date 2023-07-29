@@ -73,71 +73,11 @@ public:
     // Handle invidual previews
     if (properties_.show_previews)
     {
-      const float x_offset_spacing = std::max(5.f, properties_.preview_width * 0.1f);
-      const auto available_space = ImGui::GetContentRegionAvail();
-      registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
-        [&, drawlist = ImGui::GetWindowDrawList()](
-          const entt::entity id, const auto& path, const auto& texture, auto& state) {
-          const auto pos = ImGui::GetCursorScreenPos();
-
-          {
-            drawlist->AddRectFilled(
-              pos,
-              pos + ImVec2{available_space.x, properties_.preview_icon_dimensions.y},
-              state.is_selected ? IM_COL32(100, 100, 25, 255) : IM_COL32(100, 100, 100, 255));
-          }
-
-          ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-          {
-            state.is_selected = !state.is_selected;
-          }
-          if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-          {
-            ImGui::SetDragDropPayload("_TEXTURE_ASSET", path.string().c_str(), path.string().size(), /*cond = */ 0);
-            ImGui::Text("%s", path.filename().string().c_str());
-            ImGui::EndDragDropSource();
-          }
-
-          {
-            const ImVec2 lower_pos{
-              pos.x + x_offset_spacing,
-              pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, state.dimensions.y)};
-            drawlist->AddImage(
-              reinterpret_cast<void*>(texture.get_id()),
-              lower_pos,
-              lower_pos + state.dimensions,
-              ImVec2(0, 0),
-              ImVec2(1, 1));
-          }
-
-          {
-            const ImVec2 lower_pos{
-              pos.x + x_offset_spacing,
-              pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, ImGui::GetTextLineHeight())};
-            drawlist->AddText(
-              lower_pos + ImVec2{state.dimensions.x + x_offset_spacing, 0.f},
-              IM_COL32_WHITE,
-              path.filename().string().c_str());
-          }
-
-          ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
-          ImGui::Separator();
-          ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
-        });
+      handle_previews(registry);
     }
     else
     {
-      registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
-        [&](const entt::entity id, const auto& path, const auto& texture, auto& state) {
-          ImGui::Checkbox(path.filename().string().c_str(), &state.is_selected);
-          if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-          {
-            ImGui::SetDragDropPayload("_TEXTURE_ASSET", path.string().c_str(), path.string().size(), /*cond = */ 0);
-            ImGui::Text("%s", path.filename().string().c_str());
-            ImGui::EndDragDropSource();
-          }
-        });
+      handle_no_previews(registry);
     }
   }
 
@@ -168,6 +108,76 @@ private:
     {
       recompute_icon_dimensions(registry);
     }
+  }
+
+  void handle_previews(entt::registry& registry)
+  {
+    const float x_offset_spacing = std::max(5.f, properties_.preview_width * 0.1f);
+    const auto available_space = ImGui::GetContentRegionAvail();
+    registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
+      [&, drawlist = ImGui::GetWindowDrawList()](
+        const entt::entity id, const auto& path, const auto& texture, auto& state) {
+        const auto pos = ImGui::GetCursorScreenPos();
+
+        {
+          drawlist->AddRectFilled(
+            pos,
+            pos + ImVec2{available_space.x, properties_.preview_icon_dimensions.y},
+            state.is_selected ? IM_COL32(100, 100, 25, 255) : IM_COL32(100, 100, 100, 255));
+        }
+
+        ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+        {
+          state.is_selected = !state.is_selected;
+        }
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+        {
+          ImGui::SetDragDropPayload("_TEXTURE_ASSET", path.string().c_str(), path.string().size(), /*cond = */ 0);
+          ImGui::Text("%s", path.filename().string().c_str());
+          ImGui::EndDragDropSource();
+        }
+
+        {
+          const ImVec2 lower_pos{
+            pos.x + x_offset_spacing,
+            pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, state.dimensions.y)};
+          drawlist->AddImage(
+            reinterpret_cast<void*>(texture.get_id()),
+            lower_pos,
+            lower_pos + state.dimensions,
+            ImVec2(0, 0),
+            ImVec2(1, 1));
+        }
+
+        {
+          const ImVec2 lower_pos{
+            pos.x + x_offset_spacing,
+            pos.y + compute_centering_offset_y(properties_.preview_icon_dimensions.y, ImGui::GetTextLineHeight())};
+          drawlist->AddText(
+            lower_pos + ImVec2{state.dimensions.x + x_offset_spacing, 0.f},
+            IM_COL32_WHITE,
+            path.filename().string().c_str());
+        }
+
+        ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
+        ImGui::Separator();
+        ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
+      });
+  }
+
+  void handle_no_previews(entt::registry& registry)
+  {
+    registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
+      [&](const entt::entity id, const auto& path, const auto& texture, auto& state) {
+        ImGui::Checkbox(path.filename().string().c_str(), &state.is_selected);
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+        {
+          ImGui::SetDragDropPayload("_TEXTURE_ASSET", path.string().c_str(), path.string().size(), /*cond = */ 0);
+          ImGui::Text("%s", path.filename().string().c_str());
+          ImGui::EndDragDropSource();
+        }
+      });
   }
 
   void handle_menu(entt::registry& registry)
