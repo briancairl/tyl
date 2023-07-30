@@ -1,0 +1,38 @@
+cc_library(
+  name="drag_and_drop",
+  hdrs=["include/drag_and_drop.hpp"],
+  srcs=[],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=["@imgui"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="clock",
+  hdrs=["include/clock.hpp"],
+  srcs=[],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="resource",
+  hdrs=["include/resource.hpp"],
+  srcs=["src/resource.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=["//lib/common/utility:expected", "@entt",],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="app",
+  hdrs=["include/app.hpp"],
+  srcs=["src/app_glfw.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=[":clock", ":drag_and_drop", "//lib/common/utility:expected", "//lib/common/utility:entt", "//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/graphics/device/glad:glad", "@glfw", "@imgui",],
+  visibility=["//visibility:public"]
+)

@@ -2,15 +2,17 @@ cc_binary(
 	name="editor",
 	srcs=["editor.cpp"],
 	deps=[
-		"//lib/common:adaptors",
-		"//lib/common:dynamic_bitset",
+		"//lib/common/debug:assert",
 		"//lib/graphics/device",
-		"//lib/graphics/device/glad:glad",
 		"//lib/graphics/host:image",
-		"//lib/graphics/sprite:animation",
-		"//lib/graphics/sprite:spritesheet",
+		"//lib/engine/core:app",
+		"//lib/engine/core:resource",
+		"//lib/engine/graphics:primitives_renderer",
+		"//lib/engine/widgets:tileset_creator",
+		"//lib/engine/widgets:texture_asset_manager",
+		"//lib/engine/widgets:text_asset_manager",
+		"//lib/engine/widgets:drag_and_drop",
 		"@entt//:entt",
-		"@glfw//:glfw",
 		"@imgui//:imgui",
 	]
 )

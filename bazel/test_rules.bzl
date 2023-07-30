@@ -5,17 +5,12 @@ def gtest(name, copts=[], linkopts=[], deps=[], **kwargs):
     '''
     _GTEST_COPTS = [
         "-Iexternal/googletest/googletest/include",
-        "-fsanitize=address",
-        "-fsanitize-address-use-after-scope",
-        "-DADDRESS_SANITIZER",
         "-g",
         "-fno-omit-frame-pointer",
         "-O0"
     ]
 
     _GTEST_LINKOPTS = [
-        "-fsanitize=address",
-        "-static-libasan"
     ]
 
     _GTEST_DEPS = [

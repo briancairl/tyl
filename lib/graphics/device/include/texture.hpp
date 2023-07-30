@@ -7,7 +7,6 @@
 
 // C++ Standard Library
 #include <cstdint>
-#include <memory>
 
 // Tyl
 #include <tyl/graphics/device/constants.hpp>
@@ -27,37 +26,83 @@ enum class TextureChannels
 };
 
 /**
- * @brief Texture data, downloaded to host
+ * @brief Non-owning texture data view
  */
-struct TextureHost
+struct TextureView
 {
 public:
-  inline auto* data() { return data_.get(); }
-  inline const auto* data() const { return data_.get(); }
-  constexpr int height() const { return height_; }
-  constexpr int width() const { return width_; }
+  /// Pointer to data
+  inline auto* data() { return data_; }
+
+  /// Pointer to data
+  inline const auto* data() const { return data_; }
+
+  /// Size of view, in bytes
+  constexpr std::size_t size() const { return size_; }
+
+  /// Shape of 2D texture, in pixels
+  constexpr const Shape2D& shape() const { return shape_; }
+
+  /// Texture element type code
   constexpr TypeCode type() const { return typecode_; }
+
+  /// Number of channels per texture element
   constexpr TextureChannels channels() const { return channels_; }
 
-  inline bool valid() const { return static_cast<bool>(data_); }
+  TextureView(void* const data, const Shape2D& shape, const TypeCode typecode, const TextureChannels channels);
 
-  TextureHost(const TextureHandle& texture);
+  TextureView(float* const data, const Shape2D& shape, const TextureChannels channels);
 
-  TextureHost(
-    std::unique_ptr<std::uint8_t[]>&& data,
-    const int h,
-    const int w,
-    const TypeCode typecode,
-    const TextureChannels channels);
+  TextureView(std::uint8_t* const data, const Shape2D& shape, const TextureChannels channels);
 
-private:
-  TextureHost() = default;
+  TextureView(std::uint16_t* const data, const Shape2D& shape, const TextureChannels channels);
 
-  std::unique_ptr<std::uint8_t[]> data_;
-  int height_;
-  int width_;
+  TextureView(std::uint32_t* const data, const Shape2D& shape, const TextureChannels channels);
+
+  template <typename T> T* element(int i, int j) { return reinterpret_cast<T*>(data()) + i * shape_.width + j; }
+
+  template <typename T> const T* element(int i, int j) const
+  {
+    return reinterpret_cast<const T*>(data()) + i * shape_.width + j;
+  }
+
+  template <typename T> const T* begin() const { return reinterpret_cast<const T*>(data()); }
+
+  template <typename T> const T* end() const
+  {
+    return reinterpret_cast<const T*>(data()) + (shape_.width * shape_.height);
+  }
+
+  inline bool valid() const { return data_ != nullptr; }
+
+protected:
+  TextureView() = default;
+
+  void* data_;
+  std::size_t size_;
+  Shape2D shape_;
   TypeCode typecode_;
   TextureChannels channels_;
+
+  friend class Texture;
+  friend class TextureHandle;
+};
+
+/**
+ * @brief Texture data, downloaded to host
+ */
+class TextureHost : public TextureView
+{
+public:
+  TextureHost(const TextureHandle& texture);
+
+  ~TextureHost();
+
+private:
+  using TextureView::TextureView;
+
+  TextureHost() = default;
+  TextureHost(void* const data, const Shape2D& shape, const TypeCode typecode, const TextureChannels channels);
 
   friend class Texture;
   friend class TextureHandle;
@@ -88,8 +133,6 @@ struct TextureOptions
     std::uint8_t unpack_alignment : 1;
     std::uint8_t generate_mip_map : 1;
   } flags = {1, 1};
-
-  TextureOptions() = default;
 };
 
 /**
@@ -105,6 +148,11 @@ public:
 
   TextureHandle& operator=(TextureHandle&&);
   TextureHandle& operator=(const TextureHandle&) = default;
+
+  /**
+   * @brief Uploads new texture
+   */
+  void upload(const TextureView& texture_data, const TextureOptions& texture_options = TextureOptions{}) const;
 
   /**
    * @brief Downloads texture to host
@@ -137,7 +185,12 @@ public:
   [[nodiscard]] constexpr operator bool() const { return TextureHandle::valid(); }
 
   /**
-   * @brief Binds texture to a working texture unit
+   * @brief Sets texture to an active state
+   */
+  void bind() const;
+
+  /**
+   * @brief Sets texture to an active state and binds to a texture unit
    */
   void bind(const index_t texture_index) const;
 
@@ -146,14 +199,22 @@ public:
    */
   void unbind() const;
 
+  /**
+   * @brief Returns texture height
+   */
+  const Shape2D& shape() const { return shape_; }
+
 protected:
-  explicit TextureHandle(const texture_id_t id, const TypeCode typecode);
+  TextureHandle(const texture_id_t id, const TypeCode typecode, const Shape2D& shape);
 
   /// Device texture ID
   texture_id_t texture_id_;
 
   /// Device texture data typecode
   TypeCode typecode_;
+
+  /// Texture shape
+  Shape2D shape_;
 };
 
 /**
@@ -168,55 +229,52 @@ class Texture : public TextureHandle
 public:
   Texture(Texture&& other);
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
+    const TypeCode type,
+    const TextureChannels mode = TextureChannels::R,
+    const TextureOptions& options = TextureOptions{});
+  Texture(
+    const Shape2D& shape,
     const float* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const double* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::int8_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::uint8_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::int16_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::uint16_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::int32_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
   Texture(
-    const int h,
-    const int w,
+    const Shape2D& shape,
     const std::uint32_t* const data,
     const TextureChannels mode = TextureChannels::R,
     const TextureOptions& options = TextureOptions{});
 
-  explicit Texture(const TextureHost& texture_data, const TextureOptions& texture_options = TextureOptions{});
+  explicit Texture(const TextureView& texture_data, const TextureOptions& texture_options);
 
   ~Texture();
 

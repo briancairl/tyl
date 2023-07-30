@@ -33,11 +33,21 @@ git_repository(
 # ImGui
 http_archive(
   name="imgui",
-  url="https://github.com/ocornut/imgui/archive/v1.80.zip",
-  sha256="9da756d65d18a34cbb4f30ae64e6d6c42f94907b070ad3abaf553cb99e4ad403",
+  url="https://github.com/ocornut/imgui/archive/refs/tags/v1.89.6.zip",
+  sha256="96012e5dee6db965f45b04f27df58016815ec43e3214a7973cfe501b4a71395f",
   build_file="@//external:imgui.BUILD",
-  strip_prefix="imgui-1.80"
+  strip_prefix="imgui-1.89.6"
 )
+
+# ImGui
+http_archive(
+  name="imgui-file-dialogue",
+  url="https://github.com/aiekick/ImGuiFileDialog/archive/refs/heads/Lib_Only.zip",
+  sha256="ae827c0cda90581f43f1e832e329fd96f891840fce06eb7adb778af7b8504eae",
+  build_file="@//external:imgui_file_dialogue.BUILD",
+  strip_prefix="ImGuiFileDialog-Lib_Only"
+)
+
 
 # OpenAL
 new_local_repository(
@@ -70,7 +80,6 @@ http_archive(
     strip_prefix="googletest-release-1.8.0",
     build_file="@//external:googletest.BUILD",
 )
-
 
 ## Python ##
 

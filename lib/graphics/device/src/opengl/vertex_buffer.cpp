@@ -10,7 +10,7 @@
 #include <numeric>
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/vertex_buffer.hpp>
 
@@ -168,6 +168,7 @@ void VertexBuffer::setup_attributes(
 
 VertexBuffer& VertexBuffer::operator=(VertexBuffer&& other)
 {
+  this->~VertexBuffer();
   new (this) VertexBuffer{std::move(other)};
   return *this;
 }
@@ -207,7 +208,7 @@ VertexElementBuffer::VertexElementBuffer(
   const std::size_t element_count,
   const std::size_t buffer_total_bytes,
   const BufferMode buffer_mode) :
-    VertexBuffer{buffer_total_bytes, buffer_mode}, ebo_{[element_count]() -> vertex_buffer_id_t {
+    VertexBuffer{buffer_total_bytes, buffer_mode}, ebo_{[]() -> vertex_buffer_id_t {
       GLuint id;
       glGenBuffers(1, &id);
       return id;
@@ -227,13 +228,18 @@ VertexElementBuffer::VertexElementBuffer(VertexElementBuffer&& other) :
 
 VertexElementBuffer::~VertexElementBuffer()
 {
-  static_cast<VertexBuffer&>(*this).~VertexBuffer();
-
   if (ebo_ != 0)
   {
     GLuint delete_buffer = ebo_;
     glDeleteBuffers(1, &delete_buffer);
   }
+}
+
+VertexElementBuffer& VertexElementBuffer::operator=(VertexElementBuffer&& other)
+{
+  this->~VertexElementBuffer();
+  new (this) VertexElementBuffer{std::move(other)};
+  return *this;
 }
 
 MappedBuffer VertexElementBuffer::get_mapped_element_buffer_write() const
@@ -259,11 +265,11 @@ void VertexElementBuffer::set(const VertexElementBufferLayout& layout, const ele
   glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, layout.length * sizeof(element_t), data);
 }
 
-void VertexElementBuffer::draw(const VertexElementBufferLayout& layout, const DrawMode mode) const
+void VertexElementBuffer::draw(const std::size_t count, const DrawMode mode) const
 {
   glBindVertexArray(vao_);
   TYL_ASSERT_TRUE(ebo_);
-  glDrawElements(to_gl_draw_mode(mode), layout.length, GL_UNSIGNED_INT, 0);
+  glDrawElements(to_gl_draw_mode(mode), count, GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 }
 

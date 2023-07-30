@@ -312,7 +312,12 @@ public:
     const std::size_t instance_count,
     const DrawMode mode = DrawMode::Triangles) const;
 
-  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::Triangles) const;
+
+  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const
+  {
+    VertexElementBuffer::draw(layout.length, mode);
+  }
 
   ~VertexElementBuffer();
 
@@ -325,7 +330,7 @@ private:
     const std::size_t buffer_total_bytes,
     const BufferMode buffer_mode);
 
-  VertexElementBuffer(const VertexElementBuffer&) = default;
+  VertexElementBuffer(const VertexElementBuffer&) = delete;
 
   vertex_buffer_id_t ebo_;
 };

@@ -1,13 +1,13 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file texture.cpp
+ * @file image.cpp
  */
 
 // C++ Standard Library
 #include <cstdint>
-#include <sstream>
-#include <stdexcept>
+#include <cstring>
+#include <type_traits>
 
 // STB
 #pragma GCC diagnostic push
@@ -35,20 +35,20 @@ int channel_mode_to_stbi_enum(const ImageOptions::ChannelMode mode)
   case ImageOptions::ChannelMode::Default:
     return 0;
   case ImageOptions::ChannelMode::Grey:
-    return 1;
+    return STBI_grey;
   case ImageOptions::ChannelMode::GreyA:
-    return 2;
+    return STBI_grey_alpha;
   case ImageOptions::ChannelMode::RGB:
-    return 3;
+    return STBI_rgb;
   case ImageOptions::ChannelMode::RGBA:
-    return 4;
+    return STBI_rgb_alpha;
   default:
     break;
   }
-  return 0;
+  return STBI_default;
 }
 
-device::TextureChannels image_channel_count_to_mode(const int count)
+device::TextureChannels image_channel_count_to_texture_mode(const int count)
 {
   switch (count)
   {
@@ -68,34 +68,58 @@ device::TextureChannels image_channel_count_to_mode(const int count)
 
 }  // namespace anonymous
 
-device::TextureHost load(const char* path, const ImageOptions& options)
+Image::Image(const ImageShape& shape, void* const data) : shape_{shape}, data_{data} {}
+
+Image::Image(Image&& other) : shape_{other.shape_}, data_{other.data_} { other.data_ = nullptr; }
+
+Image::~Image()
 {
+  if (data_ == nullptr)
+  {
+    return;
+  }
+  else
+  {
+    stbi_image_free(data_);
+  }
+}
+
+device::Texture Image::texture(const device::TextureOptions& options) const noexcept
+{
+  return device::Texture{
+    shape_,
+    static_cast<const std::uint8_t*>(data_),
+    image_channel_count_to_texture_mode(shape_.channel_count),
+    options};
+}
+
+tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
+{
+  // Set flag determining whether image should be flipped on load
   stbi_set_flip_vertically_on_load(options.flags.flip_vertically);
 
-  const int c_forced = channel_mode_to_stbi_enum(options.channel_mode);
+  // Get STBI channel code
+  const int channel_count_forced = channel_mode_to_stbi_enum(options.channel_mode);
 
   // Load image data and sizing
-  int w, h, c;
-  auto* image_data_ptr = stbi_load(path, &h, &w, &c, c_forced);
+  ImageShape shape;
+  auto* image_data_ptr = stbi_load(path, &shape.height, &shape.width, &shape.channel_count, channel_count_forced);
 
   static_assert(std::is_same<decltype(image_data_ptr), std::uint8_t*>(), "Image data not loaded as byte array");
 
   // Check if image point is valid
   if (image_data_ptr == nullptr)
   {
-    std::ostringstream oss;
-    oss << "Failed to load image " << path << " : " << stbi_failure_reason();
-    throw std::runtime_error{oss.str()};
+    return tyl::unexpected{ErrorCode::LOAD_FAILURE};
   }
 
-  const int c_resolved = (options.channel_mode == ImageOptions::ChannelMode::Default) ? c : c_forced;
+  // Resolve number of channels if channel count was forced with 'options'
+  if (options.channel_mode != ImageOptions::ChannelMode::Default)
+  {
+    shape.channel_count = channel_count_forced;
+  }
 
-  return device::TextureHost{
-    std::unique_ptr<std::uint8_t[]>{image_data_ptr},
-    h,
-    w,
-    device::TypeCode::UInt8,
-    image_channel_count_to_mode(c_resolved)};
+  return Image{shape, image_data_ptr};
 }
 
 }  // namespace tyl::graphics::host

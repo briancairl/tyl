@@ -10,14 +10,17 @@ cc_library(
     "include/fwd.hpp",
     "include/shader.hpp",
     "include/texture.hpp",
+    "include/render_target.hpp",
+    "include/render_target_texture.hpp",
     "include/vertex_buffer.hpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/graphics/device",
+  deps=["//lib/common/utility:expected"],
   visibility=["//visibility:private"]
 )
 
-### OpenAL implemenatation ###
+### OpenGL implemenatation ###
 
 cc_library(
   name="graphics_impl__opengl_internal",
@@ -42,10 +45,12 @@ cc_library(
   name="graphics_impl__opengl",
   srcs=[
     "src/opengl/shader.cpp",
+    "src/opengl/render_target.cpp",
+    "src/opengl/render_target_texture.cpp",
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,
-  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common:assert"],
+  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common/debug:assert"],
   visibility=["//visibility:private"]
 )
 

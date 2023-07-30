@@ -8,11 +8,10 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 // Tyl
-#include <tyl/common/assert.hpp>
+#include <tyl/debug/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>
 
@@ -54,29 +53,32 @@ inline const char* to_gl_shader_str(const ShaderType shader_type)
   return "ShaderType[INVALID]";
 }
 
-inline shader_id_t create_gl_shader_source(const ShaderType shader_type)
+inline shader_id_t create_gl_shader_source(const ShaderType shader_type) noexcept
 {
   return glCreateShader(to_gl_shader_code(shader_type));
 }
 
 
-inline shader_id_t create_gl_shader() { return glCreateProgram(); }
+inline shader_id_t create_gl_shader() noexcept { return glCreateProgram(); }
 
 
-void validate_gl_shader_compilation(const GLuint shader_id, const ShaderType shader_type)
+[[nodiscard]] bool validate_gl_shader_compilation(
+  const GLuint shader_id,
+  const ShaderType shader_type,
+  std::string* const error_details) noexcept
 {
   // Check compilation status
   GLint success;
   glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
 
-  // Compiled correctly; nothing to do
   if (success == GL_TRUE)
   {
-    return;
+    // Compiled correctly; nothing to do
+    return true;
   }
-  // Get shader compilation error
-  else
+  else if (error_details != nullptr)
   {
+    // Get shader compilation error
     GLint len;
     glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &len);
 
@@ -88,25 +90,26 @@ void validate_gl_shader_compilation(const GLuint shader_id, const ShaderType sha
     oss << "glCompileShader [" << to_gl_shader_str(shader_type) << ':' << shader_id << "]\n\n(" << written
         << " char)\n\n"
         << info_log_contents;
-    throw std::runtime_error{oss.str()};
+    (*error_details) = oss.str();
   }
+  return false;
 }
 
 
-void validate_gl_shader_linkage(const GLuint program_id)
+[[nodiscard]] bool validate_gl_shader_linkage(const GLuint program_id, std::string* const error_details) noexcept
 {
   // Check compilation status
   GLint success;
   glGetProgramiv(program_id, GL_LINK_STATUS, &success);
 
-  // Compiled correctly; nothing to do
   if (success == GL_TRUE)
   {
-    return;
+    // Compiled correctly; nothing to do
+    return true;
   }
-  // Get shader compilation error
-  else
+  else if (error_details != nullptr)
   {
+    // Get shader linkage error
     GLint len;
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &len);
 
@@ -116,11 +119,12 @@ void validate_gl_shader_linkage(const GLuint program_id)
 
     std::ostringstream oss;
     oss << "glLinkProgram [" << program_id << "]\n\n(" << written << " char)\n\n" << info_log_contents;
-    throw std::runtime_error{oss.str()};
+    (*error_details) = oss.str();
   }
+  return false;
 }
 
-void put_shader_version_preamble(std::ostream& os)
+void put_shader_version_preamble(std::ostream& os) noexcept
 {
   GLint major, minor;
   glGetIntegerv(GL_MAJOR_VERSION, &major);
@@ -142,9 +146,6 @@ ShaderSource::ShaderSource(std::string_view code, const ShaderType type) :
 
   // Compile component shader code and check for errors
   glCompileShader(shader_id_);
-
-  // Validate compilation
-  validate_gl_shader_compilation(shader_id_, type);
 }
 
 ShaderSource::ShaderSource(ShaderSource&& other) : shader_id_{other.shader_id_}
@@ -158,31 +159,48 @@ ShaderSource& ShaderSource::operator=(ShaderSource&& other)
   return *this;
 }
 
-ShaderSource ShaderSource::vertex(std::string_view code)
+tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+ShaderSource::vertex(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource{oss.str(), ShaderType::VERTEX};
+  return ShaderSource::create(oss.str(), ShaderType::VERTEX, error_details);
 }
 
-ShaderSource ShaderSource::fragment(std::string_view code)
+tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+ShaderSource::fragment(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource{oss.str(), ShaderType::FRAGMENT};
+  return ShaderSource::create(oss.str(), ShaderType::FRAGMENT, error_details);
 }
 
-ShaderSource ShaderSource::geometry(std::string_view code)
+tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+ShaderSource::geometry(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource{oss.str(), ShaderType::GEOMETRY};
+  return ShaderSource::create(oss.str(), ShaderType::GEOMETRY, error_details);
 }
 
-ShaderSource ShaderSource::load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble)
+tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+ShaderSource::create(std::string_view code, const ShaderType type, std::string* const error_details) noexcept
+{
+
+  ShaderSource shader_source{code, type};
+
+  if (!validate_gl_shader_compilation(shader_source.shader_id_, type, error_details))
+  {
+    return tyl::unexpected{ErrorCode::COMPILATION_FAILURE};
+  }
+  return shader_source;
+}
+
+tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+ShaderSource::load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble) noexcept
 {
   if (std::ifstream ifs{filename}; ifs.is_open())
   {
@@ -198,19 +216,17 @@ ShaderSource ShaderSource::load_from_file(const char* filename, const ShaderType
     std::copy(
       std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>(), std::ostreambuf_iterator<char>(oss));
 
-    return ShaderSource{oss.str(), type};
+    return ShaderSource::create(oss.str(), type);
   }
   else
   {
-    std::ostringstream oss;
-    oss << "Could not open shader source file " << filename;
-    throw std::runtime_error{oss.str()};
+    return tyl::unexpected{ErrorCode::LOAD_FAILURE};
   }
 }
 
 ShaderSource::~ShaderSource()
 {
-  if (shader_id_)
+  if (shader_id_ != invalid_shader_id)
   {
     glDeleteShader(shader_id_);
   }
@@ -220,26 +236,19 @@ ShaderProgramHost::ShaderProgramHost(std::unique_ptr<std::uint8_t>&& data, const
     data_{std::move(data)}, size_{len}, format_{format}
 {}
 
-Shader::Shader(const ShaderSource vertex_source, const ShaderSource fragment_source) : Shader{create_gl_shader()}
+Shader::Shader(const ShaderSource& vertex_source, const ShaderSource& fragment_source) : Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_, vertex_source.get_id());
   glAttachShader(shader_id_, fragment_source.get_id());
 
   // Link shader program components
   glLinkProgram(shader_id_);
-
-  // Validate program linkage
-  validate_gl_shader_linkage(shader_id_);
-
-  // Detach all component shaders no longer in use
-  glDetachShader(shader_id_, vertex_source.get_id());
-  glDetachShader(shader_id_, fragment_source.get_id());
 }
 
 Shader::Shader(
-  const ShaderSource vertex_source,
-  const ShaderSource fragment_source,
-  const ShaderSource geometry_source) :
+  const ShaderSource& vertex_source,
+  const ShaderSource& fragment_source,
+  const ShaderSource& geometry_source) :
     Shader{create_gl_shader()}
 {
   glAttachShader(shader_id_, vertex_source.get_id());
@@ -248,14 +257,6 @@ Shader::Shader(
 
   // Link shader program components
   glLinkProgram(shader_id_);
-
-  // Validate program linkage
-  validate_gl_shader_linkage(shader_id_);
-
-  // Detach all component shaders no longer in use
-  glDetachShader(shader_id_, vertex_source.get_id());
-  glDetachShader(shader_id_, fragment_source.get_id());
-  glDetachShader(shader_id_, geometry_source.get_id());
 }
 
 Shader::Shader(Shader&& other) : Shader{other.shader_id_} { other.shader_id_ = invalid_shader_id; }
@@ -264,9 +265,6 @@ Shader::Shader(const ShaderProgramHost& shader_host) : Shader{create_gl_shader()
 {
   // Load program as binary
   glProgramBinary(shader_id_, shader_host.format_, shader_host.data(), shader_host.size());
-
-  // Validate program linkage
-  validate_gl_shader_linkage(shader_id_);
 }
 
 Shader& Shader::operator=(Shader&& other)
@@ -380,6 +378,62 @@ void Shader::setMat4(const char* var_name, const float* data) const
 {
   TYL_ASSERT_NE(shader_id_, invalid_shader_id);
   glUniformMatrix4fv(glGetUniformLocation(shader_id_, var_name), 1, GL_FALSE, data);
+}
+
+tyl::expected<Shader, Shader::ErrorCode> Shader::create(
+  const ShaderSource& vertex_source,
+  const ShaderSource& fragment_source,
+  std::string* const error_details) noexcept
+{
+
+  Shader shader{vertex_source, fragment_source};
+
+  if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
+  {
+    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+  }
+
+  // Detach all component shaders no longer in use
+  glDetachShader(shader.shader_id_, vertex_source.get_id());
+  glDetachShader(shader.shader_id_, fragment_source.get_id());
+
+  return shader;
+}
+
+tyl::expected<Shader, Shader::ErrorCode> Shader::create(
+  const ShaderSource& vertex_source,
+  const ShaderSource& fragment_source,
+  const ShaderSource& geometry_source,
+  std::string* const error_details) noexcept
+{
+
+  Shader shader{vertex_source, fragment_source, geometry_source};
+
+  if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
+  {
+    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+  }
+
+  // Detach all component shaders no longer in use
+  glDetachShader(shader.shader_id_, vertex_source.get_id());
+  glDetachShader(shader.shader_id_, fragment_source.get_id());
+  glDetachShader(shader.shader_id_, geometry_source.get_id());
+
+  return shader;
+}
+
+tyl::expected<Shader, Shader::ErrorCode>
+Shader::create(const ShaderProgramHost& shader_host, std::string* const error_details) noexcept
+{
+
+  Shader shader{shader_host};
+
+  if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
+  {
+    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+  }
+
+  return shader;
 }
 
 
