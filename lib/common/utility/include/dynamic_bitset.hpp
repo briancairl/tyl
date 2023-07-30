@@ -46,6 +46,15 @@ public:
     bit_count_ = bit_count;
   }
 
+  dynamic_bitset(dynamic_bitset&& other) :
+      block_data_{other.block_data_},
+      block_count_{other.block_count_},
+      bit_count_{other.bit_count_},
+      allocator_{other.allocator_}
+  {
+    other.block_data_ = nullptr;
+  }
+
   ~dynamic_bitset() { dynamic_bitset::deallocate(); }
 
   void resize(const std::size_t bit_count, const bool state = false)

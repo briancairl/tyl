@@ -28,6 +28,7 @@ namespace tyl::engine::widgets
 namespace
 {
 
+constexpr bool kShowBorders = true;
 constexpr float kScalingMin = 0.1f;
 constexpr float kScalingMax = 10.0f;
 
@@ -42,19 +43,28 @@ public:
   {
     if (ImGui::BeginPopup("#SelectionPicker", ImGuiWindowFlags_HorizontalScrollbar))
     {
-      ImGui::Text("selection");
-      ImGui::Separator();
-      registry.view<SelectionTag, std::string>().each([this](const entt::entity id, const auto& label) {
-        ImGui::TextColored(
-          id == active_selection_ ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 1.0f},
-          "%s",
-          label.c_str());
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-        {
-          active_selection_ = id;
-        }
-      });
-      if (ImGui::Button("delete") and active_selection_.has_value())
+      handle_texture_selection_creation(registry);
+      ImGui::SliderFloat("scaling", &scaling_, kScalingMin, kScalingMax);
+
+      ImGui::BeginChild("#SelectionTabs", ImVec2{0, 150}, kShowBorders, ImGuiWindowFlags_HorizontalScrollbar);
+      if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_Reorderable))
+      {
+        registry.view<SelectionTag, std::string>().each([this](const entt::entity id, const auto& label) {
+          ImGui::PushID(static_cast<int>(id));
+          if (ImGui::BeginTabItem(label.c_str(), nullptr, ImGuiTabItemFlags_None))
+          {
+            active_selection_ = id;
+            ImGui::EndTabItem();
+          }
+          ImGui::PopID();
+        });
+        ImGui::EndTabBar();
+      }
+      handle_texture_selection_grid_properties(registry);
+      handle_texture_selection_rect_properties(registry);
+      ImGui::EndChild();
+
+      if (active_selection_.has_value() && ImGui::Button("delete current"))
       {
         registry.destroy(*active_selection_);
         active_selection_.reset();
@@ -62,17 +72,7 @@ public:
       ImGui::EndPopup();
     }
 
-    handle_texture_selection_creation(registry);
-
-    ImGui::SliderFloat("scaling", &scaling_, kScalingMin, kScalingMax);
-    handle_texture_selection_grid_properties(registry);
-    handle_texture_selection_rect_properties(registry);
-
-    ImGui::BeginChild(
-      "#DragAndDropArea",
-      ImVec2{0, 0},
-      /*show_borders=*/!texture_id_.has_value(),
-      ImGuiWindowFlags_HorizontalScrollbar);
+    ImGui::BeginChild("#DragAndDropArea", ImVec2{500, 500}, kShowBorders, ImGuiWindowFlags_HorizontalScrollbar);
     if (!texture_id_.has_value())
     {
       ImGui::Text("%s", "To start, drop a texture here!");
@@ -101,6 +101,42 @@ public:
       ImGui::OpenPopup("#SelectionPicker");
     }
 
+    handle_texture_drag_and_drop(registry);
+
+    ImGui::BeginChild("#TileSetPreviewArea", ImVec2{500, 250}, kShowBorders, ImGuiWindowFlags_HorizontalScrollbar);
+
+    ImGui::EndChild();
+  }
+
+  constexpr bool lock_window_movement() const { return is_dragging_offset_; }
+
+private:
+  struct SelectionTag
+  {};
+
+  struct SelectionRect
+  {
+    ImVec2 offset = {0.f, 0.f};
+    ImVec2 size = {1.f, 1.f};
+  };
+
+  struct SelectionGrid
+  {
+    ImVec2 offset = {0.f, 0.f};
+    ImVec2 cell_size = {25.f, 25.f};
+    int dims[2] = {10, 10};
+    dynamic_bitset<std::uint64_t> cell_selected;
+
+    SelectionGrid(const int rows, const int cols, const ImVec2 _cell_size) : cell_size{_cell_size}
+    {
+      dims[0] = rows;
+      dims[1] = cols;
+      cell_selected.resize(rows * cols);
+    }
+  };
+
+  void handle_texture_drag_and_drop(entt::registry& registry)
+  {
     if (!ImGui::BeginDragDropTarget())
     {
       return;
@@ -123,60 +159,35 @@ public:
     ImGui::EndDragDropTarget();
   }
 
-  constexpr bool lock_window_movement() const { return is_dragging_offset_; }
-
-private:
-  struct SelectionTag
-  {};
-
-  struct SelectionRect
-  {
-    ImVec2 offset = {0.f, 0.f};
-    ImVec2 cell_size = {1.f, 1.f};
-  };
-
-  struct SelectionGrid
-  {
-    ImVec2 offset = {0.f, 0.f};
-    ImVec2 cell_size = {25.f, 25.f};
-    int dims[2] = {10, 10};
-    dynamic_bitset<std::uint64_t> cell_selected;
-
-    SelectionGrid(const int rows, const int cols, const ImVec2 _cell_size) : cell_size{_cell_size}
-    {
-      dims[0] = rows;
-      dims[1] = cols;
-      cell_selected.resize(rows * cols);
-    }
-  };
-
   void handle_texture_selection_creation(entt::registry& registry)
   {
-    if (ImGui::BeginMenuBar())
+    if (!texture_id_.has_value())
     {
-      if (texture_id_.has_value() and ImGui::BeginMenu("create"))
-      {
-        if (ImGui::MenuItem("rectangle"))
-        {
-          const auto id = registry.create();
-          registry.emplace<std::string>(id, "rect");
-          registry.emplace<SelectionTag>(id);
-          registry.emplace<SelectionRect>(id);
-          active_selection_ = id;
-        }
+      return;
+    }
 
-        if (ImGui::MenuItem("grid"))
-        {
-          const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
-          const auto id = registry.create();
-          registry.emplace<std::string>(id, "grid");
-          registry.emplace<SelectionTag>(id);
-          registry.emplace<SelectionGrid>(id, 10, 10, ImVec2(texture.shape().height / 10, texture.shape().width / 10));
-          active_selection_ = id;
-        }
-        ImGui::EndMenu();
+    if (ImGui::Button("new rect"))
+    {
+      const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
+      const auto id = registry.create();
+      registry.emplace<std::string>(id, "rect");
+      registry.emplace<SelectionTag>(id);
+      {
+        auto& select = registry.emplace<SelectionRect>(id);
+        select.size.x = texture.shape().height;
+        select.size.y = texture.shape().width;
       }
-      ImGui::EndMenuBar();
+      active_selection_ = id;
+    }
+
+    if (ImGui::Button("new grid"))
+    {
+      const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
+      const auto id = registry.create();
+      registry.emplace<std::string>(id, "grid");
+      registry.emplace<SelectionTag>(id);
+      registry.emplace<SelectionGrid>(id, 10, 10, ImVec2(texture.shape().height / 10, texture.shape().width / 10));
+      active_selection_ = id;
     }
   }
 
@@ -186,11 +197,67 @@ private:
     {
       return;
     }
+
+    auto& properties = registry.get<SelectionRect>(*active_selection_);
+
+    if (ImGui::InputFloat2("offset", reinterpret_cast<float*>(&properties.offset)))
+    {
+      properties.offset.x = std::max(0.f, properties.offset.x);
+      properties.offset.y = std::max(0.f, properties.offset.y);
+    }
+
+    if (ImGui::InputFloat2("size", reinterpret_cast<float*>(&properties.size)))
+    {
+      properties.size.x = std::max(1.f, properties.size.x);
+      properties.size.y = std::max(1.f, properties.size.y);
+    }
   }
 
   void
   handle_texture_selection_rect_interaction(ImDrawList* const drawlist, const ImVec2& origin, entt::registry& registry)
-  {}
+  {
+    registry.view<std::string, SelectionRect>().each(
+      [&](const entt::entity selection_id, const auto& label, auto& rect) {
+        const float ox = origin.x + rect.offset.x * scaling_;
+        const float oy = origin.y + rect.offset.y * scaling_;
+        const float cx = rect.size.x * scaling_;
+        const float cy = rect.size.y * scaling_;
+        const bool is_selected = active_selection_ == selection_id;
+
+        // Corner dragging
+        if (is_selected)
+        {
+          static constexpr float kGrabRadius = 10.f;
+          ImVec2 lower{ox - kGrabRadius, oy - kGrabRadius};
+          ImVec2 upper{ox + kGrabRadius, oy + kGrabRadius};
+          const bool is_hovering = ImGui::IsMouseHoveringRect(lower, upper);
+          const bool is_mouse_down = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+
+          is_dragging_offset_ = (is_dragging_offset_ and is_mouse_down) or is_hovering;
+
+          if (is_dragging_offset_ and is_mouse_down)
+          {
+            const auto mouse_pos_relative = ImGui::GetMousePos() - origin;
+            const auto inv_scaling = 1.f / scaling_;
+            rect.offset.x = std::max(0.f, std::round(mouse_pos_relative.x * inv_scaling));
+            rect.offset.y = std::max(0.f, std::round(mouse_pos_relative.y * inv_scaling));
+          }
+          else if (is_hovering)
+          {
+            drawlist->AddRectFilled(lower, upper, IM_COL32(255, 0, 255, 100));
+          }
+        }
+
+        {
+          const float line_thickness = is_selected ? std::max(1.f, 2.f * scaling_) : 1.f;
+          const auto line_color = is_selected ? IM_COL32(255, 255, 25, 255) : IM_COL32(255, 100, 50, 50);
+
+          const ImVec2 lower{ox, oy};
+          const ImVec2 upper{lower.x + cx, lower.y + cy};
+          drawlist->AddRect(lower, upper, line_color, 0.0f, 0, line_thickness);
+        }
+      });
+  }
 
   void handle_texture_selection_grid_properties(entt::registry& registry)
   {
@@ -235,9 +302,10 @@ private:
         const float oy = origin.y + grid.offset.y * scaling_;
         const float cx = grid.cell_size.x * scaling_;
         const float cy = grid.cell_size.y * scaling_;
+        const bool is_selected = active_selection_ == selection_id;
 
         // Corner dragging
-        if (active_selection_ == selection_id)
+        if (is_selected)
         {
           static constexpr float kGrabRadius = 10.f;
           ImVec2 lower{ox - kGrabRadius, oy - kGrabRadius};
@@ -259,8 +327,6 @@ private:
             drawlist->AddRectFilled(lower, upper, IM_COL32(255, 0, 255, 100));
           }
         }
-
-        const bool is_selected = active_selection_ == selection_id;
 
         // Handle cell selection
         {
@@ -322,6 +388,7 @@ private:
   std::optional<entt::entity> texture_id_;
   std::optional<entt::entity> active_selection_;
   bool is_dragging_offset_ = false;
+  bool is_dragging_size_ = false;
 };
 
 TilesetCreator::~TilesetCreator() = default;
@@ -337,11 +404,12 @@ TilesetCreator::TilesetCreator(const Options& options, std::unique_ptr<Impl>&& i
 
 void TilesetCreator::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
 {
+  ImGui::ShowDemoWindow();
   ImGui::SetCurrentContext(imgui_ctx);
   if (ImGui::Begin(
         options_.name,
         nullptr,
-        ImGuiWindowFlags_MenuBar | (impl_->lock_window_movement() ? ImGuiWindowFlags_NoMove : 0)))
+        ImGuiWindowFlags_AlwaysAutoResize | (impl_->lock_window_movement() ? ImGuiWindowFlags_NoMove : 0)))
   {
     impl_->update(reg);
   }
