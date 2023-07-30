@@ -225,7 +225,7 @@ expected<App, App::OnCreateErrorCode> App::create(const Options& options)
 
   // Create window with graphics context
   GLFWwindow* window =
-    glfwCreateWindow(options.initial_window_height, options.initial_window_width, options.window_title, NULL, NULL);
+    glfwCreateWindow(options.initial_window_width, options.initial_window_height, options.window_title, NULL, NULL);
 
   if (window == nullptr)
   {

@@ -83,8 +83,8 @@ struct DefaultTextLocator : core::resource::Text::Locator
 int main(int argc, char** argv)
 {
   auto app = tyl::engine::core::App::create({
-    .initial_window_height = 500,
-    .initial_window_width = 500,
+    .initial_window_height = 1000,
+    .initial_window_width = 1500,
     .window_title = "engine",
     .enable_vsync = true,
   });

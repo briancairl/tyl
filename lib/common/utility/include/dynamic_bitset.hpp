@@ -78,12 +78,17 @@ public:
 
   void set(const std::size_t bit) const
   {
-    return bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+  }
+
+  void flip(const std::size_t bit) const
+  {
+    bits::flip(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
   }
 
   void clear(const std::size_t bit) const
   {
-    return bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
   }
 
   [[nodiscard]] constexpr bool test(const std::size_t bit) const

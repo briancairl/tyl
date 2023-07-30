@@ -152,6 +152,14 @@ template <typename BlockT, typename IndexT> constexpr void set(BlockT&& mask, co
 }
 
 /**
+ * @brief Flips bit in a \c BlockT block at \c offset
+ */
+template <typename BlockT, typename IndexT> constexpr void flip(BlockT&& mask, const IndexT offset)
+{
+  std::forward<BlockT>(mask) ^= make_mask<std::remove_reference_t<BlockT>>(offset);
+}
+
+/**
  * @brief Clears bit (sets to low) in a \c BlockT block high at \c offset
  */
 template <typename BlockT, typename IndexT> constexpr void clear(BlockT&& mask, const IndexT offset)

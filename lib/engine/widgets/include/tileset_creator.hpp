@@ -29,7 +29,9 @@ public:
   };
 
   struct Options
-  {};
+  {
+    const char* name = "Tile Set Creator";
+  };
 
   [[nodiscard]] static tyl::expected<TilesetCreator, OnCreateErrorCode> create(const Options& options);
 
@@ -40,9 +42,11 @@ public:
   void update(ImGuiContext* const imgui_ctx, entt::registry& reg);
 
 private:
+  Options options_;
+
   class Impl;
   std::unique_ptr<Impl> impl_;
-  explicit TilesetCreator(std::unique_ptr<Impl>&& impl);
+  TilesetCreator(const Options& options, std::unique_ptr<Impl>&& impl);
 };
 
 }  // namespace tyl::engine::widgets
