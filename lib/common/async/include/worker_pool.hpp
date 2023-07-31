@@ -190,18 +190,32 @@ template <
   typename ResultT = std::invoke_result_t<std::remove_reference_t<WorkT>>>
 auto post(worker_pool_base<WorkGroupT, WorkQueueT, WorkOptionsT>& wp, WorkT&& work)
 {
+  auto create_work = [](auto&& p, auto&& work) {
+    return [p = std::move(p), w = std::forward<WorkT>(work)]() mutable {
+      if constexpr (std::is_same_v<ResultT, void>)
+      {
+        w();
+        p->set_value();
+      }
+      else
+      {
+        p->set_value(w());
+      }
+    };
+  };
+
   if constexpr (Strategy == post_strategy::blocking)
   {
     auto p = std::make_shared<std::promise<ResultT>>();
     auto f = p->get_future();
-    wp.emplace([p = std::move(p), w = std::forward<WorkT>(work)]() mutable { p->set_value(w()); });
+    wp.emplace(create_work(p, std::forward<WorkT>(work)));
     return f;
   }
   else
   {
     auto p = std::make_shared<non_blocking_promise<ResultT>>();
     auto f = p->get_future();
-    wp.emplace([p = std::move(p), w = std::forward<WorkT>(work)]() mutable { p->set_value(w()); });
+    wp.emplace(create_work(p, std::forward<WorkT>(work)));
     return f;
   }
 }

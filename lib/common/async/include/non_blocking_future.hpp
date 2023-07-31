@@ -92,5 +92,45 @@ private:
   std::optional<T> result_opt_;
 };
 
+template <> class non_blocking_promise<void> : public std::enable_shared_from_this<non_blocking_promise<void>>
+{
+public:
+  non_blocking_promise() : result_ready_flag_{false}, result_set_{false} {}
+
+  void set_value()
+  {
+    result_set_ = true;
+    result_ready_flag_ = true;
+  }
+
+  non_blocking_future<void> get_future() { return non_blocking_future{this->shared_from_this()}; }
+
+private:
+  friend non_blocking_future<void>;
+
+  bool valid() const { return result_ready_flag_ and result_set_; }
+
+  expected<void, non_blocking_future_error> get()
+  {
+    expected<void, non_blocking_future_error> result;
+    if (!result_ready_flag_)
+    {
+      result = unexpected{non_blocking_future_error::not_ready};
+    }
+    else if (!result_set_)
+    {
+      result = unexpected{non_blocking_future_error::retrieved};
+    }
+    else
+    {
+      result_set_ = false;
+    }
+    return result;
+  }
+
+  std::atomic<bool> result_ready_flag_;
+  std::atomic<bool> result_set_;
+};
+
 
 }  // namespace tyl::async
