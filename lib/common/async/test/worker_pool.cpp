@@ -22,6 +22,61 @@ TEST(Worker, EmplaceAndDtor)
   wp.emplace([] { std::this_thread::sleep_for(std::chrono::milliseconds(5)); });
 }
 
+TEST(Worker, Post)
+{
+  worker wp;
+
+  auto tracker = post(wp, [] { return 1; });
+
+  while (true)
+  {
+    if (auto result_or_error = tracker.get(); result_or_error.has_value())
+    {
+      ASSERT_EQ(*result_or_error, 1);
+      break;
+    }
+    else
+    {
+      ASSERT_EQ(result_or_error.error(), non_blocking_future_error::not_ready);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  }
+
+  ASSERT_EQ(tracker.get(), non_blocking_future_error::retrieved);
+}
+
+TEST(Worker, PostBlocking)
+{
+  worker wp;
+
+  auto tracker = post<post_strategy::blocking>(wp, [] { return 1; });
+
+  ASSERT_EQ(tracker.get(), 1);
+}
+
+TEST(WorkerPool, Post)
+{
+  worker_pool wp{5UL};
+
+  auto tracker = post(wp, [] { return 1; });
+
+  while (true)
+  {
+    if (auto result_or_error = tracker.get(); result_or_error.has_value())
+    {
+      ASSERT_EQ(*result_or_error, 1);
+      break;
+    }
+    else
+    {
+      ASSERT_EQ(result_or_error.error(), non_blocking_future_error::not_ready);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  }
+
+  ASSERT_EQ(tracker.get(), non_blocking_future_error::retrieved);
+}
+
 TEST(WorkerPool, EmplaceAndDtor)
 {
   worker_pool wp{5UL};
@@ -29,6 +84,37 @@ TEST(WorkerPool, EmplaceAndDtor)
   wp.emplace([] { std::this_thread::sleep_for(std::chrono::milliseconds(5)); });
 }
 
+TEST(WorkerPool, PostBlocking)
+{
+  worker_pool wp{5UL};
+
+  auto tracker = post<post_strategy::blocking>(wp, [] { return 1; });
+
+  ASSERT_EQ(tracker.get(), 1);
+}
+
+TEST(StaticWorkerPool, Post)
+{
+  static_worker_pool<4> wp;
+
+  auto tracker = post(wp, [] { return 1; });
+
+  while (true)
+  {
+    if (auto result_or_error = tracker.get(); result_or_error.has_value())
+    {
+      ASSERT_EQ(*result_or_error, 1);
+      break;
+    }
+    else
+    {
+      ASSERT_EQ(result_or_error.error(), non_blocking_future_error::not_ready);
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+  }
+
+  ASSERT_EQ(tracker.get(), non_blocking_future_error::retrieved);
+}
 
 TEST(StaticWorkerPool, EmplaceAndDtor)
 {
@@ -37,11 +123,11 @@ TEST(StaticWorkerPool, EmplaceAndDtor)
   wp.emplace([] { std::this_thread::sleep_for(std::chrono::milliseconds(5)); });
 }
 
-TEST(StaticWorkerPool, Post)
+TEST(StaticWorkerPool, PostBlocking)
 {
   static_worker_pool<4> wp;
 
-  auto tracker = post(wp, [] { return 1; });
+  auto tracker = post<post_strategy::blocking>(wp, [] { return 1; });
 
   ASSERT_EQ(tracker.get(), 1);
 }

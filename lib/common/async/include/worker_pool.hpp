@@ -17,48 +17,53 @@
 #include <thread>
 #include <vector>
 
+// Tyl
+#include <tyl/async/non_blocking_future.hpp>
+
 namespace tyl::async
 {
 
 template <std::size_t N> class work_group
 {
 public:
-  template <typename Fn> explicit work_group(Fn f)
+  template <typename WorkLoopFnT> explicit work_group(WorkLoopFnT f)
   {
-    for (auto& t : workers_)
-    {
-      t = std::thread{f};
-    }
+    work_group::for_each_worker([f](auto& t) { t = std::thread{f}; });
   }
 
   ~work_group()
   {
-    for (auto& t : workers_)
-    {
-      t.join();
-    }
+    work_group::for_each_worker([](auto& t) { t.join(); });
   }
 
 private:
+  template <typename UnaryFnT> void for_each_worker(UnaryFnT&& fn)
+  {
+    std::for_each(workers_.begin(), workers_.end(), std::forward<UnaryFnT>(fn));
+  }
   std::array<std::thread, N> workers_;
 };
 
 template <> class work_group<0>
 {
 public:
-  template <typename Fn>
-  work_group(Fn f, const std::size_t n_workers = std::thread::hardware_concurrency()) :
+  template <typename WorkLoopFnT>
+  explicit work_group(WorkLoopFnT f, const std::size_t n_workers = std::thread::hardware_concurrency()) :
       workers_{std::make_unique<std::thread[]>(n_workers)}, n_workers_{n_workers}
   {
-    std::for_each(workers_.get(), workers_.get() + n_workers_, [f](auto& t) { t = std::thread{f}; });
+    work_group::for_each_worker([f](auto& t) { t = std::thread{f}; });
   }
 
   ~work_group()
   {
-    std::for_each(workers_.get(), workers_.get() + n_workers_, [](auto& t) { t.join(); });
+    work_group::for_each_worker([](auto& t) { t.join(); });
   }
 
 private:
+  template <typename UnaryFnT> void for_each_worker(UnaryFnT&& fn)
+  {
+    std::for_each(workers_.get(), workers_.get() + n_workers_, std::forward<UnaryFnT>(fn));
+  }
   std::unique_ptr<std::thread[]> workers_;
   std::size_t n_workers_;
 };
@@ -66,7 +71,7 @@ private:
 template <> class work_group<1>
 {
 public:
-  template <typename Fn> explicit work_group(Fn&& f) : worker_{std::forward<Fn>(f)} {}
+  template <typename WorkLoopFnT> explicit work_group(WorkLoopFnT&& f) : worker_{std::forward<WorkLoopFnT>(f)} {}
 
   ~work_group() { worker_.join(); }
 
@@ -93,7 +98,13 @@ private:
   std::deque<WorkStorageT, WorkStorageAllocatorT> c_;
 };
 
-template <typename WorkGroupT, typename WorkQueueT, bool kFinishAllWork = false> class worker_pool_base
+struct worker_pool_options_default
+{
+  static constexpr bool kFinishAllWork = false;
+};
+
+template <typename WorkGroupT, typename WorkQueueT, typename WorkOptionsT = worker_pool_options_default>
+class worker_pool_base
 {
 public:
   template <typename... WorkGroupArgTs>
@@ -102,20 +113,19 @@ public:
       workers_{
         [this]() {
           std::unique_lock lock{work_queue_mutex_};
-          while (working_ || (kFinishAllWork and !work_queue_.empty()))
+          while (work_loop_shuld_continue())
           {
-            work_queue_cv_.wait(lock);
-
             if (work_queue_.empty())
             {
-              continue;
+              work_queue_cv_.wait(lock);
             }
-
-            auto next_to_run = work_queue_.pop();
-
-            lock.unlock();
-            next_to_run();
-            lock.lock();
+            else
+            {
+              auto next_to_run = work_queue_.pop();
+              lock.unlock();
+              next_to_run();
+              lock.lock();
+            }
           }
         },
         std::forward<WorkGroupArgTs>(args)...}
@@ -140,6 +150,18 @@ public:
   }
 
 private:
+  bool work_loop_shuld_continue() const
+  {
+    if constexpr (WorkOptionsT::kFinishAllWork)
+    {
+      return working_ or !work_queue_.empty();
+    }
+    else
+    {
+      return working_;
+    }
+  }
+
   std::mutex work_queue_mutex_;
   std::condition_variable work_queue_cv_;
   bool working_;
@@ -153,17 +175,35 @@ using worker_pool = worker_pool_base<work_group<0>, work_queue<>>;
 
 template <std::size_t N> using static_worker_pool = worker_pool_base<work_group<N>, work_queue<>>;
 
+enum class post_strategy
+{
+  blocking,
+  nonblocking,
+};
+
 template <
+  post_strategy Strategy = post_strategy::nonblocking,
   typename WorkGroupT,
   typename WorkQueueT,
+  typename WorkOptionsT,
   typename WorkT,
   typename ResultT = std::invoke_result_t<std::remove_reference_t<WorkT>>>
-auto post(worker_pool_base<WorkGroupT, WorkQueueT>& wp, WorkT&& work) -> std::future<ResultT>
+auto post(worker_pool_base<WorkGroupT, WorkQueueT, WorkOptionsT>& wp, WorkT&& work)
 {
-  auto p = std::make_shared<std::promise<ResultT>>();
-  auto f = p->get_future();
-  wp.emplace([p = std::move(p), w = std::forward<WorkT>(work)]() mutable { p->set_value(w()); });
-  return f;
+  if constexpr (Strategy == post_strategy::blocking)
+  {
+    auto p = std::make_shared<std::promise<ResultT>>();
+    auto f = p->get_future();
+    wp.emplace([p = std::move(p), w = std::forward<WorkT>(work)]() mutable { p->set_value(w()); });
+    return f;
+  }
+  else
+  {
+    auto p = std::make_shared<non_blocking_promise<ResultT>>();
+    auto f = p->get_future();
+    wp.emplace([p = std::move(p), w = std::forward<WorkT>(work)]() mutable { p->set_value(w()); });
+    return f;
+  }
 }
 
 }  // namespace tyl::async
