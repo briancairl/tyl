@@ -84,9 +84,25 @@ public:
   constexpr const ValueT* operator->() const noexcept { return &value(); }
   constexpr ValueT* operator->() noexcept { return &value(); }
 
+  constexpr bool operator==(const expected<ValueT, ErrorT>& rhs) const { return this->u_ == rhs.u_; }
+
+  constexpr bool operator!=(const expected<ValueT, ErrorT>& rhs) const { return this->u_ != rhs.u_; }
+
 private:
   /// Underlying storage
   std::variant<ValueT, ErrorT> u_;
 };
+
+template <typename ValueT, typename ErrorT>
+constexpr bool operator==(const expected<ValueT, ErrorT>& lhs, const ErrorT rhs)
+{
+  return !lhs.has_value() and lhs.error() == rhs;
+}
+
+template <typename ValueT, typename ErrorT>
+constexpr bool operator!=(const expected<ValueT, ErrorT>& lhs, const ErrorT rhs)
+{
+  return lhs.has_value() or lhs.error() != rhs;
+}
 
 }  // namespace tyl
