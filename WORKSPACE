@@ -75,9 +75,9 @@ new_git_repository(
 # GTest/GMock
 http_archive(
     name="googletest",
-    url="https://github.com/google/googletest/archive/release-1.8.0.zip",
-    sha256="f3ed3b58511efd272eb074a3a6d6fb79d7c2e6a0e374323d1e6bcbcc1ef141bf",
-    strip_prefix="googletest-release-1.8.0",
+    url="https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip",
+    sha256="1f357c27ca988c3f7c6b4bf68a9395005ac6761f034046e9dde0896e3aba00e4",
+    strip_prefix="googletest-1.14.0",
     build_file="@//external:googletest.BUILD",
 )
 
