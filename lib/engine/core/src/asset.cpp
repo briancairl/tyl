@@ -10,9 +10,9 @@
 #include <unordered_set>
 
 // Tyl
-#include <tyl/engine/core/resource.hpp>
+#include <tyl/engine/core/asset.hpp>
 
-namespace tyl::engine::core::resource
+namespace tyl::engine::core::asset
 {
 namespace
 {
@@ -44,14 +44,14 @@ std::optional<TypeCode> resolve_type(const Path& path)
   return std::nullopt;
 }
 
-using LoadedResourceMap = std::unordered_map<Path, entt::entity, HashPath>;
+using LoadedAssetMap = std::unordered_map<Path, entt::entity, HashPath>;
 
-LoadedResourceMap& get_loaded_resource_map(entt::registry& reg)
+LoadedAssetMap& get_loaded_asset_map(entt::registry& reg)
 {
   auto& ctx = reg.ctx();
-  if (auto* const rm = ctx.find<LoadedResourceMap>(); rm == nullptr)
+  if (auto* const rm = ctx.find<LoadedAssetMap>(); rm == nullptr)
   {
-    return ctx.emplace<LoadedResourceMap>();
+    return ctx.emplace<LoadedAssetMap>();
   }
   else
   {
@@ -59,12 +59,11 @@ LoadedResourceMap& get_loaded_resource_map(entt::registry& reg)
   }
 }
 
-template <typename ResourceT>
-std::optional<ErrorCode> load(entt::registry& reg, const entt::entity id, const Path& path)
+template <typename AssetT> std::optional<ErrorCode> load(entt::registry& reg, const entt::entity id, const Path& path)
 {
-  using TagType = typename ResourceT::Tag;
-  using LocatorType = typename ResourceT::Locator;
-  static constexpr auto kTypeCodeValue = ResourceT::kTypeCodeValue;
+  using TagType = typename AssetT::Tag;
+  using LocatorType = typename AssetT::Locator;
+  static constexpr auto kTypeCodeValue = AssetT::kTypeCodeValue;
 
   if (!entt::locator<LocatorType>::has_value())
   {
@@ -112,25 +111,25 @@ std::ostream& operator<<(std::ostream& os, const ErrorCode error_code)
   switch (error_code)
   {
   case ErrorCode::UNAVAILABLE: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNAVAILABLE";
+    return os << "tyl::engine::core::asset::ErrorCode::UNAVAILABLE";
   }
   case ErrorCode::EXISTS: {
-    return os << "tyl::engine::core::resource::ErrorCode::EXISTS";
+    return os << "tyl::engine::core::asset::ErrorCode::EXISTS";
   }
   case ErrorCode::LOAD_FAILED: {
-    return os << "tyl::engine::core::resource::ErrorCode::LOAD_FAILED";
+    return os << "tyl::engine::core::asset::ErrorCode::LOAD_FAILED";
   }
   case ErrorCode::LOCATOR_NOT_IMPLEMENTED: {
-    return os << "tyl::engine::core::resource::ErrorCode::LOCATOR_NOT_IMPLEMENTED";
+    return os << "tyl::engine::core::asset::ErrorCode::LOCATOR_NOT_IMPLEMENTED";
   }
   case ErrorCode::UNKNOWN_LOCATOR_TYPE: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_LOCATOR_TYPE";
+    return os << "tyl::engine::core::asset::ErrorCode::UNKNOWN_LOCATOR_TYPE";
   }
   case ErrorCode::UNKNOWN_EXTENSION: {
-    return os << "tyl::engine::core::resource::ErrorCode::UNKNOWN_EXTENSION";
+    return os << "tyl::engine::core::asset::ErrorCode::UNKNOWN_EXTENSION";
   }
   }
-  return os << "tyl::engine::core::resource::ErrorCode::*";
+  return os << "tyl::engine::core::asset::ErrorCode::*";
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
@@ -138,21 +137,21 @@ std::ostream& operator<<(std::ostream& os, const TypeCode type_code)
   switch (type_code)
   {
   case TypeCode::AUDIO: {
-    return os << "tyl::engine::core::resource::TypeCode::AUDIO";
+    return os << "tyl::engine::core::asset::TypeCode::AUDIO";
   }
   case TypeCode::TEXTURE: {
-    return os << "tyl::engine::core::resource::TypeCode::TEXTURE";
+    return os << "tyl::engine::core::asset::TypeCode::TEXTURE";
   }
   case TypeCode::TEXT: {
-    return os << "tyl::engine::core::resource::TypeCode::TEXT";
+    return os << "tyl::engine::core::asset::TypeCode::TEXT";
   }
   }
-  return os << "tyl::engine::core::resource::TypeCode::*";
+  return os << "tyl::engine::core::asset::TypeCode::*";
 }
 
 expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type)
 {
-  auto& rm = get_loaded_resource_map(reg);
+  auto& rm = get_loaded_asset_map(reg);
 
   if (const auto itr = rm.find(path); itr != rm.end())
   {
@@ -190,7 +189,7 @@ expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path)
 
 expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path)
 {
-  auto& rm = get_loaded_resource_map(reg);
+  auto& rm = get_loaded_asset_map(reg);
   if (const auto itr = rm.find(path); itr != rm.end())
   {
     return itr->second;
@@ -203,7 +202,7 @@ expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path)
 
 bool release(entt::registry& reg, const Path& path)
 {
-  auto& rm = get_loaded_resource_map(reg);
+  auto& rm = get_loaded_asset_map(reg);
   if (const auto itr = rm.find(path); itr != rm.end())
   {
     reg.destroy(itr->second);
@@ -224,22 +223,22 @@ bool release(entt::registry& reg, const entt::entity id)
 
 void reload(entt::registry& reg, const ReloadErrorCallback& error_callback)
 {
-  reg.view<TypeCode, Path>().each([&rm = get_loaded_resource_map(reg), &reg, &error_callback](
-                                    entt::entity id, const TypeCode& type, const Path& path) {
-    // Skip is already loaded
-    if (const auto itr = rm.find(path); itr != rm.end())
-    {
-      return;
-    }
-    else if (const auto error_opt = load_any(reg, id, path, type); !error_opt.has_value())
-    {
-      rm.emplace(path, id);
-    }
-    else if (error_callback)
-    {
-      error_callback(reg, id, path, *error_opt);
-    }
-  });
+  reg.view<TypeCode, Path>().each(
+    [&rm = get_loaded_asset_map(reg), &reg, &error_callback](entt::entity id, const TypeCode& type, const Path& path) {
+      // Skip is already loaded
+      if (const auto itr = rm.find(path); itr != rm.end())
+      {
+        return;
+      }
+      else if (const auto error_opt = load_any(reg, id, path, type); !error_opt.has_value())
+      {
+        rm.emplace(path, id);
+      }
+      else if (error_callback)
+      {
+        error_callback(reg, id, path, *error_opt);
+      }
+    });
 }
 
-}  // namespace tyl::engine::core::resource
+}  // namespace tyl::engine::core::asset

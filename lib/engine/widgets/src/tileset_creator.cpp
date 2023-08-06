@@ -18,7 +18,7 @@
 
 // Tyl
 #include <tyl/debug/assert.hpp>
-#include <tyl/engine/core/resource.hpp>
+#include <tyl/engine/core/asset.hpp>
 #include <tyl/engine/widgets/tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/utility/dynamic_bitset.hpp>
@@ -144,9 +144,9 @@ private:
     else if (const auto* const payload = ImGui::AcceptDragDropPayload("_TEXTURE_ASSET", /*cond = */ 0);
              payload != nullptr)
     {
-      const core::resource::Path asset_path{
+      const core::asset::Path asset_path{
         std::string_view{reinterpret_cast<char*>(payload->Data), static_cast<std::size_t>(payload->DataSize)}};
-      if (auto guid_or_error = core::resource::get(registry, asset_path); guid_or_error.has_value())
+      if (auto guid_or_error = core::asset::get(registry, asset_path); guid_or_error.has_value())
       {
         texture_id_.emplace(std::move(guid_or_error).value());
         active_selection_.reset();

@@ -15,8 +15,8 @@
 #include <imgui_internal.h>
 
 // Tyl
+#include <tyl/engine/core/asset.hpp>
 #include <tyl/engine/core/drag_and_drop.hpp>
-#include <tyl/engine/core/resource.hpp>
 #include <tyl/engine/widgets/drag_and_drop.hpp>
 #include <tyl/utility/entt.hpp>
 
@@ -65,7 +65,7 @@ public:
       {
         // TODO(perf) do loading in another thread
         // TODO(qol) show loading progress bar
-        if (const auto id_or_error = core::resource::create(registry, file_path_name); !id_or_error.has_value())
+        if (const auto id_or_error = core::asset::create(registry, file_path_name); !id_or_error.has_value())
         {
           std::ostringstream oss;
           oss << "Error loading [" << file_path_name << "]: " << id_or_error.error();

@@ -4,7 +4,7 @@ cc_library(
   srcs=["src/texture_asset_manager.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
-  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/graphics/device", "//lib/common/utility:entt"],
+  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/graphics/device", "//lib/common/utility:entt"],
   visibility=["//visibility:public"]
 )
 
@@ -14,7 +14,7 @@ cc_library(
   srcs=["src/text_asset_manager.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
-  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/common/utility:entt"],
+  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/common/utility:entt"],
   visibility=["//visibility:public"]
 )
 
@@ -24,7 +24,7 @@ cc_library(
   srcs=["src/drag_and_drop.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
-  deps=["@imgui", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/engine/core:drag_and_drop", "//lib/common/utility:entt"],
+  deps=["@imgui", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/engine/core:drag_and_drop", "//lib/common/utility:entt"],
   visibility=["//visibility:public"]
 )
 
@@ -34,6 +34,6 @@ cc_library(
   srcs=["src/tileset_creator.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
-  deps=["@imgui", "//lib/common/utility:expected", "//lib/engine/core:resource", "//lib/graphics/device", "//lib/common/utility:entt", "//lib/common/utility:dynamic_bitset"],
+  deps=["@imgui", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/graphics/device", "//lib/common/utility:entt", "//lib/common/utility:dynamic_bitset"],
   visibility=["//visibility:public"]
 )

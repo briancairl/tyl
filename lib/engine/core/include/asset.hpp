@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file resource.hpp
+ * @file asset.hpp
  */
 #pragma once
 
@@ -17,7 +17,7 @@
 // Tyl
 #include <tyl/utility/expected.hpp>
 
-namespace tyl::engine::core::resource
+namespace tyl::engine::core::asset
 {
 
 using Path = std::filesystem::path;
@@ -43,7 +43,7 @@ enum class TypeCode
 
 std::ostream& operator<<(std::ostream& os, const TypeCode type_code);
 
-template <typename ResourceT, TypeCode TYPE> struct Resource
+template <typename AssetT, TypeCode TYPE> struct Asset
 {
   static constexpr TypeCode kTypeCodeValue = TYPE;
   struct Tag
@@ -55,13 +55,13 @@ template <typename ResourceT, TypeCode TYPE> struct Resource
   };
 };
 
-struct Audio final : Resource<Audio, TypeCode::AUDIO>
+struct Audio final : Asset<Audio, TypeCode::AUDIO>
 {};
 
-struct Texture final : Resource<Texture, TypeCode::TEXTURE>
+struct Texture final : Asset<Texture, TypeCode::TEXTURE>
 {};
 
-struct Text final : Resource<Text, TypeCode::TEXT>
+struct Text final : Asset<Text, TypeCode::TEXT>
 {};
 
 expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type);
@@ -78,4 +78,4 @@ using ReloadErrorCallback = std::function<void(entt::registry& reg, const entt::
 
 void reload(entt::registry& reg, const ReloadErrorCallback& error_callback = nullptr);
 
-}  // namespace tyl::engine::core::resource
+}  // namespace tyl::engine::core::asset

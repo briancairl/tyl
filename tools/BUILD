@@ -6,7 +6,7 @@ cc_binary(
 		"//lib/graphics/device",
 		"//lib/graphics/host:image",
 		"//lib/engine/core:app",
-		"//lib/engine/core:resource",
+		"//lib/engine/core:asset",
 		"//lib/engine/graphics:primitives_renderer",
 		"//lib/engine/widgets:tileset_creator",
 		"//lib/engine/widgets:texture_asset_manager",

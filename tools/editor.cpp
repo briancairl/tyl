@@ -28,7 +28,7 @@
 // Tyl
 #include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/app.hpp>
-#include <tyl/engine/core/resource.hpp>
+#include <tyl/engine/core/asset.hpp>
 #include <tyl/engine/graphics/primitives_renderer.hpp>
 #include <tyl/engine/graphics/types.hpp>
 #include <tyl/engine/widgets/drag_and_drop.hpp>
@@ -45,9 +45,9 @@ using namespace tyl::engine;
 using namespace tyl::graphics;
 
 
-struct DefaultTextureLocator : core::resource::Texture::Locator
+struct DefaultTextureLocator : core::asset::Texture::Locator
 {
-  bool load(entt::registry& reg, const entt::entity id, const core::resource::Path& path) const override
+  bool load(entt::registry& reg, const entt::entity id, const core::asset::Path& path) const override
   {
     if (auto image_or_error = host::Image::load(path.string().c_str()); image_or_error.has_value())
     {
@@ -61,9 +61,9 @@ struct DefaultTextureLocator : core::resource::Texture::Locator
   }
 };
 
-struct DefaultTextLocator : core::resource::Text::Locator
+struct DefaultTextLocator : core::asset::Text::Locator
 {
-  bool load(entt::registry& reg, const entt::entity id, const core::resource::Path& path) const override
+  bool load(entt::registry& reg, const entt::entity id, const core::asset::Path& path) const override
   {
     if (std::ifstream ifs{path}; ifs.is_open())
     {
@@ -94,8 +94,8 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  entt::locator<core::resource::Texture::Locator>::emplace<DefaultTextureLocator>();
-  entt::locator<core::resource::Text::Locator>::emplace<DefaultTextLocator>();
+  entt::locator<core::asset::Texture::Locator>::emplace<DefaultTextureLocator>();
+  entt::locator<core::asset::Text::Locator>::emplace<DefaultTextLocator>();
 
   entt::registry registry;
 

@@ -22,7 +22,7 @@
 #include <ImGuiFileDialog.h>
 
 // Tyl
-#include <tyl/engine/core/resource.hpp>
+#include <tyl/engine/core/asset.hpp>
 #include <tyl/engine/widgets/text_asset_manager.hpp>
 #include <tyl/utility/entt.hpp>
 
@@ -53,8 +53,8 @@ public:
 
   void update(entt::registry& registry)
   {
-    // Add view state to all available texture resources
-    registry.template view<core::resource::Text::Tag>(entt::exclude<PreviewProperties>)
+    // Add view state to all available texture assets
+    registry.template view<core::asset::Text::Tag>(entt::exclude<PreviewProperties>)
       .each([&registry](const entt::entity guid) { registry.emplace<PreviewProperties>(guid); });
 
     handle_scrolling();
@@ -63,7 +63,7 @@ public:
     handle_error_popup();
 
     // Handle invidual previews
-    registry.view<core::resource::Text::Tag, core::resource::Path, std::string, PreviewProperties>().each(
+    registry.view<core::asset::Text::Tag, core::asset::Path, std::string, PreviewProperties>().each(
       [&](const entt::entity guid, const auto& path, const auto& text, auto& properties) {
         ImGui::Checkbox(path.string().c_str(), &properties.is_selected);
         if (!ImGui::IsItemHovered())
@@ -113,11 +113,11 @@ private:
           // TODO(qol) show pop-up "are you sure" before deleting
           // TODO(qol) show deleting progress bar
           // TODO(perf) delete in separate thread
-          registry.view<core::resource::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
             [&registry](const entt::entity guid, const auto& properties) {
               if (properties.is_selected)
               {
-                core::resource::release(registry, guid);
+                core::asset::release(registry, guid);
               }
             });
         }
@@ -129,13 +129,13 @@ private:
       {
         if (ImGui::MenuItem("all"))
         {
-          registry.view<core::resource::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
             [](const entt::entity guid, auto& properties) { properties.is_selected = true; });
         }
 
         if (ImGui::MenuItem("none"))
         {
-          registry.view<core::resource::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
             [](const entt::entity guid, auto& properties) { properties.is_selected = false; });
         }
 
@@ -162,7 +162,7 @@ private:
         {
           // TODO(perf) do loading in another thread
           // TODO(qol) show loading progress bar
-          if (const auto id_or_error = core::resource::create(registry, file_path_name, core::resource::TypeCode::TEXT);
+          if (const auto id_or_error = core::asset::create(registry, file_path_name, core::asset::TypeCode::TEXT);
               !id_or_error.has_value())
           {
             std::ostringstream oss;

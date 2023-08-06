@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file resource.hpp
+ * @file app.hpp
  */
 #pragma once
 
