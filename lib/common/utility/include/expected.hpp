@@ -84,9 +84,57 @@ public:
   constexpr const ValueT* operator->() const noexcept { return &value(); }
   constexpr ValueT* operator->() noexcept { return &value(); }
 
+  constexpr bool operator==(const expected<ValueT, ErrorT>& rhs) const { return this->u_ == rhs.u_; }
+  constexpr bool operator!=(const expected<ValueT, ErrorT>& rhs) const { return this->u_ != rhs.u_; }
+
 private:
   /// Underlying storage
   std::variant<ValueT, ErrorT> u_;
 };
+
+/**
+ * @copydoc expected
+ *
+ * Specialization for <code>ValueT == void</code>
+ */
+template <typename ErrorT> class expected<void, ErrorT>
+{
+public:
+  using value_type = void;
+  using error_type = ErrorT;
+
+  constexpr expected(const unexpected<ErrorT>& unexpected) : u_{std::in_place_type<ErrorT>, unexpected.error()} {}
+
+  constexpr expected(unexpected<ErrorT>&& unexpected) : u_{std::in_place_type<ErrorT>, std::move(unexpected).error()} {}
+
+  constexpr expected() = default;
+
+  constexpr bool has_value() const noexcept { return std::holds_alternative<std::monostate>(u_); }
+  constexpr operator bool() const noexcept { return has_value(); }
+
+  constexpr const ErrorT& error() const& noexcept { return std::get<ErrorT>(u_); }
+  constexpr ErrorT& error() & noexcept { return std::get<ErrorT>(u_); }
+  constexpr const ErrorT&& error() const&& noexcept { return std::get<ErrorT>(u_); }
+  constexpr ErrorT&& error() && noexcept { return std::move(std::get<ErrorT>(u_)); }
+
+  constexpr bool operator==(const expected<void, ErrorT>& rhs) const { return this->u_ == rhs.u_; }
+  constexpr bool operator!=(const expected<void, ErrorT>& rhs) const { return this->u_ != rhs.u_; }
+
+private:
+  /// Underlying storage
+  std::variant<std::monostate, ErrorT> u_;
+};
+
+template <typename ValueT, typename ErrorT>
+constexpr bool operator==(const expected<ValueT, ErrorT>& lhs, const ErrorT rhs)
+{
+  return !lhs.has_value() and lhs.error() == rhs;
+}
+
+template <typename ValueT, typename ErrorT>
+constexpr bool operator!=(const expected<ValueT, ErrorT>& lhs, const ErrorT rhs)
+{
+  return lhs.has_value() or lhs.error() != rhs;
+}
 
 }  // namespace tyl
