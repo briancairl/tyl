@@ -7,3 +7,11 @@ gtest(
   deps=["//lib/common/async:worker_pool",],
   visibility=["//visibility:public"],
 )
+
+gtest(
+  name="synchronized",
+  timeout = "short",
+  srcs=["synchronized.cpp"],
+  deps=["//lib/common/async:synchronized",],
+  visibility=["//visibility:public"],
+)
