@@ -1,17 +1,18 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file tileset_creator.hpp
+ * @file drag_and_drop.hpp
  */
 #pragma once
 
-// Entt
-#include <entt/fwd.hpp>
+// C++ Standard Library
+#include <memory>
 
 // ImGui
 #include <imgui.h>
 
 // Tyl
+#include <tyl/engine/core/resources_fwd.hpp>
 #include <tyl/utility/expected.hpp>
 
 namespace tyl::engine::widgets
@@ -34,7 +35,7 @@ public:
 
   ~DragAndDrop();
 
-  void update(ImGuiContext* const imgui_ctx, entt::registry& reg);
+  void update(ImGuiContext* const imgui_ctx, core::Resources& resources);
 
 private:
   class Impl;

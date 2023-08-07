@@ -7,14 +7,10 @@
 
 // C++ Standard Library
 #include <filesystem>
-#include <functional>
 #include <iosfwd>
-#include <optional>
-
-// Entt
-#include <entt/entt.hpp>
 
 // Tyl
+#include <tyl/engine/core/resources_fwd.hpp>
 #include <tyl/utility/expected.hpp>
 
 namespace tyl::engine::core::asset
@@ -24,58 +20,46 @@ using Path = std::filesystem::path;
 
 enum class ErrorCode
 {
-  UNAVAILABLE,
-  EXISTS,
-  LOAD_FAILED,
-  LOCATOR_NOT_IMPLEMENTED,
-  UNKNOWN_LOCATOR_TYPE,
-  UNKNOWN_EXTENSION,
+  kUnavailable,
+  kExists,
+  kLoadFailed,
+  kUnknownExtension,
+  kUnimplementedLoader
 };
-
-std::ostream& operator<<(std::ostream& os, const ErrorCode error_code);
 
 enum class TypeCode
 {
-  AUDIO,
-  TEXTURE,
-  TEXT
+  kAudio,
+  kTexture,
+  kText
 };
 
-std::ostream& operator<<(std::ostream& os, const TypeCode type_code);
-
-template <typename AssetT, TypeCode TYPE> struct Asset
+template <TypeCode CODE> struct TypeTag
 {
-  static constexpr TypeCode kTypeCodeValue = TYPE;
-  struct Tag
-  {};
-  struct Locator
-  {
-    virtual ~Locator() = default;
-    virtual bool load(entt::registry& reg, const entt::entity id, const Path& path) const = 0;
-  };
+  static constexpr TypeCode type_code = CODE;
 };
 
-struct Audio final : Asset<Audio, TypeCode::AUDIO>
+using AudioTag = TypeTag<TypeCode::kAudio>;
+using TextureTag = TypeTag<TypeCode::kTexture>;
+using TextTag = TypeTag<TypeCode::kText>;
+
+struct IsLoading
 {};
 
-struct Texture final : Asset<Texture, TypeCode::TEXTURE>
-{};
+expected<entt::entity, ErrorCode> load(Resources& resources, const Path& path, const TypeCode type);
 
-struct Text final : Asset<Text, TypeCode::TEXT>
-{};
-
-expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path, const TypeCode type);
-
-expected<entt::entity, ErrorCode> create(entt::registry& reg, const Path& path);
-
-expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path);
+expected<entt::entity, ErrorCode> load(Resources& resources, const Path& path);
 
 bool release(entt::registry& reg, const Path& path);
 
 bool release(entt::registry& reg, const entt::entity);
 
-using ReloadErrorCallback = std::function<void(entt::registry& reg, const entt::entity, const Path&, const ErrorCode)>;
+void update(entt::registry& reg);
 
-void reload(entt::registry& reg, const ReloadErrorCallback& error_callback = nullptr);
+expected<entt::entity, ErrorCode> get(entt::registry& reg, const Path& path);
+
+std::ostream& operator<<(std::ostream& os, const ErrorCode error_code);
+
+std::ostream& operator<<(std::ostream& os, const TypeCode type_code);
 
 }  // namespace tyl::engine::core::asset

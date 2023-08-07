@@ -29,6 +29,7 @@
 #include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/app.hpp>
 #include <tyl/engine/core/asset.hpp>
+#include <tyl/engine/core/resources.hpp>
 #include <tyl/engine/graphics/primitives_renderer.hpp>
 #include <tyl/engine/graphics/types.hpp>
 #include <tyl/engine/widgets/drag_and_drop.hpp>
@@ -45,41 +46,6 @@ using namespace tyl::engine;
 using namespace tyl::graphics;
 
 
-struct DefaultTextureLocator : core::asset::Texture::Locator
-{
-  bool load(entt::registry& reg, const entt::entity id, const core::asset::Path& path) const override
-  {
-    if (auto image_or_error = host::Image::load(path.string().c_str()); image_or_error.has_value())
-    {
-      reg.emplace<device::Texture>(id, image_or_error->texture());
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-};
-
-struct DefaultTextLocator : core::asset::Text::Locator
-{
-  bool load(entt::registry& reg, const entt::entity id, const core::asset::Path& path) const override
-  {
-    if (std::ifstream ifs{path}; ifs.is_open())
-    {
-      std::stringstream ss;
-      ss << ifs.rdbuf();
-      reg.emplace<std::string>(id, ss.str());
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
-};
-
-
 int main(int argc, char** argv)
 {
   auto app = tyl::engine::core::App::create({
@@ -94,19 +60,16 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  entt::locator<core::asset::Texture::Locator>::emplace<DefaultTextureLocator>();
-  entt::locator<core::asset::Text::Locator>::emplace<DefaultTextLocator>();
-
-  entt::registry registry;
+  core::Resources resources;
 
   {
-    const auto id = registry.create();
+    const auto id = resources.registry.create();
 
-    registry.emplace<graphics::DrawType::LineStrip>(id);
-    registry.emplace<graphics::VertexColor>(id, 1.0f, 0.0f, 0.0f, 1.0f);
+    resources.registry.emplace<graphics::DrawType::LineStrip>(id);
+    resources.registry.emplace<graphics::VertexColor>(id, 1.0f, 0.0f, 0.0f, 1.0f);
 
     {
-      auto& vertices = registry.emplace<graphics::VertexList2D>(id);
+      auto& vertices = resources.registry.emplace<graphics::VertexList2D>(id);
       vertices.emplace_back(+0.5f, +0.0f);
       vertices.emplace_back(+0.5f, +0.5f);
       vertices.emplace_back(-0.5f, -0.0f);
@@ -115,7 +78,7 @@ int main(int argc, char** argv)
   }
 
 
-  auto& manipulated_point = [&registry]() -> tyl::Vec2f& {
+  auto& manipulated_point = [&registry = resources.registry]() -> tyl::Vec2f& {
     const auto id = registry.create();
 
     registry.emplace<graphics::DrawType::LineStrip>(id);
@@ -204,16 +167,18 @@ int main(int argc, char** argv)
       cmat_inv.block<2, 2>(0, 0) * app_state.cursor_position_normalized + cmat_inv.col(2).head<2>();
     manipulated_point = cursor_position_cmat;
 
-    primitives_renderer->draw(cmat, registry);
-    tileset_creator->update(app_state.imgui_context, registry);
-    texture_asset_manager->update(app_state.imgui_context, registry);
-    text_asset_manager->update(app_state.imgui_context, registry);
-    drag_and_drop->update(app_state.imgui_context, registry);
+    primitives_renderer->draw(cmat, resources.registry);
+    tileset_creator->update(app_state.imgui_context, resources);
+    texture_asset_manager->update(app_state.imgui_context, resources);
+    text_asset_manager->update(app_state.imgui_context, resources);
+    drag_and_drop->update(app_state.imgui_context, resources);
+
+    tyl::engine::core::asset::update(resources.registry);
 
     return true;
   };
 
-  while (app->update(registry, update_callback))
+  while (app->update(resources.registry, update_callback))
   {}
   return 0;
 }

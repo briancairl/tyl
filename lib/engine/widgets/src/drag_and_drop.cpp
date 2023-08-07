@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file drag_and_drop_handler.cpp
+ * @file drag_and_drop.cpp
  */
 
 // C++ Standard Library
@@ -17,6 +17,7 @@
 // Tyl
 #include <tyl/engine/core/asset.hpp>
 #include <tyl/engine/core/drag_and_drop.hpp>
+#include <tyl/engine/core/resources.hpp>
 #include <tyl/engine/widgets/drag_and_drop.hpp>
 #include <tyl/utility/entt.hpp>
 
@@ -30,7 +31,41 @@ class DragAndDrop::Impl
 public:
   Impl() {}
 
-  void update(entt::registry& registry)
+  void update(core::Resources& resources)
+  {
+    if (!handle_load_error_popup(resources.registry))
+    {
+      return;
+    }
+    else if (!handle_load_progress_popup(resources.registry))
+    {
+      return;
+    }
+
+    if (auto* data_ptr =
+          get_if<core::DragAndDropData>(resources.registry, [](const auto& data) { return !data.paths.empty(); });
+        data_ptr != nullptr)
+    {
+      for (const auto& file_path_name : data_ptr->paths)
+      {
+        // TODO(perf) do loading in another thread
+        // TODO(qol) show loading progress bar
+        if (const auto id_or_error = core::asset::load(resources, file_path_name); !id_or_error.has_value())
+        {
+          std::ostringstream oss;
+          oss << "Error loading [" << file_path_name << "]: " << id_or_error.error();
+          last_errors_.emplace_back(oss.str());
+        }
+        else
+        {
+          currently_loading_.emplace_back(std::move(id_or_error).value());
+        }
+      }
+    }
+  }
+
+private:
+  bool handle_load_error_popup(entt::registry& registry)
   {
     if (!last_errors_.empty() && !ImGui::IsPopupOpen("#ResultDialogue"))
     {
@@ -40,7 +75,7 @@ public:
     if (ImGui::BeginPopup("#ResultDialogue"))
     {
       const bool should_close = ImGui::Button("close");
-      ImGui::Text("imports: (%d)", static_cast<int>(last_imported_counter_));
+      ImGui::Text("imports: (%d)", static_cast<int>(currently_loading_.size()));
       ImGui::Text("errors: (%d)", static_cast<int>(last_errors_.size()));
       for (const auto& error : last_errors_)
       {
@@ -53,35 +88,67 @@ public:
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndPopup();
-
-      return;
+      return false;
     }
-    else if (auto* data_ptr =
-               get_if<core::DragAndDropData>(registry, [](const auto& data) { return !data.paths.empty(); });
-             data_ptr != nullptr)
+    else
     {
-      last_imported_counter_ = 0;
-      for (const auto& file_path_name : data_ptr->paths)
-      {
-        // TODO(perf) do loading in another thread
-        // TODO(qol) show loading progress bar
-        if (const auto id_or_error = core::asset::create(registry, file_path_name); !id_or_error.has_value())
-        {
-          std::ostringstream oss;
-          oss << "Error loading [" << file_path_name << "]: " << id_or_error.error();
-          last_errors_.emplace_back(oss.str());
-        }
-        else
-        {
-          ++last_imported_counter_;
-        }
-      }
+      return true;
     }
   }
 
-private:
-  std::size_t last_imported_counter_ = 0;
+  bool handle_load_progress_popup(entt::registry& registry)
+  {
+    if (!currently_loading_.empty() && !ImGui::IsPopupOpen("Loading Assets"))
+    {
+      ImGui::OpenPopup("Loading Assets");
+    }
+
+    if (ImGui::BeginPopupModal("Loading Assets"))
+    {
+      core::asset::Path* loaded_path = nullptr;
+      std::size_t loaded_count = 0;
+      for (const auto id : currently_loading_)
+      {
+        if (registry.any_of<core::asset::IsLoading>(id))
+        {
+          continue;
+        }
+        else
+        {
+          loaded_path = std::addressof(registry.get<core::asset::Path>(id));
+          ++loaded_count;
+        }
+      }
+
+      ImGui::ProgressBar(static_cast<float>(loaded_count) / static_cast<float>(currently_loading_.size()));
+      if (loaded_path != nullptr)
+      {
+        ImGui::Text("%s", loaded_path->string().c_str());
+      }
+
+      if (loaded_count == currently_loading_.size())
+      {
+        for (const auto id : currently_loading_)
+        {
+          if (registry.any_of<core::asset::ErrorCode>(id))
+          {
+            const auto& [error, file_path_name] = registry.get<core::asset::ErrorCode, core::asset::Path>(id);
+            std::ostringstream oss;
+            oss << "Error loading [" << file_path_name << "]: " << error;
+            last_errors_.emplace_back(oss.str());
+          }
+        }
+        currently_loading_.clear();
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndPopup();
+      return false;
+    }
+    return true;
+  }
+
   std::vector<std::string> last_errors_ = {};
+  std::vector<entt::entity> currently_loading_ = {};
 };
 
 DragAndDrop::~DragAndDrop() = default;
@@ -93,10 +160,10 @@ tyl::expected<DragAndDrop, DragAndDrop::OnCreateErrorCode> DragAndDrop::create(c
 
 DragAndDrop::DragAndDrop(std::unique_ptr<Impl>&& impl) : impl_{std::move(impl)} {}
 
-void DragAndDrop::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
+void DragAndDrop::update(ImGuiContext* const imgui_ctx, core::Resources& resources)
 {
   ImGui::SetCurrentContext(imgui_ctx);
-  impl_->update(reg);
+  impl_->update(resources);
 }
 
 }  // namespace tyl::engine::widgets

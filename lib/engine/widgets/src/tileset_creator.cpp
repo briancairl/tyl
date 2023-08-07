@@ -19,6 +19,7 @@
 // Tyl
 #include <tyl/debug/assert.hpp>
 #include <tyl/engine/core/asset.hpp>
+#include <tyl/engine/core/resources.hpp>
 #include <tyl/engine/widgets/tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/utility/dynamic_bitset.hpp>
@@ -39,8 +40,10 @@ class TilesetCreator::Impl
 public:
   Impl() {}
 
-  void update(entt::registry& registry)
+  void update(core::Resources& resources)
   {
+    auto& registry = resources.registry;
+
     if (ImGui::BeginPopup("#SelectionPicker", ImGuiWindowFlags_HorizontalScrollbar))
     {
       handle_texture_selection_creation(registry);
@@ -402,7 +405,7 @@ TilesetCreator::TilesetCreator(const Options& options, std::unique_ptr<Impl>&& i
     options_{options}, impl_{std::move(impl)}
 {}
 
-void TilesetCreator::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
+void TilesetCreator::update(ImGuiContext* const imgui_ctx, core::Resources& resources)
 {
   ImGui::ShowDemoWindow();
   ImGui::SetCurrentContext(imgui_ctx);
@@ -411,7 +414,7 @@ void TilesetCreator::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
         nullptr,
         ImGuiWindowFlags_AlwaysAutoResize | (impl_->lock_window_movement() ? ImGuiWindowFlags_NoMove : 0)))
   {
-    impl_->update(reg);
+    impl_->update(resources);
   }
   ImGui::End();
 }

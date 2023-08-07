@@ -126,17 +126,17 @@ public:
   /**
    * @brief Executes a unary function, passed the underlying value, under lock
    */
-  template <typename UnaryFn> void with_lock(UnaryFn fn)
+  template <typename UnaryFn> decltype(auto) with_lock(UnaryFn fn)
   {
     if constexpr (std::is_invocable<UnaryFn, const ValueT&>())
     {
       auto locked = rlock();
-      fn(*locked);
+      return fn(*locked);
     }
     else
     {
       auto locked = wlock();
-      fn(*locked);
+      return fn(*locked);
     }
   }
 

@@ -18,7 +18,6 @@ cc_library(
   visibility=["//visibility:public"]
 )
 
-
 cc_library(
   name="primitives_renderer",
   hdrs=["include/primitives_renderer.hpp"],

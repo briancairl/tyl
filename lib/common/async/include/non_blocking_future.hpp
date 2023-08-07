@@ -7,6 +7,7 @@
 
 // C++ Standard Library
 #include <atomic>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -38,6 +39,8 @@ template <typename T> class non_blocking_promise;
 template <typename T> class non_blocking_future
 {
 public:
+  non_blocking_future(non_blocking_future&&) = default;
+
   /**
    * @brief Returns true if value held by future is valid
    */
@@ -118,17 +121,20 @@ private:
    */
   expected<T, non_blocking_future_error> get()
   {
-    expected<T, non_blocking_future_error> result = unexpected{non_blocking_future_error::retrieved};
     if (!result_ready_flag_)
     {
-      result = unexpected{non_blocking_future_error::not_ready};
+      return unexpected{non_blocking_future_error::not_ready};
     }
     else if (std::lock_guard lock{result_mutex_}; result_opt_.has_value())
     {
-      result = std::move(result_opt_).value();
+      auto result = std::move(result_opt_).value();
       result_opt_.reset();
+      return expected<T, non_blocking_future_error>{std::move(result)};
     }
-    return result;
+    else
+    {
+      return unexpected{non_blocking_future_error::retrieved};
+    }
   }
 
   /// Protects shared result state between threads of execution

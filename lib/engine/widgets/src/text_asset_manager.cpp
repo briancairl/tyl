@@ -23,6 +23,7 @@
 
 // Tyl
 #include <tyl/engine/core/asset.hpp>
+#include <tyl/engine/core/resources.hpp>
 #include <tyl/engine/widgets/text_asset_manager.hpp>
 #include <tyl/utility/entt.hpp>
 
@@ -51,19 +52,21 @@ class TextAssetManager::Impl
 public:
   Impl() {}
 
-  void update(entt::registry& registry)
+  void update(core::Resources& resources)
   {
+    auto& registry = resources.registry;
+
     // Add view state to all available texture assets
-    registry.template view<core::asset::Text::Tag>(entt::exclude<PreviewProperties>)
+    registry.template view<core::asset::TextTag>(entt::exclude<PreviewProperties>)
       .each([&registry](const entt::entity guid) { registry.emplace<PreviewProperties>(guid); });
 
     handle_scrolling();
     handle_menu(registry);
-    handle_file_dialogue(registry);
+    handle_file_dialogue(resources);
     handle_error_popup();
 
     // Handle invidual previews
-    registry.view<core::asset::Text::Tag, core::asset::Path, std::string, PreviewProperties>().each(
+    registry.view<core::asset::TextTag, core::asset::Path, std::string, PreviewProperties>().each(
       [&](const entt::entity guid, const auto& path, const auto& text, auto& properties) {
         ImGui::Checkbox(path.string().c_str(), &properties.is_selected);
         if (!ImGui::IsItemHovered())
@@ -113,7 +116,7 @@ private:
           // TODO(qol) show pop-up "are you sure" before deleting
           // TODO(qol) show deleting progress bar
           // TODO(perf) delete in separate thread
-          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::TextTag, PreviewProperties>().each(
             [&registry](const entt::entity guid, const auto& properties) {
               if (properties.is_selected)
               {
@@ -129,13 +132,13 @@ private:
       {
         if (ImGui::MenuItem("all"))
         {
-          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::TextTag, PreviewProperties>().each(
             [](const entt::entity guid, auto& properties) { properties.is_selected = true; });
         }
 
         if (ImGui::MenuItem("none"))
         {
-          registry.view<core::asset::Text::Tag, PreviewProperties>().each(
+          registry.view<core::asset::TextTag, PreviewProperties>().each(
             [](const entt::entity guid, auto& properties) { properties.is_selected = false; });
         }
 
@@ -152,7 +155,7 @@ private:
     }
   }
 
-  void handle_file_dialogue(entt::registry& registry)
+  void handle_file_dialogue(core::Resources& resources)
   {
     if (ImGuiFileDialog::Instance()->Display("#AssetPicker"))
     {
@@ -162,7 +165,7 @@ private:
         {
           // TODO(perf) do loading in another thread
           // TODO(qol) show loading progress bar
-          if (const auto id_or_error = core::asset::create(registry, file_path_name, core::asset::TypeCode::TEXT);
+          if (const auto id_or_error = core::asset::load(resources, file_path_name, core::asset::TypeCode::kText);
               !id_or_error.has_value())
           {
             std::ostringstream oss;
@@ -212,12 +215,12 @@ TextAssetManager::TextAssetManager(const Options& options, std::unique_ptr<Impl>
     options_{options}, impl_{std::move(impl)}
 {}
 
-void TextAssetManager::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
+void TextAssetManager::update(ImGuiContext* const imgui_ctx, core::Resources& resources)
 {
   ImGui::SetCurrentContext(imgui_ctx);
   if (ImGui::Begin(options_.name, nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_HorizontalScrollbar))
   {
-    impl_->update(reg);
+    impl_->update(resources);
   }
   ImGui::End();
 }
