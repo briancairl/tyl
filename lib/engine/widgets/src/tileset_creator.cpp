@@ -5,6 +5,7 @@
  */
 
 // C++ Standard Library
+#include <cstring>
 #include <memory>
 #include <optional>
 
@@ -44,33 +45,33 @@ public:
   {
     auto& registry = resources.registry;
 
-    if (ImGui::BeginPopup("#SelectionPicker", ImGuiWindowFlags_HorizontalScrollbar))
-    {
-      handle_texture_selection_creation(registry);
-      ImGui::SliderFloat("scaling", &scaling_, kScalingMin, kScalingMax);
+    handle_texture_selection_creation_popup(registry);
 
-      ImGui::BeginChild("#SelectionTabs", ImVec2{0, 150}, kShowBorders, ImGuiWindowFlags_HorizontalScrollbar);
-      if (ImGui::BeginTabBar("MyTabBar", ImGuiTabBarFlags_Reorderable))
+    if (ImGui::BeginPopup(
+          "#SelectionPicker",
+          ImGuiWindowFlags_HorizontalScrollbar |
+            (texture_id_.has_value() ? ImGuiWindowFlags_MenuBar : ImGuiWindowFlags_None)))
+    {
+      handle_texture_selection_creation_menu(registry);
+      if (ImGui::BeginCombo("selection", next_selection_label_buffer_))
       {
         registry.view<SelectionTag, std::string>().each([this](const entt::entity id, const auto& label) {
           ImGui::PushID(static_cast<int>(id));
-          if (ImGui::BeginTabItem(label.c_str(), nullptr, ImGuiTabItemFlags_None))
+          if (ImGui::Selectable(label.c_str(), active_selection_ == id))
           {
             active_selection_ = id;
-            ImGui::EndTabItem();
+            std::strcpy(next_selection_label_buffer_, label.c_str());
           }
           ImGui::PopID();
         });
-        ImGui::EndTabBar();
+        ImGui::EndCombo();
       }
-      handle_texture_selection_grid_properties(registry);
-      handle_texture_selection_rect_properties(registry);
-      ImGui::EndChild();
 
-      if (active_selection_.has_value() && ImGui::Button("delete current"))
+      if (active_selection_.has_value())
       {
-        registry.destroy(*active_selection_);
-        active_selection_.reset();
+        ImGui::SliderFloat("scaling", &scaling_, kScalingMin, kScalingMax);
+        handle_texture_selection_grid_properties(registry, *active_selection_);
+        handle_texture_selection_rect_properties(registry, *active_selection_);
       }
       ImGui::EndPopup();
     }
@@ -99,9 +100,10 @@ public:
     }
     ImGui::EndChild();
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+    if (open_selection_picker_popup_ or ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
       ImGui::OpenPopup("#SelectionPicker");
+      open_selection_picker_popup_ = false;
     }
 
     handle_texture_drag_and_drop(registry);
@@ -162,46 +164,111 @@ private:
     ImGui::EndDragDropTarget();
   }
 
-  void handle_texture_selection_creation(entt::registry& registry)
+  void handle_texture_selection_creation_menu(entt::registry& registry)
   {
     if (!texture_id_.has_value())
     {
       return;
     }
 
-    if (ImGui::Button("new rect"))
+    if (ImGui::BeginMenuBar())
     {
-      const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
-      const auto id = registry.create();
-      registry.emplace<std::string>(id, "rect");
-      registry.emplace<SelectionTag>(id);
+      if (ImGui::BeginMenu("create"))
       {
-        auto& select = registry.emplace<SelectionRect>(id);
-        select.size.x = texture.shape().height;
-        select.size.y = texture.shape().width;
+        if (ImGui::MenuItem("new rect"))
+        {
+          next_selection_shape_ = NextSelectionShape::kRect;
+          open_selection_label_popup_ = true;
+        }
+        if (ImGui::MenuItem("new grid"))
+        {
+          next_selection_shape_ = NextSelectionShape::kGrid;
+          open_selection_label_popup_ = true;
+        }
+        ImGui::EndMenu();
       }
-      active_selection_ = id;
-    }
 
-    if (ImGui::Button("new grid"))
-    {
-      const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
-      const auto id = registry.create();
-      registry.emplace<std::string>(id, "grid");
-      registry.emplace<SelectionTag>(id);
-      registry.emplace<SelectionGrid>(id, 10, 10, ImVec2(texture.shape().height / 10, texture.shape().width / 10));
-      active_selection_ = id;
+      if (active_selection_.has_value() and ImGui::BeginMenu("edit"))
+      {
+        if (ImGui::MenuItem("delete"))
+        {
+          registry.destroy(*active_selection_);
+          active_selection_.reset();
+
+          auto view = registry.view<SelectionTag, std::string>();
+          for (const auto id : view)
+          {
+            active_selection_ = id;
+            std::strcpy(next_selection_label_buffer_, registry.get<std::string>(id).c_str());
+          }
+
+          if (!active_selection_.has_value())
+          {
+            std::strcpy(next_selection_label_buffer_, "no selections");
+          }
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMenuBar();
     }
   }
 
-  void handle_texture_selection_rect_properties(entt::registry& registry)
+  void handle_texture_selection_creation_popup(entt::registry& registry)
   {
-    if (!active_selection_.has_value() or !registry.all_of<SelectionRect>(*active_selection_))
+    static constexpr const char* kCreationPopupModalName = "selection_menu";
+
+    if (open_selection_label_popup_)
+    {
+      ImGui::OpenPopup(kCreationPopupModalName);
+      open_selection_label_popup_ = false;
+    }
+
+    if (ImGui::BeginPopupModal(
+          kCreationPopupModalName, nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoTitleBar))
+    {
+      if (ImGui::InputText(
+            "label",
+            next_selection_label_buffer_,
+            sizeof(next_selection_label_buffer_),
+            ImGuiInputTextFlags_EnterReturnsTrue))
+      {
+        const auto& texture = registry.get<graphics::device::Texture>(*texture_id_);
+        const auto id = registry.create();
+        switch (*next_selection_shape_)
+        {
+        case NextSelectionShape::kRect: {
+          registry.emplace<std::string>(id, next_selection_label_buffer_);
+          registry.emplace<SelectionTag>(id);
+          {
+            auto& select = registry.emplace<SelectionRect>(id);
+            select.size.x = texture.shape().height;
+            select.size.y = texture.shape().width;
+          }
+          break;
+        }
+        case NextSelectionShape::kGrid: {
+          registry.emplace<std::string>(id, next_selection_label_buffer_);
+          registry.emplace<SelectionTag>(id);
+          registry.emplace<SelectionGrid>(id, 10, 10, ImVec2(texture.shape().height / 10, texture.shape().width / 10));
+          break;
+        }
+        }
+        active_selection_ = id;
+        ImGui::CloseCurrentPopup();
+        open_selection_picker_popup_ = true;
+      }
+      ImGui::EndPopup();
+    }
+  }
+
+  static void handle_texture_selection_rect_properties(entt::registry& registry, const entt::entity id)
+  {
+    if (!registry.all_of<SelectionRect>(id))
     {
       return;
     }
 
-    auto& properties = registry.get<SelectionRect>(*active_selection_);
+    auto& properties = registry.get<SelectionRect>(id);
 
     if (ImGui::InputFloat2("offset", reinterpret_cast<float*>(&properties.offset)))
     {
@@ -262,14 +329,14 @@ private:
       });
   }
 
-  void handle_texture_selection_grid_properties(entt::registry& registry)
+  static void handle_texture_selection_grid_properties(entt::registry& registry, const entt::entity id)
   {
-    if (!active_selection_.has_value() or !registry.all_of<SelectionGrid>(*active_selection_))
+    if (!registry.all_of<SelectionGrid>(id))
     {
       return;
     }
 
-    auto& properties = registry.get<SelectionGrid>(*active_selection_);
+    auto& properties = registry.get<SelectionGrid>(id);
 
     if (ImGui::InputInt2("dims", properties.dims, ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -387,11 +454,21 @@ private:
     handle_texture_selection_rect_interaction(drawlist, origin, registry);
   }
 
+  enum class NextSelectionShape
+  {
+    kRect,
+    kGrid
+  };
+
   float scaling_ = 1.f;
   std::optional<entt::entity> texture_id_;
   std::optional<entt::entity> active_selection_;
+  std::optional<NextSelectionShape> next_selection_shape_;
+  bool open_selection_picker_popup_ = false;
+  bool open_selection_label_popup_ = false;
+  char next_selection_label_buffer_[100] = "no selections";
   bool is_dragging_offset_ = false;
-  bool is_dragging_size_ = false;
+  // bool is_dragging_size_ = false;
 };
 
 TilesetCreator::~TilesetCreator() = default;
