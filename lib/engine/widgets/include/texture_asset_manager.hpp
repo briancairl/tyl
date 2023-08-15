@@ -8,13 +8,11 @@
 // C++ Standard Library
 #include <memory>
 
-// Entt
-#include <entt/fwd.hpp>
-
 // ImGui
 #include <imgui.h>
 
 // Tyl
+#include <tyl/engine/core/resources_fwd.hpp>
 #include <tyl/utility/expected.hpp>
 
 namespace tyl::engine::widgets
@@ -41,7 +39,7 @@ public:
 
   ~TextureAssetManager();
 
-  void update(ImGuiContext* const imgui_ctx, entt::registry& reg);
+  void update(ImGuiContext* const imgui_ctx, core::Resources& resources);
 
 private:
   Options options_;

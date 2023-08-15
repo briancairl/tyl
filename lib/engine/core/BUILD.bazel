@@ -18,12 +18,12 @@ cc_library(
 )
 
 cc_library(
-  name="resource",
-  hdrs=["include/resource.hpp"],
-  srcs=["src/resource.cpp"],
+  name="asset",
+  hdrs=["include/asset.hpp"],
+  srcs=["src/asset.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/core",
-  deps=["//lib/common/utility:expected", "@entt",],
+  deps=[":resources", "//lib/common/utility:expected", "//lib/graphics/device:device", "//lib/graphics/host:image", ],
   visibility=["//visibility:public"]
 )
 
@@ -34,5 +34,15 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine/core",
   deps=[":clock", ":drag_and_drop", "//lib/common/utility:expected", "//lib/common/utility:entt", "//lib/common/debug:assert", "//lib/common/math:geometry", "//lib/graphics/device/glad:glad", "@glfw", "@imgui",],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="resources",
+  hdrs=["include/resources.hpp", "include/resources_fwd.hpp"],
+  srcs=[],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=["//lib/common/async:worker_pool", "@entt",],
   visibility=["//visibility:public"]
 )

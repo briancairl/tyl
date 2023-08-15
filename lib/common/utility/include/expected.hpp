@@ -68,7 +68,7 @@ public:
 
   constexpr const ValueT& value() const& noexcept { return std::get<ValueT>(u_); }
   constexpr ValueT& value() & noexcept { return std::get<ValueT>(u_); }
-  constexpr const ValueT&& value() const&& noexcept { return std::get<ValueT>(u_); }
+  constexpr const ValueT&& value() const&& noexcept { return std::move(std::get<ValueT>(u_)); }
   constexpr ValueT&& value() && noexcept { return std::move(std::get<ValueT>(u_)); }
 
   constexpr const ErrorT& error() const& noexcept { return std::get<ErrorT>(u_); }

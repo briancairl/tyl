@@ -8,6 +8,15 @@ cc_library(
 )
 
 cc_library(
+  name="synchronized",
+  hdrs=["include/synchronized.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/async",
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="worker_pool",
   hdrs=["include/worker_pool.hpp",],
   strip_include_prefix="include",

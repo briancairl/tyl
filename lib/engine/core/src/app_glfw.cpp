@@ -327,32 +327,41 @@ bool App::update_start(entt::registry& registry)
     window_state_->now = Clock::now();
     window_state_->registry = std::addressof(registry);
 
-    // Scan for states of all keys of interest
-    for (std::size_t i = 0; i < KeyInfo::kKeyCount; ++i)
+    if (ImGui::IsWindowHovered(ImGuiFocusedFlags_AnyWindow))
     {
-      glfw_get_key_state(window_state_->key_info.state[i], glfw_window_handle, kGLFWKeyCodes[i]);
-    }
-
-    // Get current cursor position on screen
-    {
-      double xpos, ypos;
-      glfwGetCursorPos(glfw_window_handle, &xpos, &ypos);
-      window_state_->cursor_position << xpos, ypos;
-    }
-
-    // Get current cursose position in graphics viewport space
-    {
-      window_state_->cursor_position_normalized =
-        (1.0f - 2.f * window_state_->cursor_position.array() / window_state_->window_size.cast<float>().array());
-      window_state_->cursor_position_normalized[0] = -window_state_->cursor_position_normalized[0];
-    }
-
-    // Reset horizontal/vertical scroll state
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow))
-    {
+      // Reset horizontal/vertical scroll state
       window_state_->cursor_scroll.reset();
+
+      // Reset all key states
+      for (std::size_t i = 0; i < KeyInfo::kKeyCount; ++i)
+      {
+        window_state_->key_info.state[i].reset();
+      }
     }
-    else if (const auto dt = window_state_->now - window_state_->cursor_scroll.stamp(); dt > Clock::millis(20))
+    else
+    {
+      // Scan for states of all keys of interest
+      for (std::size_t i = 0; i < KeyInfo::kKeyCount; ++i)
+      {
+        glfw_get_key_state(window_state_->key_info.state[i], glfw_window_handle, kGLFWKeyCodes[i]);
+      }
+
+      // Get current cursor position on screen
+      {
+        double xpos, ypos;
+        glfwGetCursorPos(glfw_window_handle, &xpos, &ypos);
+        window_state_->cursor_position << xpos, ypos;
+      }
+
+      // Get current cursose position in graphics viewport space
+      {
+        window_state_->cursor_position_normalized =
+          (1.0f - 2.f * window_state_->cursor_position.array() / window_state_->window_size.cast<float>().array());
+        window_state_->cursor_position_normalized[0] = -window_state_->cursor_position_normalized[0];
+      }
+    }
+
+    if (const auto dt = window_state_->now - window_state_->cursor_scroll.stamp(); dt > Clock::millis(20))
     {
       window_state_->cursor_scroll.reset();
     }

@@ -21,7 +21,8 @@
 #include <ImGuiFileDialog.h>
 
 // Tyl
-#include <tyl/engine/core/resource.hpp>
+#include <tyl/engine/core/asset.hpp>
+#include <tyl/engine/core/resources.hpp>
 #include <tyl/engine/widgets/texture_asset_manager.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/utility/entt.hpp>
@@ -71,11 +72,13 @@ class TextureAssetManager::Impl
 public:
   Impl() {}
 
-  void update(entt::registry& registry)
+  void update(core::Resources& resources)
   {
+    auto& registry = resources.registry;
+
     handle_preview_initialization(registry);
     handle_menu(registry);
-    handle_file_dialogue(registry);
+    handle_file_dialogue(resources);
     handle_error_popup();
 
     // Handle invidual previews
@@ -92,7 +95,7 @@ public:
 private:
   void recompute_icon_dimensions(entt::registry& registry) const
   {
-    registry.template view<core::resource::Texture::Tag, graphics::device::Texture, PreviewState>().each(
+    registry.template view<core::asset::TextureTag, graphics::device::Texture, PreviewState>().each(
       [&](const entt::entity id, const auto& texture, auto& state) {
         state.dimensions = compute_icon_dimensions(texture.shape(), properties_.preview_icon_dimensions);
       });
@@ -102,8 +105,8 @@ private:
   {
     bool any_initialized = false;
 
-    // Add view state to all available texture resources
-    registry.template view<core::resource::Texture::Tag, graphics::device::Texture>(entt::exclude<PreviewState>)
+    // Add view state to all available texture assets
+    registry.template view<core::asset::TextureTag, graphics::device::Texture>(entt::exclude<PreviewState>)
       .each([&](const entt::entity id, const auto& texture) {
         registry.emplace<PreviewState>(id);
         any_initialized = true;
@@ -119,7 +122,7 @@ private:
   {
     const float x_offset_spacing = std::max(5.f, properties_.preview_icon_dimensions.x * 0.1f);
     const auto available_space = ImGui::GetContentRegionAvail();
-    registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
+    registry.view<core::asset::TextureTag, core::asset::Path, graphics::device::Texture, PreviewState>().each(
       [&, drawlist = ImGui::GetWindowDrawList()](
         const entt::entity id, const auto& path, const auto& texture, auto& state) {
         const auto pos = ImGui::GetCursorScreenPos();
@@ -174,7 +177,7 @@ private:
 
   void handle_no_previews(entt::registry& registry)
   {
-    registry.view<core::resource::Texture::Tag, core::resource::Path, graphics::device::Texture, PreviewState>().each(
+    registry.view<core::asset::TextureTag, core::asset::Path, graphics::device::Texture, PreviewState>().each(
       [&](const entt::entity id, const auto& path, const auto& texture, auto& state) {
         ImGui::Checkbox(path.filename().string().c_str(), &state.is_selected);
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
@@ -205,11 +208,11 @@ private:
           // TODO(qol) show pop-up "are you sure" before deleting
           // TODO(qol) show deleting progress bar
           // TODO(perf) delete in separate thread
-          registry.view<core::resource::Texture::Tag, PreviewState>().each(
+          registry.view<core::asset::TextureTag, PreviewState>().each(
             [&registry](const entt::entity id, const auto& state) {
               if (state.is_selected)
               {
-                core::resource::release(registry, id);
+                core::asset::release(registry, id);
               }
             });
         }
@@ -221,13 +224,13 @@ private:
       {
         if (ImGui::MenuItem("all"))
         {
-          registry.view<core::resource::Texture::Tag, PreviewState>().each(
+          registry.view<core::asset::TextureTag, PreviewState>().each(
             [](const entt::entity id, auto& state) { state.is_selected = true; });
         }
 
         if (ImGui::MenuItem("none"))
         {
-          registry.view<core::resource::Texture::Tag, PreviewState>().each(
+          registry.view<core::asset::TextureTag, PreviewState>().each(
             [](const entt::entity id, auto& state) { state.is_selected = false; });
         }
 
@@ -254,7 +257,7 @@ private:
     }
   }
 
-  void handle_file_dialogue(entt::registry& registry)
+  void handle_file_dialogue(core::Resources& resources)
   {
     if (ImGuiFileDialog::Instance()->Display("#AssetPicker"))
     {
@@ -264,13 +267,16 @@ private:
         {
           // TODO(perf) do loading in another thread
           // TODO(qol) show loading progress bar
-          if (const auto id_or_error =
-                core::resource::create(registry, file_path_name, core::resource::TypeCode::TEXTURE);
+          if (const auto id_or_error = core::asset::load(resources, file_path_name, core::asset::TypeCode::kTexture);
               !id_or_error.has_value())
           {
             std::ostringstream oss;
             oss << "Error loading [" << file_path_name << "]: " << id_or_error.error();
             last_errors_.emplace_back(oss.str());
+          }
+          else
+          {
+            currently_loading_.emplace_back(std::move(id_or_error).value());
           }
         }
       }
@@ -302,6 +308,7 @@ private:
 
   WidgetProperties properties_;
   std::vector<std::string> last_errors_ = {};
+  std::vector<entt::entity> currently_loading_ = {};
 };
 
 TextureAssetManager::~TextureAssetManager() = default;
@@ -316,12 +323,12 @@ TextureAssetManager::TextureAssetManager(const Options& options, std::unique_ptr
     options_{options}, impl_{std::move(impl)}
 {}
 
-void TextureAssetManager::update(ImGuiContext* const imgui_ctx, entt::registry& reg)
+void TextureAssetManager::update(ImGuiContext* const imgui_ctx, core::Resources& resources)
 {
   ImGui::SetCurrentContext(imgui_ctx);
   if (ImGui::Begin(options_.name, nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_HorizontalScrollbar))
   {
-    impl_->update(reg);
+    impl_->update(resources);
   }
   ImGui::End();
 }
