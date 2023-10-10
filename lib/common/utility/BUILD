@@ -8,6 +8,15 @@ cc_library(
 )
 
 cc_library(
+  name="crtp",
+  hdrs=["include/crtp.hpp",],
+  strip_include_prefix="include",
+  include_prefix="tyl/utility",
+  deps=[],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="dynamic_bitset",
   hdrs=["include/dynamic_bitset.hpp",],
   strip_include_prefix="include",

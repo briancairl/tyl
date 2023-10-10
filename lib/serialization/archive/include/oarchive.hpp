@@ -14,13 +14,14 @@
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 #include <tyl/serialization/sequence.hpp>
+#include <tyl/utility/crtp.hpp>
 
 namespace tyl::serialization
 {
 
 template <typename OArchiveT, typename ValueT> struct save_impl;
 
-template <typename OArchiveT> class oarchive
+template <typename OArchiveT> class oarchive : public crtp_base<oarchive<OArchiveT>>
 {
   template <typename ValueT>
   static constexpr bool is_primitive = is_label_v<ValueT> or is_packet_v<ValueT> or is_sequence_v<ValueT>;
@@ -29,49 +30,46 @@ public:
   template <typename ValueT> OArchiveT& operator&(const ValueT& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
-    save_impl<OArchiveT, CleanT>{}(derived(), value);
-    return derived();
+    save_impl<OArchiveT, CleanT>{}(this->derived(), value);
+    return this->derived();
   }
 
   template <typename ValueT> std::enable_if_t<!is_primitive<ValueT>, OArchiveT&> operator<<(const ValueT& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
-    save_impl<OArchiveT, CleanT>{}(derived(), value);
-    return derived();
+    save_impl<OArchiveT, CleanT>{}(this->derived(), value);
+    return this->derived();
   }
 
   template <typename IteratorT> OArchiveT& operator<<(const sequence<IteratorT>& sequence)
   {
-    derived().write_impl(sequence);
-    return derived();
+    this->derived().write_impl(sequence);
+    return this->derived();
   }
 
   OArchiveT& operator<<(const label& l)
   {
-    derived().write_impl(l);
-    return derived();
+    this->derived().write_impl(l);
+    return this->derived();
   }
 
   template <typename PointerT> OArchiveT& operator<<(const basic_packet<PointerT>& packet)
   {
-    derived().write_impl(packet);
-    return derived();
+    this->derived().write_impl(packet);
+    return this->derived();
   }
 
   template <typename PointerT, std::size_t Len>
   OArchiveT& operator<<(const basic_packet_fixed_size<PointerT, Len>& packet)
   {
-    derived().write_impl(packet);
-    return derived();
+    this->derived().write_impl(packet);
+    return this->derived();
   }
 
   oarchive() = default;
 
 private:
   oarchive(const oarchive&) = default;
-
-  constexpr OArchiveT& derived() { return static_cast<OArchiveT&>(*this); }
-  constexpr const OArchiveT& derived() const { return static_cast<const OArchiveT&>(*this); }
 
   static constexpr void write_impl(const label& _) {}
 };

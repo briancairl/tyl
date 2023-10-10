@@ -14,13 +14,14 @@
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 #include <tyl/serialization/sequence.hpp>
+#include <tyl/utility/crtp.hpp>
 
 namespace tyl::serialization
 {
 
 template <typename IArchiveT, typename ValueT> struct load_impl;
 
-template <typename IArchiveT> class iarchive
+template <typename IArchiveT> class iarchive : public crtp_base<iarchive<IArchiveT>>
 {
   template <typename ValueT>
   static constexpr bool is_primitive = is_label_v<ValueT> or is_packet_v<ValueT> or is_sequence_v<ValueT>;
@@ -29,48 +30,45 @@ public:
   template <typename ValueT> IArchiveT& operator&(ValueT&& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
-    load_impl<IArchiveT, CleanT>{}(derived(), std::forward<ValueT>(value));
-    return derived();
+    load_impl<IArchiveT, CleanT>{}(this->derived(), std::forward<ValueT>(value));
+    return this->derived();
   }
 
   template <typename ValueT> std::enable_if_t<!is_primitive<ValueT>, IArchiveT&> operator>>(ValueT&& value)
   {
     using CleanT = std::remove_const_t<std::remove_reference_t<ValueT>>;
-    load_impl<IArchiveT, CleanT>{}(derived(), std::forward<ValueT>(value));
-    return derived();
+    load_impl<IArchiveT, CleanT>{}(this->derived(), std::forward<ValueT>(value));
+    return this->derived();
   }
 
   template <typename IteratorT> IArchiveT& operator>>(sequence<IteratorT> sequence)
   {
-    derived().read_impl(sequence);
-    return derived();
+    this->derived().read_impl(sequence);
+    return this->derived();
   }
 
   IArchiveT& operator>>(label l)
   {
-    derived().read_impl(l);
-    return derived();
+    this->derived().read_impl(l);
+    return this->derived();
   }
 
   template <typename PointerT> IArchiveT& operator>>(basic_packet<PointerT> packet)
   {
-    derived().read_impl(packet);
-    return derived();
+    this->derived().read_impl(packet);
+    return this->derived();
   }
 
   template <typename PointerT, std::size_t Len> IArchiveT& operator>>(basic_packet_fixed_size<PointerT, Len> packet)
   {
-    derived().read_impl(packet);
-    return derived();
+    this->derived().read_impl(packet);
+    return this->derived();
   }
 
   iarchive() = default;
 
 private:
   iarchive(const iarchive&) = default;
-
-  constexpr IArchiveT& derived() { return static_cast<IArchiveT&>(*this); }
-  constexpr const IArchiveT& derived() const { return static_cast<const IArchiveT&>(*this); }
 
   static constexpr void read_impl(label _) {}
 };
