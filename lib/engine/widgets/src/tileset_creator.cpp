@@ -250,6 +250,7 @@ private:
           registry.emplace<std::string>(id, next_selection_label_buffer_);
           registry.emplace<SelectionTag>(id);
           registry.emplace<SelectionGrid>(id, 10, 10, ImVec2(texture.shape().height / 10, texture.shape().width / 10));
+          registry.emplace<ImColor>(id, 1.f, 1.f, 0.f, 1.f);
           break;
         }
         }
@@ -336,7 +337,7 @@ private:
       return;
     }
 
-    auto& properties = registry.get<SelectionGrid>(id);
+    auto [properties, color] = registry.get<SelectionGrid, ImColor>(id);
 
     if (ImGui::InputInt2("dims", properties.dims, ImGuiInputTextFlags_EnterReturnsTrue))
     {
@@ -361,13 +362,15 @@ private:
     {
       properties.cell_selected.fill(false);
     }
+
+    ImGui::ColorPicker4("grid color", reinterpret_cast<float*>(&color.Value));
   }
 
   void
   handle_texture_selection_grid_interaction(ImDrawList* const drawlist, const ImVec2& origin, entt::registry& registry)
   {
-    registry.view<std::string, SelectionGrid>().each(
-      [&](const entt::entity selection_id, const auto& label, auto& grid) {
+    registry.view<std::string, ImColor, SelectionGrid>().each(
+      [&](const entt::entity selection_id, const auto& label, const auto& grid_color, auto& grid) {
         const float ox = origin.x + grid.offset.x * scaling_;
         const float oy = origin.y + grid.offset.y * scaling_;
         const float cx = grid.cell_size.x * scaling_;
@@ -423,7 +426,7 @@ private:
               }
               else
               {
-                drawlist->AddRectFilled(lower, upper, IM_COL32(255, 255, 0, 100));
+                drawlist->AddRectFilled(lower, upper, ImGui::GetColorU32(grid_color.Value));
               }
             }
           }
@@ -434,7 +437,8 @@ private:
           const float gy = grid.dims[0] * cy;
           const float gx = grid.dims[1] * cx;
           const float line_thickness = is_selected ? std::max(1.f, 2.f * scaling_) : 1.f;
-          const auto line_color = is_selected ? IM_COL32(255, 255, 25, 255) : IM_COL32(255, 100, 50, 50);
+          const auto line_color =
+            is_selected ? ImGui::GetColorU32(grid_color.Value) : (ImGui::GetColorU32(grid_color.Value) / 4);
           for (int i = 0; i <= grid.dims[0]; ++i)
           {
             drawlist->AddLine(ImVec2{ox, oy + i * cy}, ImVec2{ox + gx, oy + i * cy}, line_color, line_thickness);
