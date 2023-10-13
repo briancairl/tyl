@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/async/worker_pool.hpp>
+#include <tyl/engine/core/registry.hpp>
 
 namespace tyl::engine::core
 {
@@ -20,7 +21,7 @@ namespace tyl::engine::core
 struct Resources
 {
   /// Registry containing all game state and assets
-  entt::registry registry;
+  Registry registry;
 
   /// Worker pool for deferred work execution
   async::worker_pool worker_pool;

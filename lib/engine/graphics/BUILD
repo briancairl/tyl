@@ -27,3 +27,13 @@ cc_library(
   deps=[":camera", ":types", "@entt", "//lib/graphics/device", "//lib/common/utility:expected"],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="tileset",
+  hdrs=["include/tileset.hpp"],
+  srcs=[],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/graphics",
+  deps=["//lib/common/math:geometry", "//lib/serialization:object", "//lib/serialization/primitives"],
+  visibility=["//visibility:public"]
+)

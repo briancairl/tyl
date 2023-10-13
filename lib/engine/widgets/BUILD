@@ -34,6 +34,6 @@ cc_library(
   srcs=["src/tileset_creator.cpp"],
   strip_include_prefix="include",
   include_prefix="tyl/engine/widgets",
-  deps=["@imgui", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/engine/core:resources", "//lib/graphics/device", "//lib/common/utility:entt", "//lib/common/utility:dynamic_bitset"],
+  deps=["@imgui", "@imgui-file-dialogue", "//lib/common/utility:expected", "//lib/engine/core:asset", "//lib/engine/graphics:tileset", "//lib/engine/core:resources", "//lib/graphics/device", "//lib/common/utility:entt", "//lib/common/utility:dynamic_bitset"],
   visibility=["//visibility:public"]
 )

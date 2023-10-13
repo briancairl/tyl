@@ -38,11 +38,31 @@ cc_library(
 )
 
 cc_library(
+  name="geometry",
+  hdrs=["include/geometry.hpp"],
+  srcs=["src/geometry.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=["//lib/common/math:geometry", "//lib/serialization/primitives", "//lib/serialization:object"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="registry",
+  hdrs=["include/registry.hpp"],
+  srcs=["src/registry.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/core",
+  deps=["@entt", "//lib/serialization/primitives", "//lib/serialization:object"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="resources",
   hdrs=["include/resources.hpp", "include/resources_fwd.hpp"],
   srcs=[],
   strip_include_prefix="include",
   include_prefix="tyl/engine/core",
-  deps=["//lib/common/async:worker_pool", "@entt",],
+  deps=["//lib/common/async:worker_pool", ":registry"],
   visibility=["//visibility:public"]
 )
