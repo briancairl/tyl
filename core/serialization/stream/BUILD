@@ -1,0 +1,42 @@
+cc_library(
+  name="stream",
+  hdrs=["include/istream.hpp", "include/ostream.hpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=["//lib/common/utility:crtp"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="file_stream",
+  hdrs=[
+    "include/file_istream.hpp",
+    "include/file_ostream.hpp",
+    "include/file_stream.hpp"
+  ],
+  srcs=[
+    "src/file_istream.cpp",
+    "src/file_ostream.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=[":stream"],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="mem_stream",
+  hdrs=[
+    "include/mem_istream.hpp",
+    "include/mem_ostream.hpp",
+    "include/mem_stream.hpp"
+  ],
+  srcs=[
+    "src/mem_istream.cpp",
+    "src/mem_ostream.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization",
+  deps=[":stream"],
+  visibility=["//visibility:public"]
+)

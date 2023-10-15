@@ -1,0 +1,15 @@
+cc_library(
+  name="common",
+  hdrs=[
+    "include/assert.hpp",
+    "include/bits.hpp",
+    "include/clock.hpp",
+    "include/crtp.hpp",
+    "include/dynamic_bitset.hpp",
+    "include/expected.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl",
+  deps=["@tl_expected//:tl_expected"],
+  visibility=["//visibility:public"]
+)

@@ -48,7 +48,6 @@ http_archive(
   strip_prefix="ImGuiFileDialog-Lib_Only"
 )
 
-
 # OpenAL
 new_local_repository(
   name="openal",
@@ -70,6 +69,24 @@ new_git_repository(
   commit="b42009b3b9d4ca35bc703f5310eedc74f584be58",
   shallow_since="1594640766 -0700",
   build_file="@//external:stb.BUILD",
+)
+
+# TL-expected
+new_git_repository(
+  name="tl_expected",
+  remote="https://github.com/TartanLlama/expected.git",
+  commit="aa4f7a5e2422169d48342e369597f463ab666558",
+  shallow_since="1678876443 +0000",
+  build_file="@//external:tl_expected.BUILD",
+)
+
+# Parachute
+new_git_repository(
+  name="parachute",
+  remote="https://github.com/briancairl/parachute.git",
+  commit="3630d1fcf1b8851dc1cd6fb3114e2e65ebeb4717",
+  shallow_since="1697406458 -0400",
+  build_file="@//external:parachute.BUILD",
 )
 
 # GTest/GMock

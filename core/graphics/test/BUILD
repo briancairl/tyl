@@ -1,0 +1,34 @@
+cc_binary(
+	name="texture",
+	srcs=["texture.cpp"],
+	deps=[
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"@glfw//:glfw",
+	]
+)
+
+cc_binary(
+	name="texture-image",
+	srcs=["texture-image.cpp"],
+	deps=[
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"//lib/graphics/host:image",
+		"@glfw//:glfw",
+	],
+	data=[
+		"texture-image.png"
+	]
+)
+
+cc_binary(
+	name="vertex_buffer",
+	srcs=["vertex_buffer.cpp"],
+	deps=[
+		"//lib/common/debug:assert",
+		"//lib/graphics/device",
+		"//lib/graphics/device/glad:glad",
+		"@glfw//:glfw",
+	]
+)
