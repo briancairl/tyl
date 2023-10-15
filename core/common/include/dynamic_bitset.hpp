@@ -12,7 +12,7 @@
 #include <type_traits>
 
 // Tyl
-#include <tyl/utility/bits.hpp>
+#include <tyl/bits.hpp>
 
 namespace tyl
 {
@@ -87,22 +87,22 @@ public:
 
   void set(const std::size_t bit) const
   {
-    bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   void flip(const std::size_t bit) const
   {
-    bits::flip(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::flip(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   void clear(const std::size_t bit) const
   {
-    bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   [[nodiscard]] constexpr bool test(const std::size_t bit) const
   {
-    return bits::check(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    return bits::check(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   [[nodiscard]] std::size_t count() const

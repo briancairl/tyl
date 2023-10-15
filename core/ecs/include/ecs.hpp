@@ -14,4 +14,9 @@ namespace tyl
 using EntityID = ::entt::entity;
 using Registry = ::entt::registry;
 
+template <typename ComponentT> struct Reference
+{
+  EntityID id;
+};
+
 }  // namespace tyl

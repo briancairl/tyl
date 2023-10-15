@@ -5,11 +5,16 @@
  */
 #pragma once
 
+// C++ Standard Library
+#include <filesystem>
+#include <vector>
+
 // Tyl
 #include <tyl/async.hpp>
 #include <tyl/crtp.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/expected.hpp>
+#include <tyl/vec.hpp>
 
 namespace tyl::engine
 {
@@ -21,6 +26,10 @@ struct WidgetResources
 {
   /// Handle to active engine GUI framework context
   void* gui_context;
+  /// Drag-and-drop payloads
+  std::vector<std::filesystem::path> drop_payloads = {};
+  /// Location at which
+  Vec2f drop_cursor_position = Vec2f::Zero();
   /// Thread pool for deferred work execution
   async::ThreadPool thread_pool;
 };
@@ -43,6 +52,13 @@ enum class WidgetStatus
 
 void WidgetUpdateCommon(Registry& registry, WidgetResources& resources);
 
+template <typename WidgetT> struct WidgetOptions;
+// {
+//   using type = WidgetTOptions;
+// };
+
+template <typename WidgetT> using widget_options_t = typename WidgetOptions<WidgetT>::type;
+
 /**
  * @brief Defines a common widget interface
  */
@@ -55,9 +71,9 @@ public:
     return this->derived().UpdateImpl(registry, resources);
   }
 
-  template <typename OptionsT> [[nodiscard]] static expected<WidgetT, WidgetCreationError> create(OptionsT&& options)
+  [[nodiscard]] static expected<WidgetT, WidgetCreationError> create(const widget_options_t<WidgetT>& options)
   {
-    return WidgetT::CreateImpl(std::forward<OptionsT>(options));
+    return WidgetT::CreateImpl(options);
   }
 };
 

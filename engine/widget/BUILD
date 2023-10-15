@@ -1,14 +1,38 @@
 cc_library(
   name="widget",
-  hdrs=["include/widget.hpp"],
-  srcs=["src/widget.cpp"],
+  hdrs=[
+    "include/widget.hpp",
+  ],
+  srcs=[
+    "src/widget.cpp",
+  ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
     "//core/async",
     "//core/common",
     "//core/ecs",
+    "//core/math",
     "@imgui//:imgui",
+    "@imgui-file-dialogue"
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="widget_tileset_creator",
+  hdrs=[
+    "include/widget_tileset_creator.hpp"
+  ],
+  srcs=[
+    "src/widget_tileset_creator.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":widget",
+    "@imgui-file-dialogue",
+    "//core/graphics/device"
   ],
   visibility=["//visibility:public"]
 )

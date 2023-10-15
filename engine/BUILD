@@ -2,6 +2,8 @@ cc_binary(
   name="engine",
   srcs=["engine.cpp"],
   deps=[
+    "//core/ecs",
     "//engine/window",
+    "//engine/widget:widget_tileset_creator",
   ]
 )

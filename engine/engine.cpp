@@ -8,8 +8,12 @@
 #include <iostream>
 
 // Tyl
+#include <tyl/ecs.hpp>
+#include <tyl/engine/widget.hpp>
+#include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/engine/window.hpp>
 
+using namespace tyl;
 using namespace tyl::engine;
 
 int main(int argc, char** argv)
@@ -27,7 +31,28 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  auto on_update = [](const WindowState& state) { return true; };
+  Registry registry;
+  WidgetResources resources;
+
+  auto tileset_creator = TilesetCreator::create({});
+  if (!tileset_creator.has_value())
+  {
+    return 1;
+  }
+
+  auto on_update = [&](WindowState& window_state) {
+    resources.gui_context = window_state.gui_context;
+
+    if (!window_state.drop_payloads.empty())
+    {
+      std::swap(window_state.drop_payloads, resources.drop_payloads);
+      std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
+      window_state.drop_payloads.clear();
+    }
+
+    tileset_creator->update(registry, resources);
+    return true;
+  };
 
   while (true)
   {

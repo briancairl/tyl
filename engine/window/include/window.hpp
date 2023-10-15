@@ -7,13 +7,15 @@
 
 // C++ Standard Library
 #include <cctype>
+#include <filesystem>
 #include <iosfwd>
+#include <vector>
 
 // Tyl
 #include <tyl/clock.hpp>
 #include <tyl/engine/keyboard.hpp>
 #include <tyl/expected.hpp>
-#include <tyl/math/vec.hpp>
+#include <tyl/vec.hpp>
 
 namespace tyl::engine
 {
@@ -46,6 +48,8 @@ struct WindowState
   Vec2f cursor_position_normalized = Vec2f::Zero();
   Vec2f cursor_scroll = {};
   Clock::Time cursor_scroll_stamp = Clock::Time::min();
+  std::vector<std::filesystem::path> drop_payloads = {};
+  Vec2f drop_cursor_position = Vec2f::Zero();
   KeyInfo key_info = {};
   void* gui_context = nullptr;
   WindowCallbacks previous_callbacks = {};

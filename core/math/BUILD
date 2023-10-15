@@ -6,7 +6,7 @@ cc_library(
     "include/vec.hpp",
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/math",
+  include_prefix="tyl",
   deps=["@eigen//:eigen"],
   visibility=["//visibility:public"]
 )

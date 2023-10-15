@@ -130,6 +130,21 @@ void glfw_window_drop_callback(GLFWwindow* const window, int path_count, const c
   auto* const app_state_ptr = reinterpret_cast<WindowState*>(glfwGetWindowUserPointer(window));
   TYL_ASSERT_NON_NULL(app_state_ptr);
 
+  // Set drop payload
+  app_state_ptr->drop_payloads.reserve(path_count);
+  std::transform(
+    paths,
+    paths + path_count,
+    std::back_inserter(app_state_ptr->drop_payloads),
+    [](const char* path) -> std::filesystem::path { return std::filesystem::path{path}; });
+
+  // Set location of drop on screen
+  {
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+    app_state_ptr->drop_cursor_position << xpos, ypos;
+  }
+
   if (app_state_ptr->previous_callbacks.drop and app_state_ptr->previous_callbacks.drop != glfw_window_drop_callback)
   {
     reinterpret_cast<GLFWdropfun>(app_state_ptr->previous_callbacks.drop)(window, path_count, paths);
