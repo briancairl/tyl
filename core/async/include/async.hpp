@@ -13,9 +13,9 @@
 namespace tyl::async
 {
 
-using thread_pool = ::para::pool;
+using ThreadPool = ::para::pool;
 
-template <typename T> using non_blocking_future = ::para::non_blocking_future;
+template <typename T> using non_blocking_future = ::para::non_blocking_future<T>;
 
 /**
  * @brief Enqueues work to a work pool and returns a tracker for that work

@@ -1,0 +1,14 @@
+cc_library(
+  name="widget",
+  hdrs=["include/widget.hpp"],
+  srcs=["src/widget.cpp"],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//core/async",
+    "//core/common",
+    "//core/ecs",
+    "@imgui//:imgui",
+  ],
+  visibility=["//visibility:public"]
+)

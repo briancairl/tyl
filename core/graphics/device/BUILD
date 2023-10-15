@@ -27,7 +27,7 @@ cc_library(
   hdrs=["src/opengl/gl.inl"],
   strip_include_prefix="src/opengl",
   include_prefix="tyl/graphics/device",
-  deps=[":graphics_hdrs", "//lib/graphics/device/glad:glad", "@glfw//:glfw",],
+  deps=[":graphics_hdrs", "//core/graphics/device/glad:glad", "@glfw//:glfw",],
   visibility=["//visibility:private"]
 )
 
@@ -50,7 +50,7 @@ cc_library(
     "src/opengl/texture.cpp",
     "src/opengl/vertex_buffer.cpp",
   ] + graphics_impl__opengl_debug_selector,
-  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs", "//lib/common/debug:assert"],
+  deps=[":graphics_impl__opengl_internal", ":graphics_hdrs"],
   visibility=["//visibility:private"]
 )
 

@@ -11,7 +11,7 @@
 #include <string>
 
 // Tyl
-#include <tyl/debug/assert.hpp>
+#include <tyl/assert.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/shader.hpp>
 

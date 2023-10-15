@@ -167,13 +167,11 @@ int main(int argc, char** argv)
       cmat_inv.block<2, 2>(0, 0) * app_state.cursor_position_normalized + cmat_inv.col(2).head<2>();
     manipulated_point = cursor_position_cmat;
 
-    primitives_renderer->draw(cmat, resources.registry);
-    tileset_creator->update(app_state.imgui_context, resources);
-    texture_asset_manager->update(app_state.imgui_context, resources);
-    text_asset_manager->update(app_state.imgui_context, resources);
+    // primitives_renderer->draw(cmat, resources.registry);
+    // tileset_creator->update(app_state.imgui_context, resources);
+    // texture_asset_manager->update(app_state.imgui_context, resources);
+    // text_asset_manager->update(app_state.imgui_context, resources);
     drag_and_drop->update(app_state.imgui_context, resources);
-
-    tyl::engine::core::asset::update(resources.registry);
 
     return true;
   };

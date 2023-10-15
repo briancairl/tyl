@@ -10,7 +10,7 @@
 #include <unordered_set>
 
 // Tyl
-#include <tyl/debug/assert.hpp>
+#include <tyl/assert.hpp>
 #include <tyl/graphics/device/constants.hpp>
 #include <tyl/graphics/device/gl.inl>
 #include <tyl/graphics/device/render_target.hpp>
