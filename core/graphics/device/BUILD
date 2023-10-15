@@ -16,7 +16,7 @@ cc_library(
   ],
   strip_include_prefix="include",
   include_prefix="tyl/graphics/device",
-  deps=["//lib/common/utility:expected"],
+  deps=["//core/common"],
   visibility=["//visibility:private"]
 )
 

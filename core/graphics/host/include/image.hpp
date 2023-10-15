@@ -9,9 +9,9 @@
 #include <cstdint>
 
 // Tyl
+#include <tyl/expected.hpp>
 #include <tyl/graphics/device/fwd.hpp>
 #include <tyl/graphics/device/typedef.hpp>
-#include <tyl/utility/expected.hpp>
 
 namespace tyl::graphics::host
 {

@@ -194,7 +194,7 @@ ShaderSource::create(std::string_view code, const ShaderType type, std::string* 
 
   if (!validate_gl_shader_compilation(shader_source.shader_id_, type, error_details))
   {
-    return tyl::unexpected{ErrorCode::COMPILATION_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::COMPILATION_FAILURE};
   }
   return shader_source;
 }
@@ -220,7 +220,7 @@ ShaderSource::load_from_file(const char* filename, const ShaderType type, const 
   }
   else
   {
-    return tyl::unexpected{ErrorCode::LOAD_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::LOAD_FAILURE};
   }
 }
 
@@ -390,7 +390,7 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
 
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
   }
 
   // Detach all component shaders no longer in use
@@ -411,7 +411,7 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
 
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
   }
 
   // Detach all component shaders no longer in use
@@ -425,14 +425,11 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
 tyl::expected<Shader, Shader::ErrorCode>
 Shader::create(const ShaderProgramHost& shader_host, std::string* const error_details) noexcept
 {
-
   Shader shader{shader_host};
-
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return tyl::unexpected{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
   }
-
   return shader;
 }
 

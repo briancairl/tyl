@@ -110,7 +110,7 @@ tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const Image
   // Check if image point is valid
   if (image_data_ptr == nullptr)
   {
-    return tyl::unexpected{ErrorCode::LOAD_FAILURE};
+    return unexpected<ErrorCode>{ErrorCode::LOAD_FAILURE};
   }
 
   // Resolve number of channels if channel count was forced with 'options'

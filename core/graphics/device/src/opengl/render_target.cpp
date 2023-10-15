@@ -31,21 +31,21 @@ RenderTarget::create(void* const context, const Shape2D& shape, const Options& o
 {
   if (context == nullptr)
   {
-    return unexpected{ErrorCode::CONTEXT_INVALID};
+    return unexpected<ErrorCode>{ErrorCode::CONTEXT_INVALID};
   }
 
   std::lock_guard lock{RenderTarget_active_context_mutex};
   if (RenderTarget_active_contexts.count(context) > 0)
   {
-    return unexpected{ErrorCode::CONTEXT_IN_USE};
+    return unexpected<ErrorCode>{ErrorCode::CONTEXT_IN_USE};
   }
   else if (shape.height < 1)
   {
-    return unexpected{ErrorCode::INVALID_HEIGHT};
+    return unexpected<ErrorCode>{ErrorCode::INVALID_HEIGHT};
   }
   else if (shape.width < 1)
   {
-    return unexpected{ErrorCode::INVALID_WIDTH};
+    return unexpected<ErrorCode>{ErrorCode::INVALID_WIDTH};
   }
 
   if (options.enable_depth_testing)

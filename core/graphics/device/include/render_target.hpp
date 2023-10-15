@@ -6,8 +6,8 @@
 #pragma once
 
 // Tyl
+#include <tyl/expected.hpp>
 #include <tyl/graphics/device/typedef.hpp>
-#include <tyl/utility/expected.hpp>
 
 namespace tyl::graphics::device
 {
