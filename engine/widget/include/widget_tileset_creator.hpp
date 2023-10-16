@@ -13,37 +13,37 @@
 
 namespace tyl::engine
 {
-class TilesetCreator;
+class TileSetCreator;
 
-struct TilesetCreatorOptions
+struct TileSetCreatorOptions
 {
   const char* name = "Tile Set Creator";
 };
 
-template <> struct WidgetOptions<TilesetCreator>
+template <> struct WidgetOptions<TileSetCreator>
 {
-  using type = TilesetCreatorOptions;
+  using type = TileSetCreatorOptions;
 };
 
-class TilesetCreator : public Widget<TilesetCreator>
+class TileSetCreator : public Widget<TileSetCreator>
 {
-  friend class Widget<TilesetCreator>;
+  friend class Widget<TileSetCreator>;
 
 public:
-  TilesetCreator(TilesetCreator&&) = default;
+  TileSetCreator(TileSetCreator&&) = default;
 
-  ~TilesetCreator();
+  ~TileSetCreator();
 
 private:
-  static expected<TilesetCreator, WidgetCreationError> CreateImpl(const TilesetCreatorOptions& options);
+  static expected<TileSetCreator, WidgetCreationError> CreateImpl(const TileSetCreatorOptions& options);
 
   WidgetStatus UpdateImpl(Registry& registry, WidgetResources& resources);
 
-  TilesetCreatorOptions options_;
+  TileSetCreatorOptions options_;
 
   class Impl;
   std::unique_ptr<Impl> impl_;
-  TilesetCreator(const TilesetCreatorOptions& options, std::unique_ptr<Impl>&& impl);
+  TileSetCreator(const TileSetCreatorOptions& options, std::unique_ptr<Impl>&& impl);
 };
 
 }  // namespace tyl::engine

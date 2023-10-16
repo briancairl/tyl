@@ -19,4 +19,14 @@ template <typename ComponentT> struct Reference
   EntityID id;
 };
 
+template <typename ComponentT> ComponentT& resolve(Registry& registry, Reference<ComponentT> reference)
+{
+  return registry.template get<ComponentT>(reference.id);
+}
+
+template <typename ComponentT> const ComponentT& resolve(const Registry& registry, Reference<ComponentT> reference)
+{
+  return registry.template get<ComponentT>(reference.id);
+}
+
 }  // namespace tyl

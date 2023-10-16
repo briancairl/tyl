@@ -32,7 +32,8 @@ cc_library(
   deps=[
     ":widget",
     "@imgui-file-dialogue",
-    "//core/graphics/device"
+    "//core/graphics/device",
+    "//core/graphics/host:image"
   ],
   visibility=["//visibility:public"]
 )

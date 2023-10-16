@@ -34,7 +34,7 @@ int main(int argc, char** argv)
   Registry registry;
   WidgetResources resources;
 
-  auto tileset_creator = TilesetCreator::create({});
+  auto tileset_creator = TileSetCreator::create({});
   if (!tileset_creator.has_value())
   {
     return 1;
@@ -42,13 +42,9 @@ int main(int argc, char** argv)
 
   auto on_update = [&](WindowState& window_state) {
     resources.gui_context = window_state.gui_context;
-
-    if (!window_state.drop_payloads.empty())
-    {
-      std::swap(window_state.drop_payloads, resources.drop_payloads);
-      std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
-      window_state.drop_payloads.clear();
-    }
+    std::swap(window_state.drop_payloads, resources.drop_payloads);
+    std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
+    window_state.drop_payloads.clear();
 
     tileset_creator->update(registry, resources);
     return true;

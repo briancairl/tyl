@@ -40,10 +40,20 @@ public:
     bit_count_ = bit_count;
   }
 
-  dynamic_bitset(const std::size_t bit_count, const bool initial_state)
+  dynamic_bitset(const std::size_t bit_count, const bool initial_state) :
+      block_data_{nullptr}, block_count_{bits::min_blocks<BlockT>(bit_count)}, bit_count_{bit_count}, allocator_{}
   {
-    dynamic_bitset::allocate(bits::min_blocks<BlockT>(bit_count));
-    bit_count_ = bit_count;
+    dynamic_bitset::allocate(block_count_);
+  }
+
+  dynamic_bitset(const dynamic_bitset& other) :
+      block_data_{other.block_data_},
+      block_count_{other.block_count_},
+      bit_count_{other.bit_count_},
+      allocator_{other.allocator_}
+  {
+    dynamic_bitset::allocate(block_count_);
+    std::memcpy(block_data_, other.block_data_, sizeof(BlockT) * block_count_);
   }
 
   dynamic_bitset(dynamic_bitset&& other) :
