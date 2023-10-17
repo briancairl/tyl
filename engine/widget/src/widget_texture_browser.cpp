@@ -137,9 +137,13 @@ public:
         {
           if (ImGui::SetDragDropPayload("TYL_TEXTURE_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
           {
-            std::cerr << "ShowTextureWithPreviews:" << static_cast<int>(id) << std::endl;
-            ImGui::Text("%s", path.filename().string().c_str());
+            ImGui::TextColored(ImVec4{0, 1, 0, 1}, "%s", path.filename().string().c_str());
           }
+          else
+          {
+            ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%s", path.filename().string().c_str());
+          }
+          ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
           ImGui::EndDragDropSource();
         }
 

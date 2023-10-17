@@ -20,6 +20,7 @@
 #include <ImGuiFileDialog.h>
 
 // Tyl
+#include <tyl/assert.hpp>
 #include <tyl/dynamic_bitset.hpp>
 #include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -102,13 +103,12 @@ public:
     {
       return;
     }
-    else if (const auto* texture_payload_id_void = ImGui::AcceptDragDropPayload("TYL_TEXTURE_ASSET", /*cond = */ 0);
-             texture_payload_id_void != nullptr)
+    else if (const auto* texture_payload = ImGui::AcceptDragDropPayload("TYL_TEXTURE_ASSET", /*cond = */ 0);
+             texture_payload != nullptr)
     {
-      const EntityID* texture_payload_id = reinterpret_cast<const EntityID*>(texture_payload_id_void);
-      std::cerr << "TileSetAtlasTextureDragAndDropInternal:" << static_cast<int>(*texture_payload_id) << std::endl;
-      // Create reference to texture
-      registry.emplace<Reference<Texture>>(*active_tile_set_id_, *texture_payload_id);
+      TYL_ASSERT_EQ(texture_payload->DataSize, sizeof(EntityID));
+      registry.emplace_or_replace<Reference<Texture>>(
+        *active_tile_set_id_, *reinterpret_cast<const EntityID*>(texture_payload->Data));
     }
     ImGui::EndDragDropTarget();
   }
