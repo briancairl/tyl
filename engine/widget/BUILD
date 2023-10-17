@@ -20,6 +20,25 @@ cc_library(
 )
 
 cc_library(
+  name="widget_texture_browser",
+  hdrs=[
+    "include/widget_texture_browser.hpp"
+  ],
+  srcs=[
+    "src/widget_texture_browser.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":widget",
+    "@imgui-file-dialogue",
+    "//core/graphics/device",
+    "//core/graphics/host:image"
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="widget_tileset_creator",
   hdrs=[
     "include/widget_tileset_creator.hpp"

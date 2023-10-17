@@ -96,7 +96,24 @@ public:
     ImGui::EndChild();
   }
 
-  void TileSetAtlasTextureDragAndDrop(Registry& registry, WidgetResources& resources)
+  void TileSetAtlasTextureDragAndDropInternal(Registry& registry)
+  {
+    if (!ImGui::BeginDragDropTarget())
+    {
+      return;
+    }
+    else if (const auto* texture_payload_id_void = ImGui::AcceptDragDropPayload("TYL_TEXTURE_ASSET", /*cond = */ 0);
+             texture_payload_id_void != nullptr)
+    {
+      const EntityID* texture_payload_id = reinterpret_cast<const EntityID*>(texture_payload_id_void);
+      std::cerr << "TileSetAtlasTextureDragAndDropInternal:" << static_cast<int>(*texture_payload_id) << std::endl;
+      // Create reference to texture
+      registry.emplace<Reference<Texture>>(*active_tile_set_id_, *texture_payload_id);
+    }
+    ImGui::EndDragDropTarget();
+  }
+
+  void TileSetAtlasTextureDragAndDropExternal(Registry& registry, WidgetResources& resources)
   {
     active_tile_set_atlas_texture_hovered_ = ImGui::IsItemHovered();
     if (!active_tile_set_id_)
@@ -159,7 +176,8 @@ public:
       }
     }
     ImGui::EndChild();
-    TileSetAtlasTextureDragAndDrop(registry, resources);
+    TileSetAtlasTextureDragAndDropExternal(registry, resources);
+    TileSetAtlasTextureDragAndDropInternal(registry);
   }
 
   void TileSetPopUp(Registry& registry, WidgetResources& resources)

@@ -5,5 +5,6 @@ cc_binary(
     "//core/ecs",
     "//engine/window",
     "//engine/widget:widget_tileset_creator",
+    "//engine/widget:widget_texture_browser",
   ]
 )

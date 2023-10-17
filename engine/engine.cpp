@@ -10,6 +10,7 @@
 // Tyl
 #include <tyl/ecs.hpp>
 #include <tyl/engine/widget.hpp>
+#include <tyl/engine/widget_texture_browser.hpp>
 #include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/engine/window.hpp>
 
@@ -40,6 +41,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto texture_browser = TextureBrowser::create({});
+  if (!texture_browser.has_value())
+  {
+    return 1;
+  }
+
   auto on_update = [&](WindowState& window_state) {
     resources.gui_context = window_state.gui_context;
     std::swap(window_state.drop_payloads, resources.drop_payloads);
@@ -47,6 +54,7 @@ int main(int argc, char** argv)
     window_state.drop_payloads.clear();
 
     tileset_creator->update(registry, resources);
+    texture_browser->update(registry, resources);
     return true;
   };
 
