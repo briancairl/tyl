@@ -78,7 +78,7 @@ public:
   {
     DragAndDropExternalSink(registry, shared, resources);
 
-    static constexpr bool kChildShowBoarders = true;
+    static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
     ImGui::BeginChild("#TexturePreviews", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
     AddTextureBrowserPreviewState(registry);

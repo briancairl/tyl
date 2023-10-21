@@ -17,7 +17,8 @@ class TileSetCreator;
 
 struct TileSetCreatorOptions
 {
-  const char* name = "Tile Set Creator";
+  const char* browser_name = "Tile Set Browser";
+  const char* creator_name = "Tile Set Creator";
 };
 
 template <> struct WidgetOptions<TileSetCreator>

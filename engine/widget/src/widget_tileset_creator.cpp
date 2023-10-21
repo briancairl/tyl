@@ -130,29 +130,18 @@ class TileSetCreator::Impl
 public:
   Impl() {}
 
-  void Update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
+  void Browser(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    if (ImGui::BeginTable("#TileSetPanels", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders))
-    {
-      // Collumn 0
-      {
-        ImGui::TableNextColumn();
-        ImGui::Text("tile sets");
-        ImGui::Separator();
-        TileSetPreview(registry, resources);
-        TileSetPopUp(registry, resources);
-        TileSetNamingPopUp(registry, resources);
-      }
-
-      // Collumn 1
-      {
-        ImGui::TableNextColumn();
-        TileSetAtlasTexture(registry, shared, resources);
-      }
-
-      ImGui::EndTable();
-    }
+    TileSetPreview(registry, resources);
+    TileSetPopUp(registry, resources);
+    TileSetNamingPopUp(registry, resources);
   }
+
+  void Creator(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
+  {
+    TileSetAtlasTexture(registry, shared, resources);
+  }
+
 
   void TileSetPreview(Registry& registry, const WidgetResources& resources)
   {
@@ -165,16 +154,19 @@ public:
         ImGui::PushID(static_cast<int>(id));
         ImGui::Checkbox("", &is_active);
         ImGui::SameLine();
-        const auto p = ImGui::GetCursorPos();
+        const ImVec2 left_pad{ImGui::GetCursorPos().x, 5};
         if (ImGui::CollapsingHeader(label.c_str()))
         {
-          ImGui::Dummy(p);
+          ImGui::Dummy(left_pad);
           ImGui::SameLine();
-          ImGui::InputFloat2("tile size", tileset.tile_size.data());
-          ImGui::Dummy(p);
+          ImGui::InputFloat("tile.x", tileset.tile_size.data() + 0);
+          ImGui::Dummy(left_pad);
+          ImGui::SameLine();
+          ImGui::InputFloat("tile.y", tileset.tile_size.data() + 1);
+          ImGui::Dummy(left_pad);
           ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "selections: %lu", selections.size());
-          ImGui::Dummy(p);
+          ImGui::Dummy(left_pad);
           ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tiles: %lu", tileset.tiles.size());
         }
@@ -314,7 +306,7 @@ public:
         if (editting_tile_set_selection_)
         {
           if (TileSetAtlasEditingSelection(
-                *editting_tile_set_selection_, inverse(es.texture_transform) * mouse_pos_in_panel))
+                *editting_tile_set_selection_, inverse(draw_transform) * ImGui::GetMousePos()))
           {
             Draw(drawlist, draw_transform, *editting_tile_set_selection_, toImVec2(tile_set.tile_size));
           }
@@ -332,7 +324,13 @@ public:
       }
       else
       {
-        drawlist->AddText(panel_pos_in_window + ImVec2{50, 50}, ImColor{1.0f, 0.5f, 0.5f, 1.0f}, "DROP TEXTURE HERE");
+        static constexpr auto kText = "DROP TEXTURE HERE";
+        static float kT = 0.0f;
+        kT += ImGui::GetIO().DeltaTime;
+        drawlist->AddText(
+          panel_pos_in_window + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(kText)) * 0.5f,
+          ImColor{1.0f, 0.2f, 0.5f, std::abs(std::sin(2.f * kT))},
+          kText);
       }
     }
     ImGui::EndChild();
@@ -477,9 +475,20 @@ WidgetStatus TileSetCreator::UpdateImpl(Registry& registry, WidgetSharedState& s
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
   if (ImGui::Begin(
-        options_.name, nullptr, (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
+        options_.browser_name,
+        nullptr,
+        (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
   {
-    impl_->Update(registry, shared, resources);
+    impl_->Browser(registry, shared, resources);
+  }
+  ImGui::End();
+
+  if (ImGui::Begin(
+        options_.creator_name,
+        nullptr,
+        (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
+  {
+    impl_->Creator(registry, shared, resources);
   }
   ImGui::End();
   return WidgetStatus::kOk;
