@@ -268,6 +268,7 @@ expected<Window, WindowCreationError> Window::create(const Options& options)
   {
     window_state.gui_context = imgui_context;
     ImGui::SetCurrentContext(imgui_context);
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   }
 
   // Setup style
@@ -384,6 +385,10 @@ WindowStatus Window::Begin()
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    // ImGui::ShowDemoWindow();
+
     return WindowStatus::kRunning;
   }
 }
