@@ -37,7 +37,7 @@ public:
 private:
   static expected<TextureBrowser, WidgetCreationError> CreateImpl(const TextureBrowserOptions& options);
 
-  WidgetStatus UpdateImpl(Registry& registry, WidgetResources& resources);
+  WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 
   TextureBrowserOptions options_;
 

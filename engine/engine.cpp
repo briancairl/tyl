@@ -33,6 +33,7 @@ int main(int argc, char** argv)
   }
 
   Registry registry;
+  WidgetSharedState shared;
   WidgetResources resources;
 
   auto tileset_creator = TileSetCreator::create({});
@@ -53,8 +54,8 @@ int main(int argc, char** argv)
     std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
     window_state.drop_payloads.clear();
 
-    tileset_creator->update(registry, resources);
-    texture_browser->update(registry, resources);
+    tileset_creator->update(registry, shared, resources);
+    texture_browser->update(registry, shared, resources);
     return true;
   };
 

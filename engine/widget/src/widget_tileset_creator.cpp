@@ -22,6 +22,7 @@
 // Tyl
 #include <tyl/assert.hpp>
 #include <tyl/dynamic_bitset.hpp>
+#include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
@@ -56,7 +57,7 @@ class TileSetCreator::Impl
 public:
   Impl() {}
 
-  void Update(Registry& registry, WidgetResources& resources)
+  void Update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
     if (ImGui::BeginTable("#TileSetPanels", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders))
     {
@@ -72,14 +73,14 @@ public:
       // Collumn 1
       {
         ImGui::TableNextColumn();
-        TileSetAtlasTexture(registry, resources);
+        TileSetAtlasTexture(registry, shared, resources);
       }
 
       ImGui::EndTable();
     }
   }
 
-  void TileSetPreview(Registry& registry, WidgetResources& resources)
+  void TileSetPreview(Registry& registry, const WidgetResources& resources)
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
@@ -97,7 +98,7 @@ public:
     ImGui::EndChild();
   }
 
-  void TileSetAtlasTextureDragAndDropInternal(Registry& registry)
+  void TileSetAtlasTextureDragAndDropInternalSink(Registry& registry)
   {
     if (!ImGui::BeginDragDropTarget())
     {
@@ -113,45 +114,30 @@ public:
     ImGui::EndDragDropTarget();
   }
 
-  void TileSetAtlasTextureDragAndDropExternal(Registry& registry, WidgetResources& resources)
+  void TileSetAtlasTextureDragAndDropExternalSink(
+    Registry& registry,
+    WidgetSharedState& shared,
+    const WidgetResources& resources)
   {
-    active_tile_set_atlas_texture_hovered_ = ImGui::IsItemHovered();
-    if (!active_tile_set_id_)
+    if (!active_tile_set_id_ or registry.any_of<Reference<Texture>>(*active_tile_set_id_))
     {
       return;
     }
-    else if (active_tile_set_last_loaded_texture_)
-    {
-      if (!active_tile_set_last_loaded_texture_->valid())
-      {
-        return;
-      }
-      else if (auto loaded = active_tile_set_last_loaded_texture_->get(); loaded.image.has_value())
-      {
-        // Create texture-asset entity
-        const auto id = registry.create();
-        registry.emplace<Texture>(id, loaded.image->texture());
-        registry.emplace<std::filesystem::path>(id, std::move(loaded.image_path));
 
-        // Create reference to texture
-        registry.emplace<Reference<Texture>>(*active_tile_set_id_, id);
-      }
-      active_tile_set_last_loaded_texture_.reset();
-    }
-    else if (registry.any_of<Reference<Texture>>(*active_tile_set_id_) || resources.drop_payloads.size() != 1)
+    lock_window_movement_ = ImGui::IsItemHovered();
+
+    // Handle drag/drop
+    const auto loaded_texture_ids_or_error = drag_and_drop_images_.update(
+      registry, shared, resources, [is_hovered = lock_window_movement_] { return is_hovered; });
+
+    // Create reference to first loaded texture
+    if (loaded_texture_ids_or_error.has_value() and !loaded_texture_ids_or_error->empty())
     {
-      return;
-    }
-    else if (active_tile_set_atlas_texture_hovered_)
-    {
-      active_tile_set_last_loaded_texture_.emplace(
-        async::post(resources.thread_pool, [image_path = resources.drop_payloads.front()] {
-          return LoadedImage{.image = Image::load(image_path), .image_path = std::move(image_path)};
-        }));
+      registry.emplace<Reference<Texture>>(*active_tile_set_id_, loaded_texture_ids_or_error->front());
     }
   }
 
-  void TileSetAtlasTexture(Registry& registry, WidgetResources& resources)
+  void TileSetAtlasTexture(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_HorizontalScrollbar;
@@ -176,11 +162,11 @@ public:
       }
     }
     ImGui::EndChild();
-    TileSetAtlasTextureDragAndDropExternal(registry, resources);
-    TileSetAtlasTextureDragAndDropInternal(registry);
+    TileSetAtlasTextureDragAndDropExternalSink(registry, shared, resources);
+    TileSetAtlasTextureDragAndDropInternalSink(registry);
   }
 
-  void TileSetPopUp(Registry& registry, WidgetResources& resources)
+  void TileSetPopUp(Registry& registry, const WidgetResources& resources)
   {
     static constexpr auto kPopUpName = "#TileSetPopUp";
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
@@ -213,7 +199,7 @@ public:
     ImGui::EndPopup();
   }
 
-  void TileSetNamingPopUp(Registry& registry, WidgetResources& resources)
+  void TileSetNamingPopUp(Registry& registry, const WidgetResources& resources)
   {
     static constexpr auto kPopUpName = "#TileSetNamingPopUp";
     if (tile_set_naming_pop_up_open_ and !ImGui::IsPopupOpen(kPopUpName))
@@ -246,18 +232,13 @@ public:
     ImGui::EndPopup();
   }
 
-  bool LockWindowMovement() { return active_tile_set_atlas_texture_hovered_; }
+  constexpr bool LockWindowMovement() const { return lock_window_movement_; }
 
+private:
+  bool lock_window_movement_ = false;
   bool tile_set_naming_pop_up_open_ = false;
-  bool active_tile_set_atlas_texture_hovered_ = false;
   std::optional<EntityID> active_tile_set_id_;
-
-  struct LoadedImage
-  {
-    expected<Image, Image::ErrorCode> image;
-    std::filesystem::path image_path;
-  };
-  std::optional<async::non_blocking_future<LoadedImage>> active_tile_set_last_loaded_texture_;
+  DragAndDropImages drag_and_drop_images_;
 };
 
 TileSetCreator::~TileSetCreator() = default;
@@ -271,15 +252,13 @@ TileSetCreator::TileSetCreator(const TileSetCreatorOptions& options, std::unique
     options_{options}, impl_{std::move(impl)}
 {}
 
-WidgetStatus TileSetCreator::UpdateImpl(Registry& registry, WidgetResources& resources)
+WidgetStatus TileSetCreator::UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
 {
+  static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
   if (ImGui::Begin(
-        options_.name,
-        nullptr,
-        (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | ImGuiWindowFlags_NoScrollbar |
-          ImGuiWindowFlags_NoScrollWithMouse))
+        options_.name, nullptr, (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
   {
-    impl_->Update(registry, resources);
+    impl_->Update(registry, shared, resources);
   }
   ImGui::End();
   return WidgetStatus::kOk;

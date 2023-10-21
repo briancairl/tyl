@@ -19,6 +19,7 @@
 
 // Tyl
 #include <tyl/dynamic_bitset.hpp>
+#include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/widget_texture_browser.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
@@ -73,7 +74,7 @@ class TextureBrowser::Impl
 public:
   Impl() {}
 
-  void Update(Registry& registry, WidgetResources& resources)
+  void Update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
     AddTextureBrowserPreviewState(registry);
     if (properties_.show_previews)
@@ -84,6 +85,7 @@ public:
     {
       ShowTextureWithPreviews(registry);
     }
+    DragAndDropExternalSink(registry, shared, resources);
   }
 
   void RecomputeIconDimensions(Registry& registry) const
@@ -94,7 +96,7 @@ public:
       });
   }
 
-  void AddTextureBrowserPreviewState(Registry& registry)
+  void AddTextureBrowserPreviewState(Registry& registry) const
   {
     bool any_initialized = false;
 
@@ -111,13 +113,15 @@ public:
     }
   }
 
-  void ShowTextureWithPreviews(Registry& registry)
+  void ShowTextureWithPreviews(Registry& registry) const
   {
     const float x_offset_spacing = std::max(5.f, properties_.preview_icon_dimensions.x * 0.1f);
     const auto available_space = ImGui::GetContentRegionAvail();
     registry.view<std::filesystem::path, Texture, TextureBrowserPreviewState>().each(
       [&,
        drawlist = ImGui::GetWindowDrawList()](const EntityID id, const auto& path, const auto& texture, auto& state) {
+        DragAndDropInternalSource(registry, id, path, texture, state);
+
         const auto pos = ImGui::GetCursorScreenPos();
 
         {
@@ -131,20 +135,6 @@ public:
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
           state.is_selected = !state.is_selected;
-        }
-
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
-        {
-          if (ImGui::SetDragDropPayload("TYL_TEXTURE_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
-          {
-            ImGui::TextColored(ImVec4{0, 1, 0, 1}, "%s", path.filename().string().c_str());
-          }
-          else
-          {
-            ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%s", path.filename().string().c_str());
-          }
-          ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
-          ImGui::EndDragDropSource();
         }
 
         {
@@ -176,6 +166,40 @@ public:
       });
   }
 
+  static void DragAndDropInternalSource(
+    Registry& registry,
+    const EntityID id,
+    const std::filesystem::path& path,
+    const Texture& texture,
+    const TextureBrowserPreviewState& state)
+  {
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    {
+      if (ImGui::SetDragDropPayload("TYL_TEXTURE_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
+      {
+        ImGui::TextColored(ImVec4{0, 1, 0, 1}, "%s", path.filename().string().c_str());
+      }
+      else
+      {
+        ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%s", path.filename().string().c_str());
+      }
+      ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
+      ImGui::EndDragDropSource();
+    }
+  }
+
+  void DragAndDropExternalSink(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
+  {
+    lock_window_movement_ = ImGui::IsWindowHovered();
+    drag_and_drop_images_.update(
+      registry, shared, resources, [is_hovered = lock_window_movement_] { return is_hovered; });
+  }
+
+  constexpr bool LockWindowMovement() const { return lock_window_movement_; }
+
+private:
+  bool lock_window_movement_ = false;
+  DragAndDropImages drag_and_drop_images_;
   TextureBrowserProperties properties_;
 };
 
@@ -190,11 +214,13 @@ TextureBrowser::TextureBrowser(const TextureBrowserOptions& options, std::unique
     options_{options}, impl_{std::move(impl)}
 {}
 
-WidgetStatus TextureBrowser::UpdateImpl(Registry& registry, WidgetResources& resources)
+WidgetStatus TextureBrowser::UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
 {
-  if (ImGui::Begin(options_.name, nullptr, ImGuiWindowFlags_HorizontalScrollbar))
+  static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_HorizontalScrollbar;
+  if (ImGui::Begin(
+        options_.name, nullptr, (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
   {
-    impl_->Update(registry, resources);
+    impl_->Update(registry, shared, resources);
   }
   ImGui::End();
   return WidgetStatus::kOk;

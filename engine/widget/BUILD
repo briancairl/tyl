@@ -1,4 +1,23 @@
 cc_library(
+  name="internal",
+  hdrs=[
+    "include/internal/drag_and_drop_images.hpp",
+    "include/internal/widget.hpp",
+  ],
+  srcs=[
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//core/async",
+    "//core/common",
+    "//core/ecs",
+    "//core/math",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
   name="widget",
   hdrs=[
     "include/widget.hpp",
@@ -9,6 +28,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
+    ":internal",
     "//core/async",
     "//core/common",
     "//core/ecs",

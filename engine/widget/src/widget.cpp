@@ -8,7 +8,7 @@
 namespace tyl::engine
 {
 
-void WidgetUpdateCommon(Registry& registry, WidgetResources& resources)
+void WidgetUpdateCommon(Registry& registry, const WidgetResources& resources)
 {
   TYL_ASSERT_NON_NULL(resources.gui_context);
   ImGui::SetCurrentContext(reinterpret_cast<ImGuiContext*>(resources.gui_context));

@@ -37,7 +37,7 @@ public:
 private:
   static expected<TileSetCreator, WidgetCreationError> CreateImpl(const TileSetCreatorOptions& options);
 
-  WidgetStatus UpdateImpl(Registry& registry, WidgetResources& resources);
+  WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 
   TileSetCreatorOptions options_;
 
