@@ -31,11 +31,14 @@ class DragAndDropImages
   using Texture = graphics::device::Texture;
 
 public:
-  struct NotReady
-  {};
+  struct Progress
+  {
+    std::size_t loaded;
+    std::size_t total;
+  };
 
   template <typename ShouldAccept, typename HandleError>
-  expected<std::vector<EntityID>, NotReady> update(
+  expected<std::vector<EntityID>, Progress> update(
     Registry& registry,
     WidgetSharedState& shared,
     const WidgetResources& resources,
@@ -44,9 +47,11 @@ public:
   {
     if (!loading_images_.empty())
     {
-      if (std::any_of(loading_images_.begin(), loading_images_.end(), [](auto& f) { return !f.valid(); }))
+      if (const std::size_t n =
+            std::count_if(loading_images_.begin(), loading_images_.end(), [](auto& f) { return f.valid(); });
+          n < loading_images_.size())
       {
-        return make_unexpected(NotReady{});
+        return make_unexpected(Progress{n, loading_images_.size()});
       }
 
       std::vector<EntityID> entities;
@@ -77,11 +82,11 @@ public:
         }));
       }
     }
-    return make_unexpected(NotReady{});
+    return make_unexpected(Progress{0, 0});
   }
 
   template <typename ShouldAccept>
-  expected<std::vector<EntityID>, NotReady>
+  expected<std::vector<EntityID>, Progress>
   update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources, ShouldAccept&& should_accept)
   {
     return update(

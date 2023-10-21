@@ -76,6 +76,17 @@ public:
 
   void Update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
+    lock_window_movement_ = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+
+    if (lock_window_movement_)
+    {
+      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4{1, 1, 0.1, 1});
+    }
+    DragAndDropExternalSink(registry, shared, resources);
+
+    static constexpr bool kChildShowBoarders = true;
+    static constexpr auto kChildFlags = ImGuiWindowFlags_None;
+    ImGui::BeginChild("#TexturePreviews", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
     AddTextureBrowserPreviewState(registry);
     if (properties_.show_previews)
     {
@@ -85,7 +96,12 @@ public:
     {
       ShowTextureWithPreviews(registry);
     }
-    DragAndDropExternalSink(registry, shared, resources);
+    ImGui::EndChild();
+
+    if (lock_window_movement_)
+    {
+      ImGui::PopStyleColor();
+    }
   }
 
   void RecomputeIconDimensions(Registry& registry) const
@@ -120,7 +136,9 @@ public:
     registry.view<std::filesystem::path, Texture, TextureBrowserPreviewState>().each(
       [&,
        drawlist = ImGui::GetWindowDrawList()](const EntityID id, const auto& path, const auto& texture, auto& state) {
+        ImGui::PushID(static_cast<int>(id));
         DragAndDropInternalSource(registry, id, path, texture, state);
+        ImGui::PopID();
 
         const auto pos = ImGui::GetCursorScreenPos();
 
@@ -190,9 +208,26 @@ public:
 
   void DragAndDropExternalSink(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    lock_window_movement_ = ImGui::IsWindowHovered();
-    drag_and_drop_images_.update(
+    auto loaded_or_error = drag_and_drop_images_.update(
       registry, shared, resources, [is_hovered = lock_window_movement_] { return is_hovered; });
+
+    static constexpr bool kChildShowBoarders = false;
+    static constexpr auto kChildFlags = ImGuiWindowFlags_None;
+    ImGui::BeginChild("#TextureDetails", ImVec2{0, 25}, kChildShowBoarders, kChildFlags);
+    if (loaded_or_error.has_value())
+    {
+      ImGui::Text("%d textures loaded", static_cast<int>(registry.view<Texture>().size()));
+    }
+    else if (const auto e = loaded_or_error.error(); e.total == 0)
+    {
+      ImGui::Text("%d textures loaded", static_cast<int>(registry.view<Texture>().size()));
+    }
+    else
+    {
+      const float p = static_cast<float>(e.loaded) / static_cast<float>(e.total);
+      ImGui::ProgressBar(p);
+    }
+    ImGui::EndChild();
   }
 
   constexpr bool LockWindowMovement() const { return lock_window_movement_; }
