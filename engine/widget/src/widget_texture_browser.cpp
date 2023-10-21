@@ -76,12 +76,6 @@ public:
 
   void Update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    lock_window_movement_ = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
-
-    if (lock_window_movement_)
-    {
-      ImGui::PushStyleColor(ImGuiCol_Border, ImVec4{1, 1, 0.1, 1});
-    }
     DragAndDropExternalSink(registry, shared, resources);
 
     static constexpr bool kChildShowBoarders = true;
@@ -96,12 +90,8 @@ public:
     {
       ShowTextureWithPreviews(registry);
     }
+    lock_window_movement_ = ImGui::IsWindowHovered();
     ImGui::EndChild();
-
-    if (lock_window_movement_)
-    {
-      ImGui::PopStyleColor();
-    }
   }
 
   void RecomputeIconDimensions(Registry& registry) const

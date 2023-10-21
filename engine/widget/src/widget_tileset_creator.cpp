@@ -124,11 +124,9 @@ public:
       return;
     }
 
-    lock_window_movement_ = ImGui::IsItemHovered();
-
     // Handle drag/drop
     const auto loaded_texture_ids_or_error = drag_and_drop_images_.update(
-      registry, shared, resources, [is_hovered = lock_window_movement_] { return is_hovered; });
+      registry, shared, resources, [is_hovered = texture_atlas_is_hovered] { return is_hovered; });
 
     // Create reference to first loaded texture
     if (loaded_texture_ids_or_error.has_value() and !loaded_texture_ids_or_error->empty())
@@ -162,6 +160,7 @@ public:
       }
     }
     ImGui::EndChild();
+    texture_atlas_is_hovered = ImGui::IsItemHovered();
     TileSetAtlasTextureDragAndDropExternalSink(registry, shared, resources);
     TileSetAtlasTextureDragAndDropInternalSink(registry);
   }
@@ -232,10 +231,10 @@ public:
     ImGui::EndPopup();
   }
 
-  constexpr bool LockWindowMovement() const { return lock_window_movement_; }
+  constexpr bool LockWindowMovement() const { return texture_atlas_is_hovered; }
 
 private:
-  bool lock_window_movement_ = false;
+  bool texture_atlas_is_hovered = false;
   bool tile_set_naming_pop_up_open_ = false;
   std::optional<EntityID> active_tile_set_id_;
   DragAndDropImages drag_and_drop_images_;
