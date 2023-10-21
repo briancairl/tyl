@@ -327,9 +327,14 @@ public:
         static constexpr auto kText = "DROP TEXTURE HERE";
         static float kT = 0.0f;
         kT += ImGui::GetIO().DeltaTime;
+        ImColor drop_text_color{ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget]};
+        {
+          drop_text_color.Value.w = std::abs(std::sin(2.f * kT));
+        }
+
         drawlist->AddText(
           panel_pos_in_window + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(kText)) * 0.5f,
-          ImColor{1.0f, 0.2f, 0.5f, std::abs(std::sin(2.f * kT))},
+          drop_text_color,
           kText);
       }
     }
