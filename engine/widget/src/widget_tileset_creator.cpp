@@ -66,61 +66,59 @@ ImTransform operator*(const ImTransform& lhs, const ImTransform& rhs)
     .scaling = (lhs.scaling * rhs.scaling)};
 }
 
+ImVec2 toImVec2(const Vec2f& v) { return ImVec2{v.x(), v.y()}; }
+
 struct TileSetSelection
 {
   Vec2i dims = {10, 10};
   ImVec2 min_corner = {0.f, 0.f};
-  ImVec2 max_corner = {100.f, 100.f};
   dynamic_bitset<std::uint64_t> selected = dynamic_bitset<std::uint64_t>{10 * 10};
 };
 
 struct TileSetAtlasTextureEditingState
 {
   bool snap_to_pixel = true;
-  float zoom_sensivity = 1e-2f;
+  float zoom_sensivity = 1e-1f;
   ImTransform texture_transform;
   std::optional<ImTransform> texture_transform_on_nav_start = std::nullopt;
 };
 
 struct TileSet
 {
-  Vec2f tile_size;
+  Vec2f tile_size = {16, 16};
   std::vector<Rect2f> tiles;
 };
 
 void Draw(
   ImDrawList* drawlist,
-  const ImVec2 draw_origin,
-  const ImTransform& transform,
-  const TileSetSelection& selection)
+  const ImTransform& draw_transform,
+  const TileSetSelection& tile_selection,
+  const ImVec2 tile_size)
 {
   static constexpr auto kLineColor = IM_COL32(255, 255, 50, 255);
   static constexpr float kLineThickness = 1;
-  if (selection.dims[0] == 1 and selection.dims[1] == 1)
+  if (tile_selection.dims[0] == 1 and tile_selection.dims[1] == 1)
   {
-    drawlist->AddRect(
-      draw_origin + transform * selection.min_corner,
-      draw_origin + transform * selection.max_corner,
-      kLineColor,
-      kLineThickness);
+    const auto min_corner = draw_transform * tile_selection.min_corner;
+    const auto max_corner = min_corner + tile_size;
+    drawlist->AddRect(min_corner, max_corner, kLineColor, kLineThickness);
   }
   else
   {
-    const ImVec2 cell_size{
-      (selection.max_corner.x - selection.min_corner.x) / selection.dims.x(),
-      (selection.max_corner.y - selection.min_corner.y) / selection.dims.y()};
-
-    for (int i = 0; i <= selection.dims.x(); ++i)
+    const auto min_corner = tile_selection.min_corner;
+    const auto max_corner =
+      min_corner + ImVec2{tile_selection.dims.x() * tile_size.x, tile_selection.dims.y() * tile_size.y};
+    for (int i = 0; i <= tile_selection.dims.x(); ++i)
     {
-      const ImVec2 tail{selection.min_corner.x, selection.min_corner.y + cell_size.y * i};
-      const ImVec2 head{selection.max_corner.x, selection.min_corner.y + cell_size.y * i};
-      drawlist->AddLine(draw_origin + transform * tail, draw_origin + transform * head, kLineColor, kLineThickness);
+      const ImVec2 tail{min_corner.x, min_corner.y + tile_size.y * i};
+      const ImVec2 head{max_corner.x, min_corner.y + tile_size.y * i};
+      drawlist->AddLine(draw_transform * tail, draw_transform * head, kLineColor, kLineThickness);
     }
-    for (int i = 0; i <= selection.dims.y(); ++i)
+    for (int i = 0; i <= tile_selection.dims.y(); ++i)
     {
-      const ImVec2 tail{selection.min_corner.x + cell_size.x * i, selection.min_corner.y};
-      const ImVec2 head{selection.min_corner.x + cell_size.x * i, selection.max_corner.y};
-      drawlist->AddLine(draw_origin + transform * tail, draw_origin + transform * head, kLineColor, kLineThickness);
+      const ImVec2 tail{min_corner.x + tile_size.x * i, min_corner.y};
+      const ImVec2 head{min_corner.x + tile_size.x * i, max_corner.y};
+      drawlist->AddLine(draw_transform * tail, draw_transform * head, kLineColor, kLineThickness);
     }
   }
 }
@@ -162,17 +160,21 @@ public:
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
     ImGui::BeginChild("#TileSetPreview", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
     registry.view<std::string, TileSet, std::vector<TileSetSelection>>().each(
-      [this](EntityID id, const auto& label, const auto& tileset, const auto& selections) {
+      [this](EntityID id, const auto& label, auto& tileset, const auto& selections) {
         bool is_active = id == active_tile_set_id_;
         ImGui::PushID(static_cast<int>(id));
         ImGui::Checkbox("", &is_active);
         ImGui::SameLine();
+        const auto p = ImGui::GetCursorPos();
         if (ImGui::CollapsingHeader(label.c_str()))
         {
-          ImGui::Dummy(ImVec2{25, 10});
+          ImGui::Dummy(p);
+          ImGui::SameLine();
+          ImGui::InputFloat2("tile size", tileset.tile_size.data());
+          ImGui::Dummy(p);
           ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "selections: %lu", selections.size());
-          ImGui::Dummy(ImVec2{25, 10});
+          ImGui::Dummy(p);
           ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tiles: %lu", tileset.tiles.size());
         }
@@ -266,11 +268,6 @@ public:
       selection.dims.x() = std::max(1, selection.dims.x() + delta);
       selection.dims.y() = std::max(1, selection.dims.y() + delta);
     }
-
-    selection.max_corner = max_corner;
-    selection.max_corner.x = std::max(selection.min_corner.x + 0.1f, selection.max_corner.x);
-    selection.max_corner.y = std::max(selection.min_corner.y + 0.1f, selection.max_corner.y);
-
     return !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
   }
 
@@ -286,8 +283,8 @@ public:
       auto* drawlist = ImGui::GetWindowDrawList();
       if (registry.any_of<Reference<Texture>>(*active_tile_set_id_))
       {
-        auto [texture_ref, editting_state, selections] =
-          registry.get<Reference<Texture>, TileSetAtlasTextureEditingState, std::vector<TileSetSelection>>(
+        auto [texture_ref, tile_set, es, selections] =
+          registry.get<Reference<Texture>, TileSet, TileSetAtlasTextureEditingState, std::vector<TileSetSelection>>(
             *active_tile_set_id_);
 
         const auto& texture = resolve(registry, texture_ref);
@@ -296,32 +293,30 @@ public:
 
         if (ImGui::IsWindowHovered())
         {
-          TileSetAtlasTextureNav(mouse_pos_in_panel, editting_state);
+          TileSetAtlasTextureNav(mouse_pos_in_panel, es);
         }
 
-        if (editting_state.snap_to_pixel)
+        if (es.snap_to_pixel)
         {
-          drawlist->AddImage(
-            reinterpret_cast<void*>(texture.get_id()),
-            panel_pos_in_window +
-              truncate(editting_state.texture_transform.scaling, editting_state.texture_transform * ImVec2{0, 0}),
-            panel_pos_in_window +
-              truncate(editting_state.texture_transform.scaling, editting_state.texture_transform * texture_size));
+          es.texture_transform.offset = truncate(es.texture_transform.scaling, es.texture_transform.offset);
+          if (editting_tile_set_selection_)
+          {
+            editting_tile_set_selection_->min_corner =
+              truncate(es.texture_transform.scaling, editting_tile_set_selection_->min_corner);
+          }
         }
-        else
-        {
-          drawlist->AddImage(
-            reinterpret_cast<void*>(texture.get_id()),
-            panel_pos_in_window + editting_state.texture_transform * ImVec2{0, 0},
-            panel_pos_in_window + editting_state.texture_transform * texture_size);
-        }
+
+        const ImTransform draw_transform = ImTransform{panel_pos_in_window} * es.texture_transform;
+
+        drawlist->AddImage(
+          reinterpret_cast<void*>(texture.get_id()), draw_transform * ImVec2{0, 0}, draw_transform * texture_size);
 
         if (editting_tile_set_selection_)
         {
           if (TileSetAtlasEditingSelection(
-                *editting_tile_set_selection_, inverse(editting_state.texture_transform) * mouse_pos_in_panel))
+                *editting_tile_set_selection_, inverse(es.texture_transform) * mouse_pos_in_panel))
           {
-            Draw(drawlist, panel_pos_in_window, editting_state.texture_transform, *editting_tile_set_selection_);
+            Draw(drawlist, draw_transform, *editting_tile_set_selection_, toImVec2(tile_set.tile_size));
           }
           else
           {
@@ -330,9 +325,9 @@ public:
           }
         }
 
-        for (const auto& s : selections)
+        for (const auto& selection : selections)
         {
-          Draw(drawlist, panel_pos_in_window, editting_state.texture_transform, s);
+          Draw(drawlist, draw_transform, selection, toImVec2(tile_set.tile_size));
         }
       }
       else
@@ -381,7 +376,6 @@ public:
         auto& es = registry.get<TileSetAtlasTextureEditingState>(*active_tile_set_id_);
         editting_tile_set_selection_.emplace();
         editting_tile_set_selection_->min_corner = inverse(es.texture_transform) * mouse_pos;
-        editting_tile_set_selection_->max_corner = editting_tile_set_selection_->min_corner + ImVec2{100, 100};
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndMenu();
@@ -416,6 +410,7 @@ public:
       {
         registry.destroy(*active_tile_set_id_);
         active_tile_set_id_.reset();
+        editting_tile_set_selection_.reset();
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndMenu();
