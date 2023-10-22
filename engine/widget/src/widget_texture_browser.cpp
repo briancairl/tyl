@@ -4,22 +4,12 @@
  * @file widget_texture_browser.cpp
  */
 
-#include <iostream>
-
 // C++ Standard Library
 #include <memory>
 
-// ImGui
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
-#include <imgui_internal.h>
-
-// ImGuiFileDialogue
-#include <ImGuiFileDialog.h>
-
 // Tyl
-#include <tyl/dynamic_bitset.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
+#include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget_texture_browser.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>

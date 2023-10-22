@@ -4,24 +4,15 @@
  * @file widget_tileset_creator.cpp
  */
 
-#include <iostream>
-
 // C++ Standard Library
 #include <memory>
 #include <optional>
 #include <vector>
 
-// ImGui
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include <imgui.h>
-#include <imgui_internal.h>
-
-// ImGuiFileDialogue
-#include <ImGuiFileDialog.h>
-
 // Tyl
 #include <tyl/assert.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
+#include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
@@ -37,45 +28,6 @@ namespace
 {
 using Image = graphics::host::Image;
 using Texture = graphics::device::Texture;
-
-struct ImTransform
-{
-  ImVec2 offset = {0, 0};
-  float scaling = 1;
-};
-
-ImVec2 ImTruncate(const ImVec2 pt) { return {std::floor(pt.x), std::floor(pt.y)}; }
-
-ImTransform ImInverse(const ImTransform& transform)
-{
-  const float inv_scaling = 1.f / transform.scaling;
-  return ImTransform{.offset = -transform.offset * inv_scaling, .scaling = inv_scaling};
-}
-
-ImVec2 operator^(const ImTransform& transform, const ImVec2 pt) { return pt * transform.scaling; }
-
-ImVec2 operator*(const ImTransform& transform, const ImVec2 pt) { return pt * transform.scaling + transform.offset; }
-
-ImTransform operator*(const ImTransform& lhs, const ImTransform& rhs)
-{
-  return ImTransform{
-    .offset = {lhs.scaling * rhs.offset.x + lhs.offset.x, lhs.scaling * rhs.offset.y + lhs.offset.y},
-    .scaling = (lhs.scaling * rhs.scaling)};
-}
-
-ImVec2 toImVec2(const Vec2f& v) { return ImVec2{v.x(), v.y()}; }
-
-ImVec4 Fade(ImVec4 original, float alpha_multiplier)
-{
-  original.w *= alpha_multiplier;
-  return original;
-}
-
-ImColor Fade(ImColor original, float alpha_multiplier)
-{
-  original.Value.w *= alpha_multiplier;
-  return original;
-}
 
 struct TileSetSelection
 {
@@ -303,7 +255,7 @@ public:
           DrawGrid(
             drawlist,
             texture_min_corner,
-            screen_to_texture ^ toImVec2(tile_set.tile_size),
+            screen_to_texture ^ ToImVec2(tile_set.tile_size),
             rows,
             cols,
             ImColor{ImGui::GetStyle().Colors[ImGuiCol_Border]});
@@ -331,7 +283,7 @@ public:
       std::snprintf(_drop_texture_text, sizeof(_drop_texture_text), "DROP TEXTURE HERE FOR [%s]", label.c_str());
       drawlist->AddText(
         screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(_drop_texture_text)) * 0.5f,
-        ImColor{Fade(ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget], time_elapsed_fadeosc_)},
+        ImColor{ImFadeColor(ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget], time_elapsed_fadeosc_)},
         _drop_texture_text);
     }
 
@@ -533,14 +485,15 @@ public:
         auto& selection = registry.get<TileSetSelection>(selection_ref.id);
         const bool is_editing = selection_ref.id == editing_tile_set_selection_id_;
         const ImVec2 pos = screen_to_texture * selection.pos;
-        const ImVec2 tsz = screen_to_texture ^ toImVec2(tile_set.tile_size);
+        const ImVec2 tsz = screen_to_texture ^ ToImVec2(tile_set.tile_size);
         const ImVec2 top = DrawGrid(
           drawlist,
           pos,
           tsz,
           selection.rows,
           selection.cols,
-          is_editing ? Fade(selection.color, 0.5f + 0.5f * time_elapsed_fadeosc_) : Fade(selection.color, 0.25f),
+          is_editing ? ImFadeColor(selection.color, 0.5f + 0.5f * time_elapsed_fadeosc_)
+                     : ImFadeColor(selection.color, 0.25f),
           screen_to_texture.scaling * selection.grid_line_thickness);
 
         if (!ImGui::IsMouseHoveringRect(pos, top) || block_additional_hovering)
@@ -556,7 +509,11 @@ public:
           block_additional_hovering = true;
           static constexpr float kRectCornerRounding = 1.f;
           drawlist->AddRectFilled(
-            pos, top, Fade(selection.color, 0.5f * time_elapsed_fadeosc_), kRectCornerRounding, ImDrawFlags_None);
+            pos,
+            top,
+            ImFadeColor(selection.color, 0.5f * time_elapsed_fadeosc_),
+            kRectCornerRounding,
+            ImDrawFlags_None);
         }
       }
     }

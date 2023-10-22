@@ -2,6 +2,7 @@ cc_library(
   name="internal",
   hdrs=[
     "include/internal/drag_and_drop_images.hpp",
+    "include/internal/imgui.hpp",
     "include/internal/widget.hpp",
   ],
   srcs=[
@@ -13,6 +14,7 @@ cc_library(
     "//core/common",
     "//core/ecs",
     "//core/math",
+    "@imgui//:imgui",
   ],
   visibility=["//visibility:private"]
 )
