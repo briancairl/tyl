@@ -21,7 +21,6 @@
 
 // Tyl
 #include <tyl/assert.hpp>
-#include <tyl/dynamic_bitset.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/widget_tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -45,17 +44,15 @@ struct ImTransform
   float scaling = 1;
 };
 
-ImVec2 truncate(const float scaling, const ImVec2 pt)
-{
-  const float inv_scaling = 1.f / scaling;
-  return {std::floor(pt.x * inv_scaling) * scaling, std::floor(pt.y * inv_scaling) * scaling};
-}
+ImVec2 ImTruncate(const ImVec2 pt) { return {std::floor(pt.x), std::floor(pt.y)}; }
 
-ImTransform inverse(const ImTransform& transform)
+ImTransform ImInverse(const ImTransform& transform)
 {
   const float inv_scaling = 1.f / transform.scaling;
-  return ImTransform{.offset = -transform.offset * transform.scaling, .scaling = inv_scaling};
+  return ImTransform{.offset = -transform.offset * inv_scaling, .scaling = inv_scaling};
 }
+
+ImVec2 operator^(const ImTransform& transform, const ImVec2 pt) { return pt * transform.scaling; }
 
 ImVec2 operator*(const ImTransform& transform, const ImVec2 pt) { return pt * transform.scaling + transform.offset; }
 
@@ -68,19 +65,39 @@ ImTransform operator*(const ImTransform& lhs, const ImTransform& rhs)
 
 ImVec2 toImVec2(const Vec2f& v) { return ImVec2{v.x(), v.y()}; }
 
+ImVec4 Fade(ImVec4 original, float alpha_multiplier)
+{
+  original.w *= alpha_multiplier;
+  return original;
+}
+
+ImColor Fade(ImColor original, float alpha_multiplier)
+{
+  original.Value.w *= alpha_multiplier;
+  return original;
+}
+
 struct TileSetSelection
 {
-  Vec2i dims = {10, 10};
-  ImVec2 min_corner = {0.f, 0.f};
-  dynamic_bitset<std::uint64_t> selected = dynamic_bitset<std::uint64_t>{10 * 10};
+  bool change = false;
+  int rows = 10;
+  int cols = 10;
+  ImVec2 pos = {0.f, 0.f};
+  ImColor color = IM_COL32_WHITE;
+  float grid_line_thickness = 1.f;
 };
 
-struct TileSetAtlasTextureEditingState
+using TileSetSelections = std::vector<Reference<TileSetSelection>>;
+
+struct AtlasTextureEditingState
 {
-  bool snap_to_pixel = true;
+  bool show_grid = true;
+  bool show_border = false;
+  bool show_source_filename = false;
+  bool show_position = true;
   float zoom_sensivity = 1e-1f;
-  ImTransform texture_transform;
-  std::optional<ImTransform> texture_transform_on_nav_start = std::nullopt;
+  ImTransform window_to_texture;
+  std::optional<ImTransform> window_to_texture_on_nav_start = std::nullopt;
 };
 
 struct TileSet
@@ -89,37 +106,38 @@ struct TileSet
   std::vector<Rect2f> tiles;
 };
 
-void Draw(
+ImVec2 DrawGrid(
   ImDrawList* drawlist,
-  const ImTransform& draw_transform,
-  const TileSetSelection& tile_selection,
-  const ImVec2 tile_size)
+  const ImVec2 pos,
+  const ImVec2 step,
+  const int rows,
+  const int cols,
+  const ImU32 color,
+  const float thickness = 1.f)
 {
-  static constexpr auto kLineColor = IM_COL32(255, 255, 50, 255);
-  static constexpr float kLineThickness = 1;
-  if (tile_selection.dims[0] == 1 and tile_selection.dims[1] == 1)
+  if (rows == 1 and cols == 1)
   {
-    const auto min_corner = draw_transform * tile_selection.min_corner;
-    const auto max_corner = min_corner + tile_size;
-    drawlist->AddRect(min_corner, max_corner, kLineColor, kLineThickness);
+    const auto top = pos + step;
+    drawlist->AddRect(pos, top, color, 0.5 * thickness, ImDrawFlags_None, thickness);
+    return top;
   }
   else
   {
-    const auto min_corner = tile_selection.min_corner;
-    const auto max_corner =
-      min_corner + ImVec2{tile_selection.dims.x() * tile_size.x, tile_selection.dims.y() * tile_size.y};
-    for (int i = 0; i <= tile_selection.dims.x(); ++i)
+    const auto top = pos + ImVec2{cols * step.x, rows * step.y};
+    for (int i = 1; i < rows; ++i)
     {
-      const ImVec2 tail{min_corner.x, min_corner.y + tile_size.y * i};
-      const ImVec2 head{max_corner.x, min_corner.y + tile_size.y * i};
-      drawlist->AddLine(draw_transform * tail, draw_transform * head, kLineColor, kLineThickness);
+      const ImVec2 tail{pos.x, pos.y + step.y * i};
+      const ImVec2 head{top.x, pos.y + step.y * i};
+      drawlist->AddLine(tail, head, color, thickness);
     }
-    for (int i = 0; i <= tile_selection.dims.y(); ++i)
+    for (int i = 1; i < cols; ++i)
     {
-      const ImVec2 tail{min_corner.x + tile_size.x * i, min_corner.y};
-      const ImVec2 head{min_corner.x + tile_size.x * i, max_corner.y};
-      drawlist->AddLine(draw_transform * tail, draw_transform * head, kLineColor, kLineThickness);
+      const ImVec2 tail{pos.x + step.x * i, pos.y};
+      const ImVec2 head{pos.x + step.x * i, top.y};
+      drawlist->AddLine(tail, head, color, thickness);
     }
+    drawlist->AddRect(pos, top, color, 0.5 * thickness, ImDrawFlags_None, thickness);
+    return top;
   }
 }
 
@@ -139,7 +157,9 @@ public:
 
   void Creator(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    TileSetAtlasTexture(registry, shared, resources);
+    time_elapsed_seconds_ += ImGui::GetIO().DeltaTime;
+    time_elapsed_fadeosc_ = std::abs(std::sin(2.f * time_elapsed_seconds_));
+    AtlasTexturePreview(registry, shared, resources);
   }
 
 
@@ -148,39 +168,25 @@ public:
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
     ImGui::BeginChild("#TileSetPreview", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
-    registry.view<std::string, TileSet, std::vector<TileSetSelection>>().each(
+    registry.view<std::string, TileSet, TileSetSelections>().each(
       [this](EntityID id, const auto& label, auto& tileset, const auto& selections) {
-        bool is_active = id == active_tile_set_id_;
         ImGui::PushID(static_cast<int>(id));
-        ImGui::Checkbox("", &is_active);
-        ImGui::SameLine();
-        const ImVec2 left_pad{ImGui::GetCursorPos().x, 5};
-        if (ImGui::CollapsingHeader(label.c_str()))
+        const bool is_selected = id == editing_tile_set_id_;
+        if (ImGui::Selectable(label.c_str(), is_selected) || is_selected)
         {
-          ImGui::Dummy(left_pad);
-          ImGui::SameLine();
+          editing_tile_set_id_ = id;
           ImGui::InputFloat("tile.x", tileset.tile_size.data() + 0);
-          ImGui::Dummy(left_pad);
-          ImGui::SameLine();
           ImGui::InputFloat("tile.y", tileset.tile_size.data() + 1);
-          ImGui::Dummy(left_pad);
-          ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "selections: %lu", selections.size());
-          ImGui::Dummy(left_pad);
-          ImGui::SameLine();
           ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tiles: %lu", tileset.tiles.size());
         }
         ImGui::Separator();
         ImGui::PopID();
-        if (is_active)
-        {
-          active_tile_set_id_ = id;
-        }
       });
     ImGui::EndChild();
   }
 
-  void TileSetAtlasTextureDragAndDropInternalSink(Registry& registry)
+  void AtlasTextureDragAndDropInternalSink(Registry& registry)
   {
     if (!ImGui::BeginDragDropTarget())
     {
@@ -191,17 +197,15 @@ public:
     {
       TYL_ASSERT_EQ(texture_payload->DataSize, sizeof(EntityID));
       registry.emplace_or_replace<Reference<Texture>>(
-        *active_tile_set_id_, *reinterpret_cast<const EntityID*>(texture_payload->Data));
+        *editing_tile_set_id_, *reinterpret_cast<const EntityID*>(texture_payload->Data));
     }
     ImGui::EndDragDropTarget();
   }
 
-  void TileSetAtlasTextureDragAndDropExternalSink(
-    Registry& registry,
-    WidgetSharedState& shared,
-    const WidgetResources& resources)
+  void
+  AtlasTextureDragAndDropExternalSink(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    if (!active_tile_set_id_ or registry.any_of<Reference<Texture>>(*active_tile_set_id_))
+    if (!editing_tile_set_id_ or registry.any_of<Reference<Texture>>(*editing_tile_set_id_))
     {
       return;
     }
@@ -213,146 +217,153 @@ public:
     // Create reference to first loaded texture
     if (loaded_texture_ids_or_error.has_value() and !loaded_texture_ids_or_error->empty())
     {
-      registry.emplace<Reference<Texture>>(*active_tile_set_id_, loaded_texture_ids_or_error->front());
+      registry.emplace<Reference<Texture>>(*editing_tile_set_id_, loaded_texture_ids_or_error->front());
     }
   }
 
-  static void TileSetAtlasTextureNav(const ImVec2 mouse_pos, TileSetAtlasTextureEditingState& state)
+  static void AtlasTextureNav(const ImTransform& view_to_pointer, AtlasTextureEditingState& state)
   {
-    auto& io = ImGui::GetIO();
-    if (!io.KeyCtrl)
+    auto& GuiIO = ImGui::GetIO();
+    if (!GuiIO.KeyCtrl)
     {
-      state.texture_transform_on_nav_start.reset();
+      state.window_to_texture_on_nav_start.reset();
       return;
     }
 
     // Zooming
-    if (const float delta = io.MouseWheel; delta != 0)
+    if (const float delta = GuiIO.MouseWheel; delta != 0)
     {
-      const float scale_delta = state.zoom_sensivity * delta;
-      const ImTransform mouse_transform{mouse_pos, 1.f};
-      const ImTransform mouse_relative_to_texture = inverse(mouse_transform) * state.texture_transform;
-      state.texture_transform =
-        mouse_transform * ImTransform{.scaling = (1.f + scale_delta)} * mouse_relative_to_texture;
+      const ImTransform pointer_to_texture = ImInverse(view_to_pointer) * state.window_to_texture;
+      const ImTransform pointer_to_scaled{.scaling = (1.f + state.zoom_sensivity * delta)};
+      state.window_to_texture = view_to_pointer * pointer_to_scaled * pointer_to_texture;
     }
 
     // Moving with mouse
     if (!ImGui::IsMouseDown(ImGuiPopupFlags_MouseButtonLeft))
     {
-      state.texture_transform_on_nav_start.reset();
+      state.window_to_texture_on_nav_start.reset();
     }
-    else if (state.texture_transform_on_nav_start)
+    else if (state.window_to_texture_on_nav_start)
     {
       const auto delta = ImGui::GetMouseDragDelta(ImGuiPopupFlags_MouseButtonLeft);
-      state.texture_transform.offset = state.texture_transform_on_nav_start->offset + delta;
+      state.window_to_texture.offset = state.window_to_texture_on_nav_start->offset + delta;
     }
     else
     {
-      state.texture_transform_on_nav_start = state.texture_transform;
+      state.window_to_texture_on_nav_start = state.window_to_texture;
     }
   }
 
-  static bool TileSetAtlasEditingSelection(TileSetSelection& selection, const ImVec2 max_corner)
+  void AtlasTexturePreview(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    auto& io = ImGui::GetIO();
-    if (const int delta = io.MouseWheel; delta != 0)
-    {
-      selection.dims.x() = std::max(1, selection.dims.x() + delta);
-      selection.dims.y() = std::max(1, selection.dims.y() + delta);
-    }
-    return !ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
-  }
-
-  void TileSetAtlasTexture(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
-  {
-    static constexpr bool kChildShowBoarders = false;
-    static constexpr auto kChildFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-    ImGui::BeginChild("#TileSetAtlasTexture", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
-    const auto panel_pos_in_window = ImGui::GetWindowPos();
-    const auto mouse_pos_in_panel = ImGui::GetMousePos() - panel_pos_in_window;
-    if (active_tile_set_id_)
-    {
-      auto* drawlist = ImGui::GetWindowDrawList();
-      if (registry.any_of<Reference<Texture>>(*active_tile_set_id_))
-      {
-        auto [texture_ref, tile_set, es, selections] =
-          registry.get<Reference<Texture>, TileSet, TileSetAtlasTextureEditingState, std::vector<TileSetSelection>>(
-            *active_tile_set_id_);
-
-        const auto& texture = resolve(registry, texture_ref);
-        const ImVec2 texture_size{
-          static_cast<float>(texture.shape().height), static_cast<float>(texture.shape().width)};
-
-        if (ImGui::IsWindowHovered())
-        {
-          TileSetAtlasTextureNav(mouse_pos_in_panel, es);
-        }
-
-        if (es.snap_to_pixel)
-        {
-          es.texture_transform.offset = truncate(es.texture_transform.scaling, es.texture_transform.offset);
-          if (editting_tile_set_selection_)
-          {
-            editting_tile_set_selection_->min_corner =
-              truncate(es.texture_transform.scaling, editting_tile_set_selection_->min_corner);
-          }
-        }
-
-        const ImTransform draw_transform = ImTransform{panel_pos_in_window} * es.texture_transform;
-
-        drawlist->AddImage(
-          reinterpret_cast<void*>(texture.get_id()), draw_transform * ImVec2{0, 0}, draw_transform * texture_size);
-
-        if (editting_tile_set_selection_)
-        {
-          if (TileSetAtlasEditingSelection(
-                *editting_tile_set_selection_, inverse(draw_transform) * ImGui::GetMousePos()))
-          {
-            Draw(drawlist, draw_transform, *editting_tile_set_selection_, toImVec2(tile_set.tile_size));
-          }
-          else
-          {
-            selections.emplace_back(std::move(editting_tile_set_selection_).value());
-            editting_tile_set_selection_.reset();
-          }
-        }
-
-        for (const auto& selection : selections)
-        {
-          Draw(drawlist, draw_transform, selection, toImVec2(tile_set.tile_size));
-        }
-      }
-      else
-      {
-        static constexpr auto kText = "DROP TEXTURE HERE";
-        static float kT = 0.0f;
-        kT += ImGui::GetIO().DeltaTime;
-        ImColor drop_text_color{ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget]};
-        {
-          drop_text_color.Value.w = std::abs(std::sin(2.f * kT));
-        }
-
-        drawlist->AddText(
-          panel_pos_in_window + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(kText)) * 0.5f,
-          drop_text_color,
-          kText);
-      }
-    }
-    ImGui::EndChild();
-    TileSetAtlasTextureSelectionPopUp(registry, resources, mouse_pos_in_panel);
-    texture_atlas_is_hovered_ = ImGui::IsItemHovered();
-    TileSetAtlasTextureDragAndDropExternalSink(registry, shared, resources);
-    TileSetAtlasTextureDragAndDropInternalSink(registry);
-  }
-
-  void TileSetAtlasTextureSelectionPopUp(Registry& registry, const WidgetResources& resources, const ImVec2 mouse_pos)
-  {
-    if (!active_tile_set_id_)
+    if (!editing_tile_set_id_)
     {
       return;
     }
 
-    static constexpr auto kPopUpName = "#TileSetAtlasTextureSelectionPopUp";
+    static constexpr bool kChildShowBoarders = false;
+    static constexpr auto kChildFlags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+    ImGui::BeginChild("#AtlasTexture", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
+
+    const ImTransform screen_to_window{ImGui::GetWindowPos()};
+    const ImTransform screen_to_pointer{ImGui::GetMousePos()};
+
+    auto* drawlist = ImGui::GetWindowDrawList();
+    auto& editing_state = registry.get<AtlasTextureEditingState>(*editing_tile_set_id_);
+
+    if (ImGui::IsWindowHovered())
+    {
+      const auto view_to_pointer = ImInverse(screen_to_window) * screen_to_pointer;
+      AtlasTextureNav(view_to_pointer, editing_state);
+    }
+
+    const ImTransform screen_to_texture = screen_to_window * editing_state.window_to_texture;
+
+    if (registry.any_of<Reference<Texture>>(*editing_tile_set_id_))
+    {
+      auto texture_ref = registry.get<Reference<Texture>>(*editing_tile_set_id_);
+      if (const auto* texture = maybe_resolve(registry, texture_ref); texture == nullptr)
+      {
+        registry.remove<Reference<Texture>>(*editing_tile_set_id_);
+      }
+      else
+      {
+        const ImVec2 texture_size{
+          static_cast<float>(texture->shape().height), static_cast<float>(texture->shape().width)};
+        const ImVec2 texture_min_corner = screen_to_texture * ImVec2{0, 0};
+        const ImVec2 texture_max_corner = screen_to_texture * texture_size;
+
+        drawlist->AddImage(reinterpret_cast<void*>(texture->get_id()), texture_min_corner, texture_max_corner);
+
+        if (editing_state.show_grid)
+        {
+          auto& tile_set = registry.get<TileSet>(*editing_tile_set_id_);
+          const int rows = texture->shape().width / tile_set.tile_size.y();
+          const int cols = texture->shape().height / tile_set.tile_size.x();
+          DrawGrid(
+            drawlist,
+            texture_min_corner,
+            screen_to_texture ^ toImVec2(tile_set.tile_size),
+            rows,
+            cols,
+            ImColor{ImGui::GetStyle().Colors[ImGuiCol_Border]});
+          drawlist->AddRect(texture_min_corner, texture_max_corner, ImColor{ImGui::GetStyle().Colors[ImGuiCol_Border]});
+        }
+        else if (editing_state.show_border)
+        {
+          drawlist->AddRect(texture_min_corner, texture_max_corner, ImColor{ImGui::GetStyle().Colors[ImGuiCol_Border]});
+        }
+
+        if (editing_state.show_source_filename)
+        {
+          const auto& filename = registry.get<std::filesystem::path>(texture_ref.id);
+          drawlist->AddText(
+            texture_min_corner + ImVec2{0, -20},
+            ImColor{ImGui::GetStyle().Colors[ImGuiCol_Text]},
+            filename.string().c_str());
+        }
+      }
+    }
+    else
+    {
+      const auto& label = registry.get<std::string>(*editing_tile_set_id_);
+      static char _drop_texture_text[100];
+      std::snprintf(_drop_texture_text, sizeof(_drop_texture_text), "DROP TEXTURE HERE FOR [%s]", label.c_str());
+      drawlist->AddText(
+        screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(_drop_texture_text)) * 0.5f,
+        ImColor{Fade(ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget], time_elapsed_fadeosc_)},
+        _drop_texture_text);
+    }
+
+    ImGui::EndChild();
+    texture_atlas_is_hovered_ = ImGui::IsItemHovered();
+
+    const auto texture_to_screen = ImInverse(screen_to_texture);
+    const auto texture_to_pointer = texture_to_screen * screen_to_pointer;
+
+    if (editing_state.show_position)
+    {
+      static char _position_text[64];
+      std::snprintf(
+        _position_text,
+        sizeof(_position_text),
+        "(%f, %f) [%.3f%%]",
+        texture_to_pointer.offset.x,
+        texture_to_pointer.offset.y,
+        100.f / texture_to_pointer.scaling);
+      drawlist->AddText(
+        screen_to_pointer.offset, ImColor{ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]}, _position_text);
+    }
+
+    AtlasTexturePopUp(registry, resources, texture_to_screen);
+    AtlasTextureDragAndDropExternalSink(registry, shared, resources);
+    AtlasTextureDragAndDropInternalSink(registry);
+    AtlasTextureEditSelection(registry, resources, drawlist, screen_to_texture);
+  }
+
+  void AtlasTexturePopUp(Registry& registry, const WidgetResources& resources, const ImTransform& texture_to_screen)
+  {
+    static constexpr auto kPopUpName = "#AtlasTexturePopUp";
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
       ImGui::OpenPopup(kPopUpName);
@@ -364,26 +375,260 @@ public:
       return;
     }
 
-    if (ImGui::BeginMenu("settings"))
+    const ImVec2 screen_popup_pos = ImGui::GetMousePosOnOpeningCurrentPopup();
+    const bool texture_is_specified = registry.any_of<Reference<Texture>>(*editing_tile_set_id_);
+    const bool selection_is_active = static_cast<bool>(editing_tile_set_selection_id_);
+
+    if (ImGui::BeginMenu("settings", texture_is_specified))
     {
-      auto& es = registry.get<TileSetAtlasTextureEditingState>(*active_tile_set_id_);
-      ImGui::Checkbox("snap to pixel", &es.snap_to_pixel);
-      ImGui::SliderFloat("zoom sensitivity", &es.zoom_sensivity, 1e-3f, 5e-1f);
+      auto& editing_state = registry.get<AtlasTextureEditingState>(*editing_tile_set_id_);
+      ImGui::Checkbox("show grid", &editing_state.show_grid);
+      ImGui::Checkbox("show border", &editing_state.show_border);
+      ImGui::Checkbox("show source", &editing_state.show_source_filename);
+      ImGui::Checkbox("show position", &editing_state.show_position);
+      ImGui::SliderFloat("zoom sensitivity", &editing_state.zoom_sensivity, 1e-3f, 5e-1f);
       ImGui::EndMenu();
     }
 
-    if (ImGui::BeginMenu("selection"))
+    if (ImGui::BeginMenu("create", texture_is_specified))
     {
-      if (ImGui::MenuItem("create"))
+      if (ImGui::MenuItem("new", nullptr, false, true))
       {
-        auto& es = registry.get<TileSetAtlasTextureEditingState>(*active_tile_set_id_);
-        editting_tile_set_selection_.emplace();
-        editting_tile_set_selection_->min_corner = inverse(es.texture_transform) * mouse_pos;
+        // Create new selection
+        const auto id = registry.create();
+        registry.emplace<TileSetSelection>(id).pos = ImTruncate(texture_to_screen * screen_popup_pos);
+        // Add to current tileset
+        registry.get<TileSetSelections>(*editing_tile_set_id_).emplace_back(Reference<TileSetSelection>{id});
+        // Set active selection
+        editing_tile_set_selection_id_ = id;
+        ImGui::CloseCurrentPopup();
+      }
+
+      if (ImGui::MenuItem("duplicate", nullptr, false, selection_is_active))
+      {
+        // Get selection we want to duplicate
+        const auto& selection_to_copy = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+        // Create new selection
+        const auto id = registry.create();
+        registry.emplace<TileSetSelection>(id, selection_to_copy).pos = texture_to_screen * screen_popup_pos;
+        // Add to current tileset
+        registry.get<TileSetSelections>(*editing_tile_set_id_).emplace_back(Reference<TileSetSelection>{id});
+        // Set active selection
+        editing_tile_set_selection_id_ = id;
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndMenu();
     }
+
+    if (ImGui::BeginMenu("selection", texture_is_specified))
+    {
+      if (ImGui::MenuItem("deselect", nullptr, false, selection_is_active))
+      {
+        // Reset active selection
+        editing_tile_set_selection_id_.reset();
+        ImGui::CloseCurrentPopup();
+      }
+
+      if (ImGui::MenuItem("move to", nullptr, false, selection_is_active))
+      {
+        // Set selection position to popup top-left corner
+        auto& selection = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+        selection.pos = texture_to_screen * screen_popup_pos;
+        ImGui::CloseCurrentPopup();
+      }
+
+      if (ImGui::BeginMenu("properties", selection_is_active))
+      {
+        auto& selection = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+        ImGui::InputFloat2("position", reinterpret_cast<float*>(&selection.pos));
+        if (ImGui::InputInt("rows", &selection.rows))
+          selection.rows = std::max(selection.rows, 1);
+        if (ImGui::InputInt("cols", &selection.cols))
+          selection.cols = std::max(selection.cols, 1);
+        ImGui::EndMenu();
+      }
+
+      if (ImGui::BeginMenu("view", selection_is_active))
+      {
+        if (ImGui::BeginMenu("color"))
+        {
+          auto& selection = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+          ImGui::ColorPicker4("color", reinterpret_cast<float*>(&selection.color.Value));
+          ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("line thickness"))
+        {
+          auto& selection = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+          ImGui::SliderFloat("##thickness", reinterpret_cast<float*>(&selection.grid_line_thickness), 1.f, 10.f);
+          ImGui::EndMenu();
+        }
+        ImGui::EndMenu();
+      }
+
+      ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("delete", texture_is_specified))
+    {
+      auto& selections = registry.get<TileSetSelections>(*editing_tile_set_id_);
+
+      if (ImGui::MenuItem("selected", nullptr, false, selection_is_active))
+      {
+        // Remove from current tileset
+        selections.erase(
+          std::remove_if(
+            selections.begin(),
+            selections.end(),
+            [id = *editing_tile_set_selection_id_](const auto& ref) { return ref.id == id; }),
+          selections.end());
+        // Remove selection
+        registry.destroy(*editing_tile_set_selection_id_);
+        // Reset active selection
+        editing_tile_set_selection_id_.reset();
+        ImGui::CloseCurrentPopup();
+      }
+
+      if (ImGui::MenuItem("all", nullptr, false, !selections.empty()))
+      {
+        // Remove all selection associate with tilset
+        for (const auto& ref : selections)
+        {
+          registry.destroy(ref.id);
+        }
+        selections.clear();
+        // Reset active selection
+        editing_tile_set_selection_id_.reset();
+        ImGui::CloseCurrentPopup();
+      }
+      ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("help"))
+    {
+      ImGui::TextUnformatted("  alt + {arrow} : resize selection grid");
+      ImGui::TextUnformatted("shift + {arrow} : move one pixel");
+      ImGui::TextUnformatted("        {arrow} : move one tile");
+      ImGui::EndMenu();
+    }
     ImGui::EndPopup();
+  }
+
+  void AtlasTextureEditSelection(
+    Registry& registry,
+    const WidgetResources& resources,
+    ImDrawList* drawlist,
+    const ImTransform& screen_to_texture)
+  {
+    auto& GuiIO = ImGui::GetIO();
+
+    auto [tile_name, tile_set, tile_set_selections, editing_state] =
+      registry.get<std::string, TileSet, TileSetSelections, AtlasTextureEditingState>(*editing_tile_set_id_);
+
+    // Handle drawing / mouse-over of selections
+    {
+      bool block_additional_hovering = false;
+      for (const auto selection_ref : tile_set_selections)
+      {
+        auto& selection = registry.get<TileSetSelection>(selection_ref.id);
+        const bool is_editing = selection_ref.id == editing_tile_set_selection_id_;
+        const ImVec2 pos = screen_to_texture * selection.pos;
+        const ImVec2 tsz = screen_to_texture ^ toImVec2(tile_set.tile_size);
+        const ImVec2 top = DrawGrid(
+          drawlist,
+          pos,
+          tsz,
+          selection.rows,
+          selection.cols,
+          is_editing ? Fade(selection.color, 0.5f + 0.5f * time_elapsed_fadeosc_) : Fade(selection.color, 0.25f),
+          screen_to_texture.scaling * selection.grid_line_thickness);
+
+        if (!ImGui::IsMouseHoveringRect(pos, top) || block_additional_hovering)
+        {
+          continue;
+        }
+        else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+          editing_tile_set_selection_id_ = selection_ref.id;
+        }
+        else
+        {
+          block_additional_hovering = true;
+          static constexpr float kRectCornerRounding = 1.f;
+          drawlist->AddRectFilled(
+            pos, top, Fade(selection.color, 0.5f * time_elapsed_fadeosc_), kRectCornerRounding, ImDrawFlags_None);
+        }
+      }
+    }
+
+    // Ignore if no active selection or navigating
+    if (!editing_tile_set_selection_id_ or GuiIO.KeyCtrl)
+    {
+      return;
+    }
+
+    // Snap selection to mouse position
+    if (texture_atlas_is_hovered_)
+    {
+      auto& selection = registry.get<TileSetSelection>(*editing_tile_set_selection_id_);
+      if (GuiIO.KeyAlt)
+      {
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+        {
+          selection.cols = std::max(1, selection.cols - 1);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+        {
+          selection.cols = std::max(1, selection.cols + 1);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+        {
+          selection.rows = std::max(1, selection.rows - 1);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+        {
+          selection.rows = std::max(1, selection.rows + 1);
+        }
+      }
+      else if (GuiIO.KeyShift)
+      {
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+        {
+          selection.pos.x -= 1;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+        {
+          selection.pos.x += 1;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+        {
+          selection.pos.y -= 1;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+        {
+          selection.pos.y += 1;
+        }
+      }
+      else
+      {
+        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow))
+        {
+          selection.pos.x -= tile_set.tile_size.x();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow))
+        {
+          selection.pos.x += tile_set.tile_size.x();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow))
+        {
+          selection.pos.y -= tile_set.tile_size.y();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_DownArrow))
+        {
+          selection.pos.y += tile_set.tile_size.y();
+        }
+      }
+    }
   }
 
 
@@ -409,11 +654,11 @@ public:
         ImGui::CloseCurrentPopup();
       }
 
-      if (ImGui::MenuItem("delete") and active_tile_set_id_)
+      if (ImGui::MenuItem("delete") and editing_tile_set_id_)
       {
-        registry.destroy(*active_tile_set_id_);
-        active_tile_set_id_.reset();
-        editting_tile_set_selection_.reset();
+        registry.destroy(*editing_tile_set_id_);
+        editing_tile_set_id_.reset();
+        editing_tile_set_selection_id_.reset();
         ImGui::CloseCurrentPopup();
       }
       ImGui::EndMenu();
@@ -444,9 +689,9 @@ public:
         const auto id = registry.create();
         registry.emplace<std::string>(id, kTileSetNameBuffer);
         registry.emplace<TileSet>(id);
-        registry.emplace<TileSetAtlasTextureEditingState>(id);
-        registry.emplace<std::vector<TileSetSelection>>(id, std::vector<TileSetSelection>{});
-        active_tile_set_id_ = id;
+        registry.emplace<AtlasTextureEditingState>(id);
+        registry.emplace<TileSetSelections>(id);
+        editing_tile_set_id_ = id;
       }
       std::strcpy(kTileSetNameBuffer, kTileSetNameBufferDefault);
       tile_set_naming_pop_up_open_ = false;
@@ -458,10 +703,12 @@ public:
   constexpr bool LockWindowMovement() const { return texture_atlas_is_hovered_; }
 
 private:
+  float time_elapsed_seconds_ = 0.f;
+  float time_elapsed_fadeosc_ = 0.f;
   bool texture_atlas_is_hovered_ = false;
   bool tile_set_naming_pop_up_open_ = false;
-  std::optional<EntityID> active_tile_set_id_;
-  std::optional<TileSetSelection> editting_tile_set_selection_;
+  std::optional<EntityID> editing_tile_set_id_;
+  std::optional<EntityID> editing_tile_set_selection_id_;
   DragAndDropImages drag_and_drop_images_;
 };
 
