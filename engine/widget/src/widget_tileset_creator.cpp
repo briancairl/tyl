@@ -279,12 +279,11 @@ public:
     else
     {
       const auto& label = registry.get<std::string>(*editing_tile_set_id_);
-      static char _drop_texture_text[100];
-      std::snprintf(_drop_texture_text, sizeof(_drop_texture_text), "DROP TEXTURE HERE FOR [%s]", label.c_str());
+      const auto* text = ImFmt("DROP TEXTURE HERE FOR [%s]", label.c_str());
       drawlist->AddText(
-        screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(_drop_texture_text)) * 0.5f,
+        screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(text)) * 0.5f,
         ImColor{ImFadeColor(ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget], time_elapsed_fadeosc_)},
-        _drop_texture_text);
+        text);
     }
 
     ImGui::EndChild();
@@ -295,16 +294,12 @@ public:
 
     if (editing_state.show_position)
     {
-      static char _position_text[64];
-      std::snprintf(
-        _position_text,
-        sizeof(_position_text),
+      const auto* text = ImFmt(
         "(%f, %f) [%.3f%%]",
         texture_to_pointer.offset.x,
         texture_to_pointer.offset.y,
         100.f / texture_to_pointer.scaling);
-      drawlist->AddText(
-        screen_to_pointer.offset, ImColor{ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]}, _position_text);
+      drawlist->AddText(screen_to_pointer.offset, ImColor{ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]}, text);
     }
 
     AtlasTexturePopUp(registry, resources, texture_to_screen);

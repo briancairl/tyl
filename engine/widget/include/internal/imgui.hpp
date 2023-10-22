@@ -7,6 +7,7 @@
 
 // C++ Standard Library
 #include <cmath>
+#include <cstdlib>
 
 // ImGui
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -56,4 +57,11 @@ inline ImColor ImFadeColor(ImColor original, float alpha_multiplier)
 {
   original.Value.w *= alpha_multiplier;
   return original;
+}
+
+template <std::size_t N = 64, typename... Ts> const char* ImFmt(const char* fmt, Ts&&... fmt_args)
+{
+  static char STATIC__text_buffer[N];
+  std::snprintf(STATIC__text_buffer, sizeof(STATIC__text_buffer), fmt, std::forward<Ts>(fmt_args)...);
+  return STATIC__text_buffer;
 }
