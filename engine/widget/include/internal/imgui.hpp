@@ -45,7 +45,9 @@ inline ImTransform operator*(const ImTransform& lhs, const ImTransform& rhs)
     .scaling = (lhs.scaling * rhs.scaling)};
 }
 
-inline ImVec2 ToImVec2(const tyl::Vec2f& v) { return ImVec2{v.x(), v.y()}; }
+inline ImVec2 ToImVec2(const tyl::Vec2f& v) { return {v.y(), v.x()}; }
+
+inline tyl::Vec2f FromImVec2(const ImVec2& v) { return {v.y, v.x}; }
 
 inline ImVec4 ImFadeColor(ImVec4 original, float alpha_multiplier)
 {
