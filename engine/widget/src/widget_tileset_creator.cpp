@@ -198,44 +198,56 @@ public:
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
-    ImGui::BeginChild("#TileSetPreview", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
-    registry.view<std::string, TileSet, TileSetSelections, Reference<Texture>>().each([this, &registry](
-                                                                                        EntityID id,
-                                                                                        const auto& label,
-                                                                                        auto& tile_set,
-                                                                                        const auto& tile_set_selections,
-                                                                                        const auto& atlas_texture_ref) {
-      ImGui::PushID(static_cast<int>(id));
-      const bool is_selected = id == editing_tile_set_id_;
-      if (ImGui::Selectable(label.c_str(), is_selected) || is_selected)
-      {
-        editing_tile_set_id_ = id;
-        ImGui::InputFloat("tile.x", tile_set.tile_size.data() + 0);
-        ImGui::InputFloat("tile.y", tile_set.tile_size.data() + 1);
-        ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tile selections: %lu", tile_set_selections.size());
-        if (auto* atlas_texture = maybe_resolve(registry, atlas_texture_ref); atlas_texture)
+    ImGui::BeginChild("##TileSetPreview", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
+    if (ImGui::BeginTable("##TileSetPreviewTable", 2, ImGuiTableFlags_Resizable))
+    {
+      registry.view<std::string, TileSet>().each([&](EntityID id, const auto& label, auto& tile_set) {
+        const auto* atlas_texture_ref = registry.try_get<Reference<Texture>>(id);
+
+        if (ImGui::TableNextColumn())
         {
-          ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{0, 50});
+          ImGui::PushID(static_cast<int>(id));
+
+          ImGui::SeparatorText(label.c_str());
+          if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+          {
+            editing_tile_set_id_ = id;
+          }
+          if (ImGui::InputFloat2("tile size", tile_set.tile_size.data()))
+          {
+            TileSetSubmitSelections(registry, resources);
+          }
+          ImGui::PopID();
         }
-      }
-      ImGui::Separator();
-      ImGui::PopID();
-    });
-    registry.view<std::string, TileSet, TileSetSelections>(entt::exclude_t<Reference<Texture>>{})
-      .each([this](EntityID id, const auto& label, auto& tile_set, const auto& tile_set_selections) {
-        ImGui::PushID(static_cast<int>(id));
-        const bool is_selected = id == editing_tile_set_id_;
-        if (ImGui::Selectable(label.c_str(), is_selected) || is_selected)
+
+        if (editing_tile_set_id_ == id)
         {
-          editing_tile_set_id_ = id;
-          ImGui::InputFloat("tile.x", tile_set.tile_size.data() + 0);
-          ImGui::InputFloat("tile.y", tile_set.tile_size.data() + 1);
-          ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tile selections: %lu", tile_set_selections.size());
-          ImGui::TextColored(ImVec4{0.5, 0.5, 0.5, 1.0}, "tiles: %lu", tile_set.tiles.size());
+          ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 1.f, 0.f, 0.25f});
         }
-        ImGui::Separator();
-        ImGui::PopID();
+
+        if (ImGui::TableNextColumn())
+        {
+          ImGui::SeparatorText(ImFmt("tiles: %lu", tile_set.tiles.size()));
+          if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+          {
+            editing_tile_set_id_ = id;
+          }
+          if (atlas_texture_ref == nullptr)
+          {
+            return;
+          }
+          else if (auto* atlas_texture = maybe_resolve(registry, *atlas_texture_ref); atlas_texture != nullptr)
+          {
+            ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{0, 50});
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            {
+              editing_tile_set_id_ = id;
+            }
+          }
+        }
       });
+      ImGui::EndTable();
+    }
     ImGui::EndChild();
   }
 
