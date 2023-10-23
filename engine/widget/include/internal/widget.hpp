@@ -14,6 +14,7 @@
 #include <tyl/clock.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/expected.hpp>
+#include <tyl/serialization/binary_archive.hpp>
 #include <tyl/vec.hpp>
 
 namespace tyl::engine

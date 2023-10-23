@@ -3,6 +3,8 @@ cc_binary(
   srcs=["engine.cpp"],
   deps=[
     "//core/ecs",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream",
     "//engine/window",
     "//engine/widget:widget_perf_monitor",
     "//engine/widget:widget_tileset_creator",

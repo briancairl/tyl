@@ -12,6 +12,19 @@
 // Tyl
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget_perf_monitor.hpp>
+#include <tyl/serialization/file_stream.hpp>
+#include <tyl/serialization/named.hpp>
+#include <tyl/serialization/packet.hpp>
+
+namespace tyl::serialization
+{
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Clock::Time> : std::true_type
+{};
+
+}  // tyl::serialization
+
+using namespace tyl::serialization;
 
 namespace tyl::engine
 {
@@ -59,6 +72,22 @@ public:
       ImGui::GetContentRegionAvail());
   }
 
+  template <typename OArchive> void Save(OArchive& ar, const Registry& registry) const
+  {
+    ar << named{"update_time_seconds", make_packet(update_time_seconds_.data(), update_time_seconds_.size())};
+    ar << named{"update_time_sample_count", update_time_sample_count_};
+    ar << named{"update_time_seconds_avg", update_time_seconds_avg_};
+    ar << named{"next_sample_time_point", next_sample_time_point_};
+  }
+
+  template <typename IArchive> void Load(IArchive& ar, Registry& registry)
+  {
+    ar >> named{"update_time_seconds", make_packet(update_time_seconds_.data(), update_time_seconds_.size())};
+    ar >> named{"update_time_sample_count", update_time_sample_count_};
+    ar >> named{"update_time_seconds_avg", update_time_seconds_avg_};
+    ar >> named{"next_sample_time_point", next_sample_time_point_};
+  }
+
 private:
   std::vector<float> update_time_seconds_;
   std::size_t update_time_sample_count_ = 0;
@@ -76,6 +105,16 @@ tyl::expected<PerfMonitor, WidgetCreationError> PerfMonitor::CreateImpl(const Pe
 PerfMonitor::PerfMonitor(const PerfMonitorOptions& options, std::unique_ptr<Impl>&& impl) :
     options_{options}, impl_{std::move(impl)}
 {}
+
+template <> void PerfMonitor::SaveImpl(binary_oarchive<file_handle_ostream>& oar, const Registry& registry) const
+{
+  impl_->Save(oar, registry);
+}
+
+template <> void PerfMonitor::LoadImpl(binary_iarchive<file_istream>& iar, Registry& registry)
+{
+  impl_->Load(iar, registry);
+}
 
 WidgetStatus PerfMonitor::UpdateImpl(
   [[maybe_unused]] Registry& registry,

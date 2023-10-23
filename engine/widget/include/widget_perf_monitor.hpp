@@ -39,6 +39,11 @@ public:
 private:
   static expected<PerfMonitor, WidgetCreationError> CreateImpl(const PerfMonitorOptions& options);
 
+  template <typename StreamT>
+  void SaveImpl(tyl::serialization::binary_oarchive<StreamT>& oar, const Registry& registry) const;
+
+  template <typename StreamT> void LoadImpl(tyl::serialization::binary_iarchive<StreamT>& oar, Registry& registry);
+
   WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 
   PerfMonitorOptions options_;

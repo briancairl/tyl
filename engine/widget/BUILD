@@ -14,6 +14,8 @@ cc_library(
     "//core/common",
     "//core/ecs",
     "//core/math",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream",
     "@imgui//:imgui",
   ],
   visibility=["//visibility:private"]
@@ -35,6 +37,7 @@ cc_library(
     "//core/common",
     "//core/ecs",
     "//core/math",
+    "//core/serialization",
     "@imgui//:imgui",
     "@imgui-file-dialogue"
   ],
