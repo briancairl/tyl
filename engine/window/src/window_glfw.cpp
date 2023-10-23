@@ -224,7 +224,7 @@ std::ostream& operator<<(std::ostream& os, const WindowCreationError error_code)
   return os << "tyl::engine::WindowCreationError::*";
 }
 
-expected<Window, WindowCreationError> Window::create(const Options& options)
+expected<Window, WindowCreationError> Window::create(Options&& options)
 {
   if (!glfw_try_init())
   {
@@ -260,16 +260,20 @@ expected<Window, WindowCreationError> Window::create(const Options& options)
 
   WindowState window_state;
 
-  if (auto* imgui_context = ImGui::CreateContext(); imgui_context == nullptr)
+  auto* imgui_context = ImGui::CreateContext();
+  if (imgui_context == nullptr)
   {
     return unexpected<WindowCreationError>{WindowCreationError::kEngineInitializationFailure};
   }
-  else
+  else if (std::filesystem::exists(options.runtime.gui_config_file_path))
   {
-    window_state.gui_context = imgui_context;
-    ImGui::SetCurrentContext(imgui_context);
-    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGui::LoadIniSettingsFromDisk(options.runtime.gui_config_file_path.string().c_str());
   }
+
+  // Set the current gui context
+  window_state.gui_context = imgui_context;
+  ImGui::SetCurrentContext(imgui_context);
+  ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
   // Setup style
   ImGui::StyleColorsDark();
@@ -279,19 +283,19 @@ expected<Window, WindowCreationError> Window::create(const Options& options)
   ImGui_ImplOpenGL3_Init(glsl_version);
   ++imgui_contexts_active;
 
-  return Window{reinterpret_cast<void*>(window), std::move(window_state), options.behavior};
+  return Window{reinterpret_cast<void*>(window), std::move(window_state), std::move(options.runtime)};
 }
 
-Window::Window(void* const window_handle, State&& window_state, const WindowBehaviorOptions& behavior_options) :
-    window_state_{std::move(window_state)}, window_handle_{window_handle}, behavior_options_{behavior_options}
+Window::Window(void* const window_handle, State&& window_state, WindowRuntimeOptions&& runtime_options) :
+    window_state_{std::move(window_state)}, window_handle_{window_handle}, runtime_options_{runtime_options}
 {
   glfw_window_setup_callbacks(asGLFWwindow(window_handle_), &window_state_);
 }
 
 Window::Window(Window&& other) :
     window_state_{std::move(other.window_state_)},
-    window_handle_{other.window_handle_},
-    behavior_options_{other.behavior_options_}
+    window_handle_{std::move(other.window_handle_)},
+    runtime_options_{std::move(other.runtime_options_)}
 {
   other.window_handle_ = nullptr;
   glfw_window_restore_callbacks(asGLFWwindow(window_handle_));
@@ -306,6 +310,8 @@ Window::~Window()
   }
   else
   {
+    ImGui::SaveIniSettingsToDisk(runtime_options_.gui_config_file_path.string().c_str());
+
     {
       auto* const glfw_window_handle = asGLFWwindow(window_handle_);
       glfwDestroyWindow(glfw_window_handle);
@@ -373,7 +379,7 @@ WindowStatus Window::Begin()
     }
 
     if (const auto dt = window_state_.now - window_state_.cursor_scroll_stamp;
-        dt > behavior_options_.scroll_timeout_duration)
+        dt > runtime_options_.scroll_timeout_duration)
     {
       window_state_.cursor_scroll = {0, 0};
     }

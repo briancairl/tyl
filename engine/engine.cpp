@@ -25,7 +25,7 @@ int main(int argc, char** argv)
      .initial_window_width = 1500,
      .window_title = "tyl",
      .enable_vsync = true,
-     .behavior = {}});
+     .runtime = {}});
 
   if (!window.has_value())
   {

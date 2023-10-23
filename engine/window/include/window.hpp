@@ -20,9 +20,10 @@
 namespace tyl::engine
 {
 
-struct WindowBehaviorOptions
+struct WindowRuntimeOptions
 {
   Clock::Duration scroll_timeout_duration = Clock::milliseconds(20);
+  std::filesystem::path gui_config_file_path = "/tmp/tyl_engine.ini";
 };
 
 struct WindowOptions
@@ -31,7 +32,7 @@ struct WindowOptions
   int initial_window_width = 500;
   const char* window_title = "app";
   bool enable_vsync = true;
-  WindowBehaviorOptions behavior = {};
+  WindowRuntimeOptions runtime = {};
 };
 
 struct WindowCallbacks
@@ -81,7 +82,7 @@ public:
 
   ~Window();
 
-  [[nodiscard]] static expected<Window, WindowCreationError> create(const Options& settings);
+  [[nodiscard]] static expected<Window, WindowCreationError> create(Options&& option);
 
   template <typename UpdateStateCallbackT> WindowStatus update(UpdateStateCallbackT on_update)
   {
@@ -105,11 +106,11 @@ private:
   WindowStatus Begin();
   void End();
 
-  Window(void* const window_handle, State&& window_state, const WindowBehaviorOptions& window_behavior_options);
+  Window(void* const window_handle, State&& window_state, WindowRuntimeOptions&& window_runtime_options);
 
   State window_state_ = {};
   void* window_handle_ = nullptr;
-  WindowBehaviorOptions behavior_options_ = {};
+  WindowRuntimeOptions runtime_options_ = {};
 };
 
 std::ostream& operator<<(std::ostream& os, const WindowCreationError error_code);
