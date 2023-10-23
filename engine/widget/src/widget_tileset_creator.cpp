@@ -48,6 +48,7 @@ struct AtlasTextureEditingState
   bool show_source_filename = false;
   bool show_position = true;
   float zoom_sensivity = 1e-1f;
+  ImColor texture_tint = ImColor{1.f, 1.f, 1.f, 1.f};
   ImTransform window_to_texture;
   std::optional<ImTransform> window_to_texture_on_nav_start = std::nullopt;
 };
@@ -358,7 +359,13 @@ public:
         const ImVec2 texture_min_corner = screen_to_texture * ImVec2{0, 0};
         const ImVec2 texture_max_corner = screen_to_texture * texture_size;
 
-        drawlist->AddImage(reinterpret_cast<void*>(texture->get_id()), texture_min_corner, texture_max_corner);
+        drawlist->AddImage(
+          reinterpret_cast<void*>(texture->get_id()),
+          texture_min_corner,
+          texture_max_corner,
+          ImVec2{0, 0},
+          ImVec2{1, 1},
+          editing_state.texture_tint);
 
         if (editing_state.show_grid)
         {
@@ -446,7 +453,16 @@ public:
       ImGui::Checkbox("show border", &editing_state.show_border);
       ImGui::Checkbox("show source", &editing_state.show_source_filename);
       ImGui::Checkbox("show position", &editing_state.show_position);
-      ImGui::SliderFloat("zoom sensitivity", &editing_state.zoom_sensivity, 1e-3f, 5e-1f);
+      if (ImGui::BeginMenu("zoom sensitivity", texture_is_specified))
+      {
+        ImGui::SliderFloat("##zoom_sensitivity", &editing_state.zoom_sensivity, 1e-3f, 5e-1f);
+        ImGui::EndMenu();
+      }
+      if (ImGui::BeginMenu("edit texture tint", texture_is_specified))
+      {
+        ImGui::ColorPicker4("##texture_tint", reinterpret_cast<float*>(&editing_state.texture_tint.Value));
+        ImGui::EndMenu();
+      }
       ImGui::EndMenu();
     }
 
