@@ -9,7 +9,7 @@
 #include <cstdint>
 
 // Tyl
-#include <tyl/utility/crtp.hpp>
+#include <tyl/crtp.hpp>
 
 namespace tyl::serialization
 {

@@ -8,8 +8,8 @@ cc_library(
 
 cc_library(
   name="serialization",
-  hdrs=["serial.hpp"],
+  hdrs=["serialization.hpp"],
   include_prefix="tyl",
-  deps=["//lib/serialization/primitives", ":object"],
+  deps=["//core/serialization/primitives", ":object"],
   visibility=["//visibility:public"]
 )

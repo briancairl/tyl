@@ -3,7 +3,7 @@ cc_library(
   hdrs=["include/istream.hpp", "include/ostream.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
-  deps=["//lib/common/utility:crtp"],
+  deps=["//core/common"],
   visibility=["//visibility:public"]
 )
 

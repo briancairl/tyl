@@ -5,9 +5,9 @@ gtest(
   timeout = "short",
   srcs=["named.cpp"],
   deps=[
-    "//lib/serialization/archive:binary_archive",
-    "//lib/serialization/stream:file_stream", 
-    "//lib/serialization/primitives",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream", 
+    "//core/serialization/primitives",
   ],
   visibility=["//visibility:public"],
 )

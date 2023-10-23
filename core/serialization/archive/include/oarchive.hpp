@@ -10,11 +10,11 @@
 #include <utility>
 
 // Tyl
+#include <tyl/crtp.hpp>
 #include <tyl/serialization/label.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 #include <tyl/serialization/sequence.hpp>
-#include <tyl/utility/crtp.hpp>
 
 namespace tyl::serialization
 {
