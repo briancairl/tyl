@@ -153,7 +153,7 @@ public:
   void Creator(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
     time_elapsed_seconds_ += ImGui::GetIO().DeltaTime;
-    time_elapsed_fadeosc_ = std::abs(std::sin(2.f * time_elapsed_seconds_));
+    time_elapsed_fadeosc_ = 0.5f + 0.5 * std::sin(2.f * time_elapsed_seconds_);
     AtlasTexturePreview(registry, shared, resources);
     TileSetSubmitSelections(registry, resources);
   }
