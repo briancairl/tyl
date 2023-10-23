@@ -116,10 +116,6 @@ public:
     registry.view<std::filesystem::path, Texture, TextureBrowserPreviewState>().each(
       [&,
        drawlist = ImGui::GetWindowDrawList()](const EntityID id, const auto& path, const auto& texture, auto& state) {
-        ImGui::PushID(static_cast<int>(id));
-        DragAndDropInternalSource(registry, id, path, texture, state);
-        ImGui::PopID();
-
         const auto pos = ImGui::GetCursorScreenPos();
 
         {
@@ -130,6 +126,7 @@ public:
         }
 
         ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
+        DragAndDropInternalSource(registry, id, path, texture, state);
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
           state.is_selected = !state.is_selected;
