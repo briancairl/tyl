@@ -4,6 +4,7 @@ cc_binary(
   deps=[
     "//core/ecs",
     "//engine/window",
+    "//engine/widget:widget_perf_monitor",
     "//engine/widget:widget_tileset_creator",
     "//engine/widget:widget_texture_browser",
   ]

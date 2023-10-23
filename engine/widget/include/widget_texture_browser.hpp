@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file tileset_creator.hpp
+ * @file widget_texture_browser.hpp
  */
 #pragma once
 

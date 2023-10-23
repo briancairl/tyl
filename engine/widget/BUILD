@@ -42,6 +42,22 @@ cc_library(
 )
 
 cc_library(
+  name="widget_perf_monitor",
+  hdrs=[
+    "include/widget_perf_monitor.hpp"
+  ],
+  srcs=[
+    "src/widget_perf_monitor.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":widget",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="widget_texture_browser",
   hdrs=[
     "include/widget_texture_browser.hpp"

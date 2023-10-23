@@ -11,6 +11,7 @@
 
 // Tyl
 #include <tyl/async.hpp>
+#include <tyl/clock.hpp>
 #include <tyl/ecs.hpp>
 #include <tyl/expected.hpp>
 #include <tyl/vec.hpp>
@@ -23,6 +24,8 @@ namespace tyl::engine
  */
 struct WidgetResources
 {
+  /// Current time
+  Clock::Time now = Clock::Time::min();
   /// Handle to active engine GUI framework context
   void* gui_context;
   /// Drag-and-drop payloads
