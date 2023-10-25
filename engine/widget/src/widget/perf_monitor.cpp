@@ -112,7 +112,7 @@ template <> void PerfMonitor::SaveImpl(WidgetOArchive<file_handle_ostream>& oar,
   impl_->Save(oar, registry);
 }
 
-template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_istream>& iar, Registry& registry)
+template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
 {
   impl_->Load(iar, registry);
 }

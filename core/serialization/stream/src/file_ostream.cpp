@@ -19,11 +19,11 @@ const char* flags_to_write_mode_str(file_ostream::flags fileopt)
 {
   if (fileopt.append)
   {
-    return "ab";
+    return fileopt.binary ? "ab" : "a";
   }
   else
   {
-    return "wb";
+    return fileopt.binary ? "wb" : "w";
   }
 }
 
@@ -31,11 +31,11 @@ const char* flags_to_write_mode_str_human_readable(file_ostream::flags fileopt)
 {
   if (fileopt.append)
   {
-    return "append";
+    return fileopt.binary ? "append|binary" : "append";
   }
   else
   {
-    return "write";
+    return fileopt.binary ? "write|binary" : "write";
   }
 }
 
