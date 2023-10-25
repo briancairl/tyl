@@ -9,7 +9,7 @@
 #include <memory>
 
 // Tyl
-#include <tyl/engine/widget.hpp>
+#include <tyl/engine/widget/base.hpp>
 
 namespace tyl::engine
 {
@@ -26,9 +26,9 @@ template <> struct WidgetOptions<TileSetCreator>
   using type = TileSetCreatorOptions;
 };
 
-class TileSetCreator : public Widget<TileSetCreator>
+class TileSetCreator : public WidgetBase<TileSetCreator>
 {
-  friend class Widget<TileSetCreator>;
+  friend class WidgetBase<TileSetCreator>;
 
 public:
   TileSetCreator(TileSetCreator&&) = default;

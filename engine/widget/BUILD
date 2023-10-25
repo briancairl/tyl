@@ -22,12 +22,12 @@ cc_library(
 )
 
 cc_library(
-  name="widget",
+  name="base",
   hdrs=[
-    "include/widget.hpp",
+    "include/widget/base.hpp",
   ],
   srcs=[
-    "src/widget.cpp",
+    "src/widget/base.cpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
@@ -41,21 +41,22 @@ cc_library(
     "@imgui//:imgui",
     "@imgui-file-dialogue"
   ],
-  visibility=["//visibility:public"]
+  visibility=["//visibility:private"]
 )
 
 cc_library(
   name="widget_perf_monitor",
   hdrs=[
-    "include/widget_perf_monitor.hpp"
+    "include/widget/perf_monitor.hpp"
   ],
   srcs=[
-    "src/widget_perf_monitor.cpp"
+    "src/widget/perf_monitor.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":base",
+    "//core/serialization/std",
   ],
   visibility=["//visibility:public"]
 )
@@ -63,15 +64,15 @@ cc_library(
 cc_library(
   name="widget_texture_browser",
   hdrs=[
-    "include/widget_texture_browser.hpp"
+    "include/widget/texture_browser.hpp"
   ],
   srcs=[
-    "src/widget_texture_browser.cpp"
+    "src/widget/texture_browser.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":base",
     "@imgui-file-dialogue",
     "//core/graphics/device",
     "//core/graphics/host:image"
@@ -82,15 +83,15 @@ cc_library(
 cc_library(
   name="widget_tileset_creator",
   hdrs=[
-    "include/widget_tileset_creator.hpp"
+    "include/widget/tileset_creator.hpp"
   ],
   srcs=[
-    "src/widget_tileset_creator.cpp"
+    "src/widget/tileset_creator.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":base",
     "@imgui-file-dialogue",
     "//core/graphics/device",
     "//core/graphics/host:image"

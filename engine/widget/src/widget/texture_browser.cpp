@@ -10,7 +10,7 @@
 // Tyl
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
-#include <tyl/engine/widget_texture_browser.hpp>
+#include <tyl/engine/widget/texture_browser.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/rect.hpp>

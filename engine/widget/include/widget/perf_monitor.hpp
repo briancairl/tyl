@@ -10,7 +10,7 @@
 
 // Tyl
 #include <tyl/clock.hpp>
-#include <tyl/engine/widget.hpp>
+#include <tyl/engine/widget/base.hpp>
 
 namespace tyl::engine
 {
@@ -27,9 +27,9 @@ template <> struct WidgetOptions<PerfMonitor>
   using type = PerfMonitorOptions;
 };
 
-class PerfMonitor : public Widget<PerfMonitor>
+class PerfMonitor : public WidgetBase<PerfMonitor>
 {
-  friend class Widget<PerfMonitor>;
+  friend class WidgetBase<PerfMonitor>;
 
 public:
   PerfMonitor(PerfMonitor&&) = default;
@@ -39,10 +39,9 @@ public:
 private:
   static expected<PerfMonitor, WidgetCreationError> CreateImpl(const PerfMonitorOptions& options);
 
-  template <typename StreamT>
-  void SaveImpl(tyl::serialization::binary_oarchive<StreamT>& oar, const Registry& registry) const;
+  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar, const Registry& registry) const;
 
-  template <typename StreamT> void LoadImpl(tyl::serialization::binary_iarchive<StreamT>& oar, Registry& registry);
+  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar, Registry& registry);
 
   WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 

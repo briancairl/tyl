@@ -9,10 +9,9 @@
 
 // Tyl
 #include <tyl/ecs.hpp>
-#include <tyl/engine/widget.hpp>
-#include <tyl/engine/widget_perf_monitor.hpp>
-#include <tyl/engine/widget_texture_browser.hpp>
-#include <tyl/engine/widget_tileset_creator.hpp>
+#include <tyl/engine/widget/perf_monitor.hpp>
+#include <tyl/engine/widget/texture_browser.hpp>
+#include <tyl/engine/widget/tileset_creator.hpp>
 #include <tyl/engine/window.hpp>
 #include <tyl/serialization/binary_iarchive.hpp>
 #include <tyl/serialization/binary_oarchive.hpp>

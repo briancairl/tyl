@@ -13,7 +13,7 @@
 #include <tyl/assert.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
-#include <tyl/engine/widget_tileset_creator.hpp>
+#include <tyl/engine/widget/tileset_creator.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/rect.hpp>

@@ -9,7 +9,7 @@
 #include <memory>
 
 // Tyl
-#include <tyl/engine/widget.hpp>
+#include <tyl/engine/widget/base.hpp>
 
 namespace tyl::engine
 {
@@ -25,9 +25,9 @@ template <> struct WidgetOptions<TextureBrowser>
   using type = TextureBrowserOptions;
 };
 
-class TextureBrowser : public Widget<TextureBrowser>
+class TextureBrowser : public WidgetBase<TextureBrowser>
 {
-  friend class Widget<TextureBrowser>;
+  friend class WidgetBase<TextureBrowser>;
 
 public:
   TextureBrowser(TextureBrowser&&) = default;

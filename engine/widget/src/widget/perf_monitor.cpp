@@ -11,10 +11,11 @@
 
 // Tyl
 #include <tyl/engine/internal/imgui.hpp>
-#include <tyl/engine/widget_perf_monitor.hpp>
+#include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/std/vector.hpp>
 
 namespace tyl::serialization
 {
@@ -74,7 +75,7 @@ public:
 
   template <typename OArchive> void Save(OArchive& ar, const Registry& registry) const
   {
-    ar << named{"update_time_seconds", make_packet(update_time_seconds_.data(), update_time_seconds_.size())};
+    ar << named{"update_time_seconds", update_time_seconds_};
     ar << named{"update_time_sample_count", update_time_sample_count_};
     ar << named{"update_time_seconds_avg", update_time_seconds_avg_};
     ar << named{"next_sample_time_point", next_sample_time_point_};
@@ -82,7 +83,7 @@ public:
 
   template <typename IArchive> void Load(IArchive& ar, Registry& registry)
   {
-    ar >> named{"update_time_seconds", make_packet(update_time_seconds_.data(), update_time_seconds_.size())};
+    ar >> named{"update_time_seconds", update_time_seconds_};
     ar >> named{"update_time_sample_count", update_time_sample_count_};
     ar >> named{"update_time_seconds_avg", update_time_seconds_avg_};
     ar >> named{"next_sample_time_point", next_sample_time_point_};
@@ -106,12 +107,12 @@ PerfMonitor::PerfMonitor(const PerfMonitorOptions& options, std::unique_ptr<Impl
     options_{options}, impl_{std::move(impl)}
 {}
 
-template <> void PerfMonitor::SaveImpl(binary_oarchive<file_handle_ostream>& oar, const Registry& registry) const
+template <> void PerfMonitor::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry) const
 {
   impl_->Save(oar, registry);
 }
 
-template <> void PerfMonitor::LoadImpl(binary_iarchive<file_istream>& iar, Registry& registry)
+template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_istream>& iar, Registry& registry)
 {
   impl_->Load(iar, registry);
 }
