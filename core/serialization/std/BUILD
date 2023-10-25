@@ -1,0 +1,18 @@
+cc_library(
+  name="std",
+  hdrs=[
+    "include/chrono.hpp",
+    "include/filesystem.hpp",
+    "include/string.hpp",
+    "include/tuple.hpp",
+    "include/utility.hpp",
+    "include/vector.hpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/serialization/std",
+  deps=[
+    "//core/serialization/primitives",
+    "//core/serialization:object"
+  ],
+  visibility=["//visibility:public"]
+)

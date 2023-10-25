@@ -1,6 +1,6 @@
 cc_library(
   name="archive",
-  hdrs=["include/fwd.hpp",
+  hdrs=["include/archive_fwd.hpp",
         "include/iarchive.hpp",
         "include/oarchive.hpp"],
   strip_include_prefix="include",
