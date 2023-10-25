@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 // Tyl
+#include <tyl/format.hpp>
 #include <tyl/serialization/file_istream.hpp>
 
 namespace tyl::serialization
@@ -39,18 +40,8 @@ file_istream::file_istream(const char* filename, const flags fileopt) :
 {
   if (file_handle_ == nullptr)
   {
-    char errbuf[128];
-    if (
-      std::snprintf(
-        errbuf,
-        sizeof(errbuf),
-        "failed to to open file (%s) for read for mode %s",
-        filename,
-        flags_to_read_mode_str_human_readable(fileopt)) < 0)
-    {
-      errbuf[sizeof(errbuf) - 1] = '\0';
-    }
-    throw std::runtime_error{errbuf};
+    throw std::runtime_error{format<32UL>(
+      "failed to to open file (%s) for read for mode %s", filename, flags_to_read_mode_str_human_readable(fileopt))};
   }
 
   if (fileopt.nobuf)

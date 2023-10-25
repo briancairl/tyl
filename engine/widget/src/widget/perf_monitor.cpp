@@ -12,6 +12,7 @@
 // Tyl
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
+#include <tyl/format.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/packet.hpp>
@@ -63,7 +64,7 @@ public:
       update_time_seconds_.data(),
       update_time_seconds_.size(),
       0.f,
-      ImFmt(
+      format(
         "avg: %f s (%f Hz) [samples %lu]",
         update_time_seconds_avg_,
         1.f / update_time_seconds_avg_,

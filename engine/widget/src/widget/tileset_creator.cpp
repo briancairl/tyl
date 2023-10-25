@@ -15,6 +15,7 @@
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
+#include <tyl/format.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/rect.hpp>
@@ -229,7 +230,7 @@ public:
 
         if (ImGui::TableNextColumn())
         {
-          ImGui::SeparatorText(ImFmt("tiles: %lu", tile_set.tiles.size()));
+          ImGui::SeparatorText(format("tiles: %lu", tile_set.tiles.size()));
           if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
           {
             editing_tile_set_id_ = id;
@@ -400,7 +401,7 @@ public:
     else
     {
       const auto& label = registry.get<std::string>(*editing_tile_set_id_);
-      const auto* text = ImFmt("DROP TEXTURE HERE FOR [%s]", label.c_str());
+      const auto* text = format("DROP TEXTURE HERE FOR [%s]", label.c_str());
       drawlist->AddText(
         screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(text)) * 0.5f,
         ImColor{ImFadeColor(ImGui::GetStyle().Colors[ImGuiCol_DragDropTarget], time_elapsed_fadeosc_)},
@@ -415,7 +416,7 @@ public:
 
     if (editing_state.show_position)
     {
-      const auto* text = ImFmt(
+      const auto* text = format(
         "(%f, %f) [%.3f%%]",
         texture_to_pointer.offset.x,
         texture_to_pointer.offset.y,

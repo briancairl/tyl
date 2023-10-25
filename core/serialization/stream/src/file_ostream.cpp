@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 // Tyl
+#include <tyl/format.hpp>
 #include <tyl/serialization/file_ostream.hpp>
 
 namespace tyl::serialization
@@ -46,18 +47,8 @@ file_ostream::file_ostream(const char* filename, const flags fileopt) :
 {
   if (file_handle_ == nullptr)
   {
-    static char errbuf[64];
-    if (
-      std::snprintf(
-        errbuf,
-        sizeof(errbuf),
-        "failed to to open file (%s) for %s",
-        filename,
-        flags_to_write_mode_str_human_readable(fileopt)) < 0)
-    {
-      errbuf[sizeof(errbuf) - 1] = '\0';
-    }
-    throw std::runtime_error{errbuf};
+    throw std::runtime_error{
+      format<32UL>("failed to to open file (%s) for %s", filename, flags_to_write_mode_str_human_readable(fileopt))};
   }
 
   if (fileopt.nobuf)
