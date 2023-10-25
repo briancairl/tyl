@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/serialization/archive_fwd.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 

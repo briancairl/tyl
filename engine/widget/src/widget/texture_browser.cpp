@@ -8,6 +8,7 @@
 #include <memory>
 
 // Tyl
+#include <tyl/engine/asset.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
@@ -113,9 +114,9 @@ public:
   {
     const float x_offset_spacing = std::max(5.f, properties_.preview_icon_dimensions.x * 0.1f);
     const auto available_space = ImGui::GetContentRegionAvail();
-    registry.view<std::filesystem::path, Texture, TextureBrowserPreviewState>().each(
-      [&,
-       drawlist = ImGui::GetWindowDrawList()](const EntityID id, const auto& path, const auto& texture, auto& state) {
+    registry.view<AssetLocation<Texture>, Texture, TextureBrowserPreviewState>().each(
+      [&, drawlist = ImGui::GetWindowDrawList()](
+        const EntityID id, const auto& asset_location, const auto& texture, auto& state) {
         const auto pos = ImGui::GetCursorScreenPos();
 
         {
@@ -126,7 +127,7 @@ public:
         }
 
         ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
-        DragAndDropInternalSource(registry, id, path, texture, state);
+        DragAndDropInternalSource(registry, id, asset_location.uri, texture, state);
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
           state.is_selected = !state.is_selected;
@@ -152,7 +153,7 @@ public:
           drawlist->AddText(
             lower_pos + ImVec2{properties_.preview_icon_dimensions.x + x_offset_spacing, 0.f},
             IM_COL32_WHITE,
-            path.filename().string().c_str());
+            asset_location.uri.filename().string().c_str());
         }
 
         ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});

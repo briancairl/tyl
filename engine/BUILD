@@ -6,8 +6,9 @@ cc_binary(
     "//core/serialization/archive:binary_archive",
     "//core/serialization/stream:file_stream",
     "//engine/window",
-    "//engine/widget:widget_perf_monitor",
-    "//engine/widget:widget_tileset_creator",
-    "//engine/widget:widget_texture_browser",
+    "//engine/widget:asset_management",
+    "//engine/widget:perf_monitor",
+    "//engine/widget:tileset_creator",
+    "//engine/widget:texture_browser",
   ]
 )

@@ -16,6 +16,7 @@ cc_library(
     "//core/math",
     "//core/serialization/archive:binary_archive",
     "//core/serialization/stream:file_stream",
+    "//engine/components",
     "@imgui//:imgui",
   ],
   visibility=["//visibility:private"]
@@ -33,19 +34,29 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     ":internal",
-    "//core/async",
-    "//core/common",
-    "//core/ecs",
-    "//core/math",
-    "//core/serialization",
-    "@imgui//:imgui",
-    "@imgui-file-dialogue"
   ],
   visibility=["//visibility:private"]
 )
 
 cc_library(
-  name="widget_perf_monitor",
+  name="asset_management",
+  hdrs=[
+    "include/widget/asset_management.hpp"
+  ],
+  srcs=[
+    "src/widget/asset_management.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":base",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="perf_monitor",
   hdrs=[
     "include/widget/perf_monitor.hpp"
   ],
@@ -62,7 +73,7 @@ cc_library(
 )
 
 cc_library(
-  name="widget_texture_browser",
+  name="texture_browser",
   hdrs=[
     "include/widget/texture_browser.hpp"
   ],
@@ -81,7 +92,7 @@ cc_library(
 )
 
 cc_library(
-  name="widget_tileset_creator",
+  name="tileset_creator",
   hdrs=[
     "include/widget/tileset_creator.hpp"
   ],

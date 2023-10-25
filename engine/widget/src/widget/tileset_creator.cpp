@@ -11,6 +11,7 @@
 
 // Tyl
 #include <tyl/assert.hpp>
+#include <tyl/engine/asset.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
@@ -388,11 +389,11 @@ public:
 
         if (editing_state.show_source_filename)
         {
-          const auto& filename = registry.get<std::filesystem::path>(texture_ref.id);
+          const auto& asset_localtion = registry.get<AssetLocation<Texture>>(texture_ref.id);
           drawlist->AddText(
             texture_min_corner + ImVec2{0, -20},
             ImColor{ImGui::GetStyle().Colors[ImGuiCol_Text]},
-            filename.string().c_str());
+            asset_localtion.uri.string().c_str());
         }
       }
     }
