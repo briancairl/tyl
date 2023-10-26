@@ -12,6 +12,7 @@
 // Tyl
 #include <tyl/async.hpp>
 #include <tyl/engine/asset.hpp>
+#include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/asset_management.hpp>
 #include <tyl/serialization/file_stream.hpp>
@@ -130,9 +131,17 @@ tyl::expected<AssetManagement, WidgetCreationError> AssetManagement::CreateImpl(
 
 AssetManagement::AssetManagement(const AssetManagementOptions& options) : options_{options} {}
 
-template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry) {}
+template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry)
+{
+  RegistryComponents<const AssetLocation<Texture>> textures{registry};
+  oar << named{"textures", textures};
+}
 
-template <> void AssetManagement::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry) {}
+template <> void AssetManagement::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
+{
+  RegistryComponents<AssetLocation<Texture>> textures{registry};
+  iar >> named{"textures", textures};
+}
 
 WidgetStatus
 AssetManagement::UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)

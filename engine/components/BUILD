@@ -1,7 +1,8 @@
 cc_library(
   name="components",
   hdrs=[
-    "include/asset.hpp"
+    "include/asset.hpp",
+    "include/ecs.hpp"
   ],
   srcs=[
   ],
