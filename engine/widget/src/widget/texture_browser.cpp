@@ -186,26 +186,11 @@ public:
 
   void DragAndDropExternalSink(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    auto loaded_or_error = drag_and_drop_images_.update(
-      registry, shared, resources, [is_hovered = lock_window_movement_] { return is_hovered; });
-
-    static constexpr bool kChildShowBoarders = false;
-    static constexpr auto kChildFlags = ImGuiWindowFlags_None;
-    ImGui::BeginChild("#TextureDetails", ImVec2{0, 25}, kChildShowBoarders, kChildFlags);
-    if (loaded_or_error.has_value())
+    for (const auto& path : resources.drop_payloads)
     {
-      ImGui::Text("%d textures loaded", static_cast<int>(registry.view<Texture>().size()));
+      const auto id = registry.create();
+      registry.emplace<AssetLocation<Texture>>(id, path);
     }
-    else if (const auto e = loaded_or_error.error(); e.total == 0)
-    {
-      ImGui::Text("%d textures loaded", static_cast<int>(registry.view<Texture>().size()));
-    }
-    else
-    {
-      const float p = static_cast<float>(e.loaded) / static_cast<float>(e.total);
-      ImGui::ProgressBar(p);
-    }
-    ImGui::EndChild();
   }
 
   constexpr bool LockWindowMovement() const { return lock_window_movement_; }

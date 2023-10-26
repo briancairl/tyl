@@ -9,6 +9,7 @@
 
 // Tyl
 #include <tyl/ecs.hpp>
+#include <tyl/engine/widget/asset_management.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
@@ -46,6 +47,12 @@ int main(int argc, char** argv)
   WidgetSharedState shared;
   WidgetResources resources;
 
+  auto asset_management = AssetManagement::create({});
+  if (!asset_management.has_value())
+  {
+    return 1;
+  }
+
   auto perf_monitor = PerfMonitor::create({});
   if (!perf_monitor.has_value())
   {
@@ -68,6 +75,7 @@ int main(int argc, char** argv)
   {
     serialization::file_istream fs{argv[1]};
     serialization::binary_iarchive iar{fs};
+    asset_management->load(iar, registry);
     perf_monitor->load(iar, registry);
     tileset_creator->load(iar, registry);
     texture_browser->load(iar, registry);
@@ -80,6 +88,7 @@ int main(int argc, char** argv)
     std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
     window_state.drop_payloads.clear();
 
+    asset_management->update(registry, shared, resources);
     perf_monitor->update(registry, shared, resources);
     tileset_creator->update(registry, shared, resources);
     texture_browser->update(registry, shared, resources);
@@ -105,6 +114,7 @@ int main(int argc, char** argv)
   {
     serialization::file_ostream ofs{argv[1]};
     serialization::binary_oarchive oar{ofs};
+    asset_management->save(oar, registry);
     perf_monitor->save(oar, registry);
     tileset_creator->save(oar, registry);
     texture_browser->save(oar, registry);

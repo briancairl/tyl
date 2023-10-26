@@ -50,6 +50,8 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     ":base",
+    "//core/graphics/device",
+    "//core/graphics/host:image",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]

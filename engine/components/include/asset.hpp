@@ -24,6 +24,7 @@ namespace tyl::engine
  */
 enum class AssetErrorCode
 {
+  kNone,
   kFailedToLocate,
   kFailedToLoad,
 };
@@ -60,10 +61,14 @@ struct AssetLoadingError
  */
 struct AssetInfo
 {
+  /// Time at which error occurred
+  Clock::Time stamp = Clock::Time::min();
+  /// Error type
+  AssetErrorCode error = AssetErrorCode::kNone;
   /// Effective size of the asset
-  std::uintmax_t size_in_bytes;
+  std::uintmax_t size_in_bytes = 0;
   /// File type from which asset was loaded
-  std::filesystem::file_type type;
+  std::filesystem::file_type type = std::filesystem::file_type::none;
 };
 
 }  // namespace tyl::engine
