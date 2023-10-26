@@ -1,9 +1,12 @@
 /*
  * @copyright 2023-present Brian Cairl
  *
- * @file registry.hpp
+ * @file ecs.hpp
  */
 #pragma once
+
+// C++ Standard Library
+#include <type_traits>
 
 // Tyl
 #include <tyl/ecs.hpp>
@@ -17,6 +20,7 @@ namespace tyl
 template <typename... ComponentTs> struct RegistryComponents
 {
   static constexpr bool IsConst = (std::is_const_v<ComponentTs> || ...);
+  static_assert(((IsConst == std::is_const_v<ComponentTs>)&&...), "All components must either be const or mutable");
   std::conditional_t<IsConst, const Registry&, Registry&> registry;
 };
 
