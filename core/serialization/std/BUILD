@@ -3,6 +3,7 @@ cc_library(
   hdrs=[
     "include/chrono.hpp",
     "include/filesystem.hpp",
+    "include/optional.hpp",
     "include/string.hpp",
     "include/tuple.hpp",
     "include/utility.hpp",

@@ -25,6 +25,18 @@ gtest(
 )
 
 gtest(
+  name="optional",
+  timeout = "short",
+  srcs=["optional.cpp"],
+  deps=[
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:mem_stream", 
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"],
+)
+
+gtest(
   name="string",
   timeout = "short",
   srcs=["string.cpp"],
