@@ -17,6 +17,8 @@ template <typename T> class Rect : public Vec<T, 4>
   using Point = Vec<T, 2>;
 
 public:
+  Rect() = default;
+
   explicit Rect(const Vec<T, 4>& v) : BaseType{v} {}
 
   Rect(Point min_point, Point max_point)

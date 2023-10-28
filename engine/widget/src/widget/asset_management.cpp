@@ -40,7 +40,7 @@ struct ScanStatus
   std::size_t total = 0;
 };
 
-template <typename AssetT, typename AssetPreRegisteredT = AssetT, typename LoadT, typename AddToRegistryT>
+template <typename AssetT, typename IntermediateAssetT = AssetT, typename LoadT, typename AddToRegistryT>
 ScanStatus scan(
   Registry& registry,
   WidgetSharedState& shared,
@@ -51,7 +51,7 @@ ScanStatus scan(
   ScanStatus status;
 
   using AssetLocationType = AssetLocation<AssetT>;
-  using AssetLoadingStateType = AssetLoadingState<AssetPreRegisteredT>;
+  using AssetLoadingStateType = AssetLoadingState<IntermediateAssetT>;
 
   // Assets which have yet to be loaded
   {
@@ -133,7 +133,7 @@ AssetManagement::AssetManagement(const AssetManagementOptions& options) : option
 
 template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry)
 {
-  RegistryComponents<const AssetLocation<Texture>> textures{registry};
+  const ConstRegistryComponents<AssetLocation<Texture>> textures{registry};
   oar << named{"textures", textures};
 }
 

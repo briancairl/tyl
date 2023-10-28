@@ -17,12 +17,17 @@
 namespace tyl
 {
 
-template <typename... ComponentTs> struct RegistryComponents
+template <typename RegsistryT, typename... ComponentTs> struct RegistryComponentsBase
 {
-  static constexpr bool IsConst = (std::is_const_v<ComponentTs> || ...);
-  static_assert(((IsConst == std::is_const_v<ComponentTs>)&&...), "All components must either be const or mutable");
-  std::conditional_t<IsConst, const Registry&, Registry&> registry;
+  RegsistryT& registry;
 };
+
+template <typename... ComponentTs> struct RegistryComponents : RegistryComponentsBase<Registry, ComponentTs...>
+{};
+
+template <typename... ComponentTs>
+struct ConstRegistryComponents : RegistryComponentsBase<const Registry, ComponentTs...>
+{};
 
 }  // namespace tyl
 
@@ -79,29 +84,27 @@ private:
   Registry* registry_;
 };
 
-template <typename Archive> struct serialize<Archive, EntityID>
-{
-  void operator()(Archive& ar, EntityID& entity)
-  {
-    static_assert(sizeof(EntityID) == sizeof(int));
-    auto* entity_as_int = reinterpret_cast<int*>(&entity);
-    ar& named{"entity", *entity_as_int};
-  }
-};
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, EntityID> : std::true_type
+{};
 
+template <typename ArchiveT, typename ComponentT>
+struct is_trivially_serializable<ArchiveT, Reference<ComponentT>> : std::true_type
+{};
 
 template <typename IArchive, typename... ComponentTs> struct load<IArchive, RegistryComponents<ComponentTs...>>
 {
-  void operator()(IArchive& iar, RegistryComponents<ComponentTs...>& components)
+  template <typename RegsistryT>
+  void operator()(IArchive& iar, RegistryComponentsBase<RegsistryT, ComponentTs...>& components)
   {
     SnapshotInputArchive<IArchive> snap_ia{iar, std::addressof(components.registry)};
-    entt::snapshot_loader{components.registry}.entities(snap_ia).template component<ComponentTs...>(snap_ia);
+    entt::continuous_loader{components.registry}.entities(snap_ia).template component<ComponentTs...>(snap_ia);
   }
 };
 
-template <typename OArchive, typename... ComponentTs> struct save<OArchive, RegistryComponents<ComponentTs...>>
+template <typename OArchive, typename... ComponentTs> struct save<OArchive, ConstRegistryComponents<ComponentTs...>>
 {
-  void operator()(OArchive& oar, const RegistryComponents<ComponentTs...>& components)
+  template <typename RegsistryT>
+  void operator()(OArchive& oar, const RegistryComponentsBase<RegsistryT, ComponentTs...>& components)
   {
     SnapshotOutputArchive<OArchive> snap_oa{oar, std::addressof(components.registry)};
     entt::snapshot{components.registry}.entities(snap_oa).template component<ComponentTs...>(snap_oa);

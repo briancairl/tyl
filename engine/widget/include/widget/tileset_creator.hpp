@@ -38,6 +38,10 @@ public:
 private:
   static expected<TileSetCreator, WidgetCreationError> CreateImpl(const TileSetCreatorOptions& options);
 
+  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar, const Registry& registry) const;
+
+  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar, Registry& registry);
+
   WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 
   TileSetCreatorOptions options_;

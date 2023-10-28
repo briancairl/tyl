@@ -12,6 +12,7 @@
 // Tyl
 #include <tyl/assert.hpp>
 #include <tyl/engine/asset.hpp>
+#include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/drag_and_drop_images.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
@@ -19,6 +20,12 @@
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/rect.hpp>
+#include <tyl/serialization/file_stream.hpp>
+#include <tyl/serialization/named.hpp>
+#include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/std/optional.hpp>
+#include <tyl/serialization/std/string.hpp>
+#include <tyl/serialization/std/vector.hpp>
 
 // 1. Create new named tileset
 // 2. Select texture
@@ -793,6 +800,8 @@ private:
   DragAndDropImages drag_and_drop_images_;
 };
 
+using namespace tyl::serialization;
+
 TileSetCreator::~TileSetCreator() = default;
 
 tyl::expected<TileSetCreator, WidgetCreationError> TileSetCreator::CreateImpl(const TileSetCreatorOptions& options)
@@ -803,6 +812,32 @@ tyl::expected<TileSetCreator, WidgetCreationError> TileSetCreator::CreateImpl(co
 TileSetCreator::TileSetCreator(const TileSetCreatorOptions& options, std::unique_ptr<Impl>&& impl) :
     options_{options}, impl_{std::move(impl)}
 {}
+
+template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry) const
+{
+  ConstRegistryComponents<
+    std::string,
+    TileSet,
+    AtlasTextureEditingState,
+    TileSetSelection,
+    TileSetSelections,
+    Reference<Texture>>
+    tilesets{registry};
+  oar << named{"tilesets", tilesets};
+}
+
+template <> void TileSetCreator::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
+{
+  RegistryComponents<
+    std::string,
+    TileSet,
+    AtlasTextureEditingState,
+    TileSetSelection,
+    TileSetSelections,
+    Reference<Texture>>
+    tilesets{registry};
+  iar >> named{"tilesets", tilesets};
+}
 
 WidgetStatus TileSetCreator::UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
 {
@@ -828,3 +863,55 @@ WidgetStatus TileSetCreator::UpdateImpl(Registry& registry, WidgetSharedState& s
 }
 
 }  // namespace tyl::engine
+
+namespace tyl::serialization
+{
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::TileSetSelection> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImTransform> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImColor> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImVec2> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Rect2f> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Vec2f> : std::true_type
+{};
+
+template <typename ArchiveT> struct serialize<ArchiveT, engine::TileSetSelections>
+{
+  void operator()(ArchiveT& ar, engine::TileSetSelections& selections) { ar& named{"selections", selections}; }
+};
+
+template <typename ArchiveT> struct serialize<ArchiveT, engine::AtlasTextureEditingState>
+{
+  void operator()(ArchiveT& ar, engine::AtlasTextureEditingState& editing_state)
+  {
+    ar& named{"show_grid", editing_state.show_grid};
+    ar& named{"show_border", editing_state.show_border};
+    ar& named{"show_source_filename", editing_state.show_source_filename};
+    ar& named{"show_position", editing_state.show_position};
+    ar& named{"zoom_sensivity", editing_state.zoom_sensivity};
+    ar& named{"texture_tint", editing_state.texture_tint};
+    ar& named{"window_to_texture", editing_state.window_to_texture};
+    // [NOT SERIALIZED] ar& named{"window_to_texture_on_nav_start", editing_state.window_to_texture_on_nav_start};
+  }
+};
+
+template <typename ArchiveT> struct serialize<ArchiveT, engine::TileSet>
+{
+  void operator()(ArchiveT& ar, engine::TileSet& tile_set)
+  {
+    ar& named{"tile_size", tile_set.tile_size};
+    ar& named{"tiles", tile_set.tiles};
+  }
+};
+
+}  // tyl::serialization
