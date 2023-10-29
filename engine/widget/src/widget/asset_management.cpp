@@ -147,12 +147,9 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
       {
         return std::move(image_or_error).value();
       }
-      else
-      {
-        return make_unexpected(AssetError::kFailedToLoad);
-      }
+      return make_unexpected(AssetError::kFailedToLoad);
     },
-    [](Registry& registry, EntityID id, Image&& image) { registry.template emplace<Texture>(id, image.texture()); });
+    [](Registry& registry, EntityID id, Image&& image) { registry.emplace<Texture>(id, image.texture()); });
 
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_None;
   if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))
@@ -161,7 +158,7 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
     {
       ImGui::TableSetupColumn("asset");
       ImGui::TableSetupColumn("loaded");
-      ImGui::TableSetupColumn("missed");
+      ImGui::TableSetupColumn("missing");
       ImGui::TableHeadersRow();
 
       ImGui::TableNextColumn();

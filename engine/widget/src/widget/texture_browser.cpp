@@ -28,7 +28,7 @@ using Image = graphics::host::Image;
 using Texture = graphics::device::Texture;
 
 constexpr float kPreviewDimMin = 50.0;
-// constexpr float kPreviewDimMax = 250.0;
+constexpr float kPreviewDimMax = 500.0;
 
 struct TextureBrowserProperties
 {
@@ -57,11 +57,6 @@ ImVec2 ComputeIconDimensions(const graphics::device::Shape2D& shape, const ImVec
   }
 }
 
-constexpr float ComputeCenteringOffset(const float available_y, const float inner_y)
-{
-  return 0.5 * (available_y - inner_y);
-}
-
 }  // namespace
 
 
@@ -80,14 +75,7 @@ public:
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
     ImGui::BeginChild("#TexturePreviews", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
     AddTextureBrowserPreviewState(scene);
-    if (properties_.show_previews)
-    {
-      ShowTextureWithPreviews(scene);
-    }
-    else
-    {
-      ShowTextureWithPreviews(scene);
-    }
+    ShowTextureListing(scene);
     lock_window_movement_ = ImGui::IsWindowHovered();
     ImGui::EndChild();
   }
@@ -100,13 +88,13 @@ public:
       });
   }
 
-  void AddTextureBrowserPreviewState(Scene& scene) const
+  void AddTextureBrowserPreviewState(Scene& scene)
   {
     bool any_initialized = false;
 
     // Add view state to all available texture assets
-    scene.assets.view<Texture>(entt::exclude<TextureBrowserPreviewState>)
-      .each([&](const EntityID id, const auto& texture) {
+    scene.assets.view<AssetLocation<Texture>, Texture>(entt::exclude<TextureBrowserPreviewState>)
+      .each([&](const EntityID id, const auto& texture, const auto& asset_location) {
         scene.assets.emplace<TextureBrowserPreviewState>(id);
         any_initialized = true;
       });
@@ -115,79 +103,131 @@ public:
     {
       RecomputeIconDimensions(scene);
     }
-  }
 
-  void ShowTextureWithPreviews(Scene& scene) const
-  {
-    const float x_offset_spacing = std::max(5.f, properties_.preview_icon_dimensions.x * 0.1f);
-    const auto available_space = ImGui::GetContentRegionAvail();
-    scene.assets.view<AssetLocation<Texture>, Texture, TextureBrowserPreviewState>().each(
-      [&, drawlist = ImGui::GetWindowDrawList()](
-        const EntityID id, const auto& asset_location, const auto& texture, auto& state) {
-        const auto pos = ImGui::GetCursorScreenPos();
-
+    if (ImGui::Button("delete"))
+    {
+      scene.assets.view<TextureBrowserPreviewState>().each([&](const EntityID id, const auto& state) {
+        if (state.is_selected)
         {
-          drawlist->AddRectFilled(
-            pos,
-            pos + ImVec2{available_space.x, properties_.preview_icon_dimensions.y},
-            state.is_selected ? IM_COL32(100, 100, 25, 255) : IM_COL32(100, 100, 100, 255));
+          scene.assets.destroy(id);
         }
-
-        ImGui::Dummy(ImVec2{available_space.x, properties_.preview_icon_dimensions.y});
-        DragAndDropInternalSource(id, asset_location.path, texture, state);
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Left) and ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-        {
-          state.is_selected = !state.is_selected;
-        }
-
-        {
-          const ImVec2 lower_pos{
-            pos.x + ComputeCenteringOffset(properties_.preview_icon_dimensions.x, state.dimensions.x) +
-              x_offset_spacing,
-            pos.y + ComputeCenteringOffset(properties_.preview_icon_dimensions.y, state.dimensions.y)};
-          drawlist->AddImage(
-            reinterpret_cast<void*>(texture.get_id()),
-            lower_pos,
-            lower_pos + state.dimensions,
-            ImVec2(0, 0),
-            ImVec2(1, 1));
-        }
-
-        {
-          const ImVec2 lower_pos{
-            pos.x + x_offset_spacing,
-            pos.y + ComputeCenteringOffset(properties_.preview_icon_dimensions.y, ImGui::GetTextLineHeight())};
-          drawlist->AddText(
-            lower_pos + ImVec2{properties_.preview_icon_dimensions.x + x_offset_spacing, 0.f},
-            IM_COL32_WHITE,
-            asset_location.path.filename().string().c_str());
-        }
-
-        ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
-        ImGui::Separator();
-        ImGui::Dummy(ImVec2{x_offset_spacing, x_offset_spacing * 0.5f});
       });
+    }
+
+    ImGui::SameLine();
+    ImGui::Checkbox("show previews", &properties_.show_previews);
+
+    if (properties_.show_previews)
+    {
+      ImGui::SameLine();
+      if (ImGui::SliderFloat2(
+            "preview dimensions",
+            reinterpret_cast<float*>(&properties_.preview_icon_dimensions),
+            kPreviewDimMin,
+            kPreviewDimMax))
+      {
+        RecomputeIconDimensions(scene);
+      }
+    }
   }
 
-  static void DragAndDropInternalSource(
+  void ShowTextureListing(Scene& scene) const
+  {
+    static constexpr bool kChildShowBoarders = false;
+    static constexpr auto kChildFlags = ImGuiWindowFlags_None;
+    if (ImGui::BeginChild("#TexturePreviewsChild", ImVec2{0, 0}, kChildShowBoarders, kChildFlags))
+    {
+      if (ImGui::BeginTable("##TextureListing", 4, ImGuiTableFlags_Resizable))
+      {
+        ImGui::TableSetupColumn("##");
+        ImGui::TableSetupColumn("path");
+        ImGui::TableSetupColumn("size");
+        ImGui::TableSetupColumn("id");
+        ImGui::TableHeadersRow();
+
+        scene.assets.view<AssetLocation<Texture>, AssetInfo, TextureBrowserPreviewState>().each(
+          [&, drawlist = ImGui::GetWindowDrawList()](
+            const EntityID id, const auto& asset_location, const auto& asset_info, auto& state) {
+            const bool is_valid = (asset_info.error == AssetError::kNone);
+            bool is_selected = state.is_selected;
+
+            ImGui::TableNextColumn();
+            {
+              ImGui::PushID(static_cast<int>(id) + 1);
+              ImGui::Checkbox("##", &is_selected);
+              ImGui::PopID();
+            }
+            ImGui::TableNextColumn();
+            {
+              ImGui::Text("%s", asset_location.path.filename().string().c_str());
+              if (
+                is_valid && !DragAndDropInternalSource(scene, id, asset_location.path, state) and
+                properties_.show_previews and ImGui::IsItemHovered() and ImGui::BeginTooltip())
+              {
+                const auto& texture = scene.assets.get<Texture>(id);
+                ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
+                ImGui::EndTooltip();
+              }
+            }
+            ImGui::TableNextColumn();
+            {
+              if (is_valid)
+              {
+                ImGui::Text("%lu kb", asset_info.size_in_bytes / 1000);
+              }
+              else
+              {
+                ImGui::Text("[n/a]");
+              }
+            }
+            ImGui::TableNextColumn();
+            {
+              ImGui::Text("%d", static_cast<int>(id));
+            }
+
+            if (!is_valid)
+            {
+              ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 0.f, 0.f, 0.25f});
+            }
+            else if (is_selected)
+            {
+              ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 1.f, 0.f, 0.25f});
+            }
+            state.is_selected = is_selected;
+          });
+
+        ImGui::EndTable();
+      }
+      ImGui::EndChild();
+    }
+  }
+
+  bool DragAndDropInternalSource(
+    const Scene& scene,
     const EntityID id,
     const std::filesystem::path& path,
-    const Texture& texture,
-    const TextureBrowserPreviewState& state)
+    const TextureBrowserPreviewState& state) const
   {
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+    if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
     {
-      if (ImGui::SetDragDropPayload("TYL_TEXTURE_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
-      {
-        ImGui::TextColored(ImVec4{0, 1, 0, 1}, "%s", path.filename().string().c_str());
-      }
-      else
-      {
-        ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%s", path.filename().string().c_str());
-      }
-      ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
-      ImGui::EndDragDropSource();
+      return false;
     }
+
+    ImVec4 tint{1, 1, 1, 1};
+    if (ImGui::SetDragDropPayload("TYL_TEXTURE_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
+    {
+      tint = ImVec4{0, 1, 0, 1};
+    }
+
+    if (properties_.show_previews)
+    {
+      const auto& texture = scene.assets.get<Texture>(id);
+      ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions, ImVec2{0, 0}, ImVec2{1, 1}, tint);
+    }
+    ImGui::TextColored(tint, "%s", path.filename().string().c_str());
+
+    ImGui::EndDragDropSource();
+    return true;
   }
 
   void DragAndDropExternalSink(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
