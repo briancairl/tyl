@@ -388,6 +388,17 @@ public:
           ImColor{ImGui::GetStyle().Colors[ImGuiCol_Text]},
           asset_location.path.string().c_str());
       }
+
+      AtlasTextureEditSelection(drawlist, screen_to_texture);
+    }
+    else
+    {
+      const auto& label = local_registry_.get<std::string>(*editing_tile_set_id_);
+      const auto* text = format<128>("TEXTURE FOR [%s] IS INVALID! PERHAPS UNLOADED OR MISSING?", label.c_str());
+      drawlist->AddText(
+        screen_to_window.offset + (ImGui::GetContentRegionAvail() - ImGui::CalcTextSize(text)) * 0.5f,
+        ImColor{ImFadeColor(ImVec4{1, 0, 0, 1}, time_elapsed_fadeosc_)},
+        text);
     }
 
     ImGui::EndChild();
@@ -408,7 +419,6 @@ public:
 
     AtlasTexturePopUp(texture_to_screen);
     AtlasTextureDragAndDropInternalSink();
-    AtlasTextureEditSelection(drawlist, screen_to_texture);
   }
 
   void AtlasTexturePopUp(const ImTransform& texture_to_screen)
