@@ -59,7 +59,6 @@ ImVec2 ComputeIconDimensions(const graphics::device::Shape2D& shape, const ImVec
 
 }  // namespace
 
-
 using namespace tyl::serialization;
 
 class TextureBrowser::Impl

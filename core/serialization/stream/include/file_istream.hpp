@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 
 // Tyl
 #include <tyl/serialization/istream.hpp>
@@ -76,7 +77,11 @@ public:
 
   static constexpr flags default_flags{.nobuf = true, .binary = true};
 
-  file_istream(const char* filename, const flags fileopt = default_flags);
+  explicit file_istream(const char* filename, const flags fileopt = default_flags);
+
+  explicit file_istream(const std::filesystem::path& path, const flags fileopt = default_flags) :
+      file_istream{path.c_str(), fileopt}
+  {}
 
   file_istream(file_istream&& other) = default;
 

@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 
 // Tyl
 #include <tyl/serialization/ostream.hpp>
@@ -57,7 +58,11 @@ public:
 
   static constexpr flags default_flags{.nobuf = true, .append = false, .binary = true};
 
-  file_ostream(const char* filename, const flags fileopt = default_flags);
+  explicit file_ostream(const char* filename, const flags fileopt = default_flags);
+
+  explicit file_ostream(const std::filesystem::path& path, const flags fileopt = default_flags) :
+      file_ostream{path.c_str(), fileopt}
+  {}
 
   file_ostream(file_ostream&& other) = default;
 

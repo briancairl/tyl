@@ -16,12 +16,13 @@ cc_library(
 )
 
 cc_library(
-  name="base",
+  name="widget",
   hdrs=[
-    "include/widget/base.hpp",
+    "include/widget/widget.hpp",
+    "include/widget/io.hpp",
   ],
   srcs=[
-    "src/widget/base.cpp",
+    "src/widget/widget.cpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
@@ -36,7 +37,7 @@ cc_library(
     "//engine/components",
     "//engine/scene",
   ],
-  visibility=["//visibility:private"]
+  visibility=["//visibility:public"]
 )
 
 cc_library(
@@ -50,7 +51,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":base",
+    ":widget",
     "//core/graphics/device",
     "//core/graphics/host:image",
     "//core/serialization/std",
@@ -69,7 +70,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":base",
+    ":widget",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]
@@ -86,7 +87,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":base",
+    ":widget",
     "@imgui-file-dialogue",
     "//core/graphics/device",
     "//core/graphics/host:image"
@@ -105,7 +106,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":base",
+    ":widget",
     "@imgui-file-dialogue",
     "//core/graphics/device",
     "//core/graphics/host:image"

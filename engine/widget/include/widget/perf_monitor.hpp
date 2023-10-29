@@ -10,7 +10,7 @@
 
 // Tyl
 #include <tyl/clock.hpp>
-#include <tyl/engine/widget/base.hpp>
+#include <tyl/engine/widget/widget.hpp>
 
 namespace tyl::engine
 {

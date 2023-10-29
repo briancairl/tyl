@@ -11,6 +11,7 @@
 #include <tyl/ecs.hpp>
 #include <tyl/engine/scene.hpp>
 #include <tyl/engine/widget/asset_management.hpp>
+#include <tyl/engine/widget/io.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
@@ -43,9 +44,11 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  Registry registry;
-  WidgetSharedState shared;
-  WidgetResources resources;
+  const std::filesystem::path working_directory{argv[1]};
+  if (std::filesystem::create_directories(working_directory))
+  {
+    std::fprintf(stderr, "[INFO] created working directory: %s\n", working_directory.string().c_str());
+  }
 
   auto asset_management = AssetManagement::create({});
   if (!asset_management.has_value())
@@ -72,17 +75,21 @@ int main(int argc, char** argv)
   }
 
   Scene scene;
+  WidgetSharedState shared;
+  WidgetResources resources;
 
-  if (std::filesystem::exists(argv[1]))
+  if (const auto path = (working_directory / "scene.bin"); std::filesystem::exists(path))
   {
-    serialization::file_istream fs{argv[1]};
-    serialization::binary_iarchive iar{fs};
+    serialization::file_istream ifs{path};
+    serialization::binary_iarchive iar{ifs};
     iar >> serialization::named{"scene", scene};
-    asset_management->load(iar);
-    perf_monitor->load(iar);
-    tileset_creator->load(iar);
-    texture_browser->load(iar);
   }
+
+  load(*asset_management, working_directory / "asset_management.bin");
+  load(*perf_monitor, working_directory / "perf_monitor.bin");
+  load(*tileset_creator, working_directory / "tileset_creator.bin");
+  load(*texture_browser, working_directory / "texture_browser.bin");
+
 
   auto on_update = [&](WindowState& window_state) {
     resources.gui_context = window_state.gui_context;
@@ -115,14 +122,16 @@ int main(int argc, char** argv)
   }
 
   {
-    serialization::file_ostream ofs{argv[1]};
+    const auto path = (working_directory / "scene.bin");
+    serialization::file_ostream ofs{path};
     serialization::binary_oarchive oar{ofs};
     oar << serialization::named{"scene", scene};
-    asset_management->save(oar);
-    perf_monitor->save(oar);
-    tileset_creator->save(oar);
-    texture_browser->save(oar);
   }
+
+  save(*asset_management, working_directory / "asset_management.bin");
+  save(*perf_monitor, working_directory / "perf_monitor.bin");
+  save(*tileset_creator, working_directory / "tileset_creator.bin");
+  save(*texture_browser, working_directory / "texture_browser.bin");
 
   return retcode;
 }
