@@ -6,6 +6,7 @@
 #pragma once
 
 // C++ Standard Library
+#include <functional>
 #include <type_traits>
 
 // Tyl
@@ -14,22 +15,36 @@
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 
-namespace tyl
+namespace tyl::engine
 {
 
-template <typename RegsistryT, typename... ComponentTs> struct RegistryComponentsBase
+template <typename... ComponentTs> struct SerializableRegistry
 {
-  RegsistryT& registry;
+  std::reference_wrapper<Registry> registry;
 };
 
-template <typename... ComponentTs> struct RegistryComponents : RegistryComponentsBase<Registry, ComponentTs...>
-{};
+template <typename... ComponentTs> struct ConstSerializableRegistry
+{
+  std::reference_wrapper<const Registry> registry;
+};
 
-template <typename... ComponentTs>
-struct ConstRegistryComponents : RegistryComponentsBase<const Registry, ComponentTs...>
-{};
+template <typename... Listing> struct Components;
 
-}  // namespace tyl
+template <typename Components> struct MakeSerializableRegistry;
+
+template <typename... Ts> struct MakeSerializableRegistry<Components<Ts...>>
+{
+  using type = SerializableRegistry<Ts...>;
+};
+
+template <typename... Ts> struct MakeSerializableRegistry<const Components<Ts...>>
+{
+  using type = ConstSerializableRegistry<Ts...>;
+};
+
+template <typename Components> using serializable_registry_t = typename MakeSerializableRegistry<Components>::type;
+
+}  // namespace tyl::engine
 
 namespace tyl::serialization
 {
@@ -91,23 +106,23 @@ template <typename ArchiveT, typename ComponentT>
 struct is_trivially_serializable<ArchiveT, Reference<ComponentT>> : std::true_type
 {};
 
-template <typename IArchive, typename... ComponentTs> struct load<IArchive, RegistryComponents<ComponentTs...>>
+template <typename IArchive, typename... ComponentTs>
+struct load<IArchive, engine::SerializableRegistry<ComponentTs...>>
 {
-  template <typename RegsistryT>
-  void operator()(IArchive& iar, RegistryComponentsBase<RegsistryT, ComponentTs...>& components)
+  void operator()(IArchive& iar, engine::SerializableRegistry<ComponentTs...> components)
   {
-    SnapshotInputArchive<IArchive> snap_ia{iar, std::addressof(components.registry)};
-    entt::continuous_loader{components.registry}.entities(snap_ia).template component<ComponentTs...>(snap_ia);
+    SnapshotInputArchive<IArchive> snap_ia{iar, std::addressof(components.registry.get())};
+    entt::snapshot_loader{components.registry.get()}.entities(snap_ia).template component<ComponentTs...>(snap_ia);
   }
 };
 
-template <typename OArchive, typename... ComponentTs> struct save<OArchive, ConstRegistryComponents<ComponentTs...>>
+template <typename OArchive, typename... ComponentTs>
+struct save<OArchive, engine::ConstSerializableRegistry<ComponentTs...>>
 {
-  template <typename RegsistryT>
-  void operator()(OArchive& oar, const RegistryComponentsBase<RegsistryT, ComponentTs...>& components)
+  void operator()(OArchive& oar, engine::ConstSerializableRegistry<ComponentTs...> components)
   {
-    SnapshotOutputArchive<OArchive> snap_oa{oar, std::addressof(components.registry)};
-    entt::snapshot{components.registry}.entities(snap_oa).template component<ComponentTs...>(snap_oa);
+    SnapshotOutputArchive<OArchive> snap_oa{oar, std::addressof(components.registry.get())};
+    entt::snapshot{components.registry.get()}.entities(snap_oa).template component<ComponentTs...>(snap_oa);
   }
 };
 

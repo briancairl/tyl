@@ -1,12 +1,13 @@
 /**
- * @copyright 2021-present Brian Cairl
+ * @copyright 2023-present Brian Cairl
  *
- * @file async.hpp
+ * @file asset.hpp
  */
 #pragma once
 
 // C++ Standard Library
 #include <filesystem>
+#include <type_traits>
 
 // Tyl
 #include <tyl/async.hpp>
@@ -22,11 +23,20 @@ namespace tyl::engine
 /**
  * @brief Error code incidating problems with asset loading
  */
-enum class AssetErrorCode
+enum class AssetError
 {
   kNone,
   kFailedToLocate,
   kFailedToLoad,
+};
+
+/**
+ * @brief Code indicating where the asset is stored at a high-level
+ */
+enum class AssetLocationType
+{
+  kLocal,
+  kRemote,
 };
 
 /**
@@ -35,24 +45,15 @@ enum class AssetErrorCode
 template <typename AssetT> struct AssetLocation
 {
   /// Path to asset
-  std::filesystem::path uri;
+  std::filesystem::path path;
+  /// Type of asset location
+  AssetLocationType type = AssetLocationType::kLocal;
 };
 
 /**
  * @brief Holds handle to a loading asset or asset error
  */
-template <typename AssetT> using AssetLoadingState = async::non_blocking_future<expected<AssetT, AssetErrorCode>>;
-
-/**
- * @brief Used to indicate an asset loading error
- */
-struct AssetLoadingError
-{
-  /// Time at which error occurred
-  Clock::Time stamp;
-  /// Error type
-  AssetErrorCode error;
-};
+template <typename AssetT> using AssetLoadingState = async::non_blocking_future<expected<AssetT, AssetError>>;
 
 /**
  * @brief Holds meta information about a loaded asset
@@ -64,7 +65,7 @@ struct AssetInfo
   /// Time at which error occurred
   Clock::Time stamp = Clock::Time::min();
   /// Error type
-  AssetErrorCode error = AssetErrorCode::kNone;
+  AssetError error = AssetError::kNone;
   /// Effective size of the asset
   std::uintmax_t size_in_bytes = 0;
   /// File type from which asset was loaded
@@ -76,17 +77,21 @@ struct AssetInfo
 namespace tyl::serialization
 {
 
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::AssetLocationType> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::AssetError> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::AssetInfo> : std::true_type
+{};
+
 template <typename ArchiveT, typename AssetT> struct serialize<ArchiveT, engine::AssetLocation<AssetT>>
 {
-  void operator()(ArchiveT& ar, engine::AssetLocation<AssetT>& asset_location) { ar& named{"uri", asset_location.uri}; }
-};
-
-template <typename ArchiveT> struct serialize<ArchiveT, engine::AssetLoadingError>
-{
-  void operator()(ArchiveT& ar, engine::AssetLoadingError& asset_loading_error)
+  void operator()(ArchiveT& ar, engine::AssetLocation<AssetT>& asset_location)
   {
-    ar& named{"stamp", asset_loading_error.stamp};
-    ar& named{"error", asset_loading_error.error};
+    ar& named{"path", asset_location.path};
+    ar& named{"type", asset_location.type};
   }
 };
 

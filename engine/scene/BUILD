@@ -1,0 +1,20 @@
+cc_library(
+  name="scene",
+  hdrs=[
+    "include/scene.hpp",
+  ],
+  srcs=[
+    "src/scene.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//engine/components",
+    "//core/ecs",
+    "//core/serialization:object",
+    "//core/serialization/stream:file_stream",
+    "//core/serialization/stream:mem_stream",
+    "//core/serialization/archive:binary_archive"
+  ],
+  visibility=["//visibility:public"]
+)

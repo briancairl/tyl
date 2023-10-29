@@ -34,15 +34,9 @@ template <typename WidgetT> using widget_options_t = typename WidgetOptions<Widg
 template <typename WidgetT> class WidgetBase : public crtp_base<WidgetBase<WidgetT>>
 {
 public:
-  template <typename StreamT> void save(WidgetOArchive<StreamT>& oar, const Registry& registry) const
-  {
-    this->derived().SaveImpl(oar, registry);
-  }
+  template <typename StreamT> void save(WidgetOArchive<StreamT>& oar) const { this->derived().SaveImpl(oar); }
 
-  template <typename StreamT> void load(WidgetIArchive<StreamT>& iar, Registry& registry)
-  {
-    this->derived().LoadImpl(iar, registry);
-  }
+  template <typename StreamT> void load(WidgetIArchive<StreamT>& iar) { this->derived().LoadImpl(iar); }
 
   WidgetStatus update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
   {
@@ -57,15 +51,9 @@ public:
   [[nodiscard]] static std::string_view name() { return WidgetT::NameImpl(); }
 
 private:
-  template <typename StreamT>
-  static constexpr void
-  SaveImpl([[maybe_unused]] WidgetOArchive<StreamT>& oar, [[maybe_unused]] const Registry& registry)
-  {}
+  template <typename StreamT> static constexpr void SaveImpl([[maybe_unused]] WidgetOArchive<StreamT>& oar) {}
 
-  template <typename StreamT>
-  static constexpr void
-  LoadImpl([[maybe_unused]] WidgetIArchive<StreamT>& iar, [[maybe_unused]] const Registry& registry)
-  {}
+  template <typename StreamT> static constexpr void LoadImpl([[maybe_unused]] WidgetIArchive<StreamT>& iar) {}
 };
 
 }  // namespace tyl::engine

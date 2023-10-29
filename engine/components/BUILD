@@ -9,7 +9,9 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
+    "//core/async",
     "//core/common",
+    "//core/ecs",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]

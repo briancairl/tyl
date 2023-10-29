@@ -34,9 +34,9 @@ public:
 private:
   static expected<AssetManagement, WidgetCreationError> CreateImpl(const AssetManagementOptions& options);
 
-  template <typename StreamT> static void SaveImpl(WidgetOArchive<StreamT>& oar, const Registry& registry);
+  template <typename StreamT> static void SaveImpl(WidgetOArchive<StreamT>& oar);
 
-  template <typename StreamT> static void LoadImpl(WidgetIArchive<StreamT>& iar, Registry& registry);
+  template <typename StreamT> static void LoadImpl(WidgetIArchive<StreamT>& iar);
 
   WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
 

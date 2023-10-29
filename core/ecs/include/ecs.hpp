@@ -1,9 +1,12 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file rect.hpp
+ * @file ecs.hpp
  */
 #pragma once
+
+// C++ Standard Library
+#include <optional>
 
 // EnTT
 #include <entt/entt.hpp>
@@ -16,38 +19,49 @@ using Registry = ::entt::registry;
 
 template <typename ComponentT> struct Reference
 {
-  EntityID id;
+  std::optional<EntityID> id;
 };
 
-template <typename OtherComponentT, typename ComponentT>
-Reference<OtherComponentT> adopt(Reference<ComponentT> reference)
+template <typename ComponentT> bool operator==(std::nullptr_t _, const Reference<ComponentT>& ref)
 {
-  return Reference<OtherComponentT>{reference.id};
-}
+  return !ref.id.has_value();
+};
 
-template <typename ComponentT> ComponentT& resolve(Registry& registry, Reference<ComponentT> reference)
+template <typename ComponentT> bool operator==(const Reference<ComponentT>& ref, std::nullptr_t _)
 {
-  return registry.template get<ComponentT>(reference.id);
-}
+  return !ref.id.has_value();
+};
 
-template <typename ComponentT> const ComponentT& resolve(const Registry& registry, Reference<ComponentT> reference)
+template <typename ComponentT> bool operator!=(std::nullptr_t _, const Reference<ComponentT>& ref)
 {
-  return registry.template get<ComponentT>(reference.id);
-}
+  return ref.id.has_value();
+};
 
-template <typename ComponentT> ComponentT* maybe_resolve(Registry& registry, Reference<ComponentT> reference)
+template <typename ComponentT> bool operator!=(const Reference<ComponentT>& ref, std::nullptr_t _)
 {
-  return registry.template any_of<ComponentT>(reference.id)
-    ? std::addressof(registry.template get<ComponentT>(reference.id))
-    : nullptr;
+  return ref.id.has_value();
+};
+
+template <typename ComponentT> ComponentT& resolve(Registry& registry, const Reference<ComponentT>& reference)
+{
+  return registry.template get<ComponentT>(*reference.id);
 }
 
 template <typename ComponentT>
-const ComponentT* maybe_resolve(const Registry& registry, Reference<ComponentT> reference)
+const ComponentT& resolve(const Registry& registry, const Reference<ComponentT>& reference)
 {
-  return registry.template any_of<ComponentT>(reference.id)
-    ? std::addressof(registry.template get<ComponentT>(reference.id))
-    : nullptr;
+  return registry.template get<ComponentT>(*reference.id);
+}
+
+template <typename ComponentT> ComponentT* maybe_resolve(Registry& registry, const Reference<ComponentT>& reference)
+{
+  return (reference != nullptr) ? std::addressof(registry.template get<ComponentT>(*reference.id)) : nullptr;
+}
+
+template <typename ComponentT>
+const ComponentT* maybe_resolve(const Registry& registry, const Reference<ComponentT>& reference)
+{
+  return (reference != nullptr) ? std::addressof(registry.template get<ComponentT>(*reference.id)) : nullptr;
 }
 
 }  // namespace tyl

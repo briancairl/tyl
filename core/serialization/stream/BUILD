@@ -1,6 +1,6 @@
 cc_library(
   name="stream",
-  hdrs=["include/istream.hpp", "include/ostream.hpp"],
+  hdrs=["include/stream_fwd.hpp", "include/istream.hpp", "include/ostream.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",
   deps=["//core/common"],

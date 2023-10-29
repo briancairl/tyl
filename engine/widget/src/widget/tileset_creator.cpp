@@ -204,7 +204,7 @@ public:
     }
   }
 
-  void TileSetPreview(Registry& registry, const WidgetResources& resources)
+  void TileSetPreview(Registry& global_registry, const WidgetResources& resources)
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
@@ -246,7 +246,7 @@ public:
           {
             return;
           }
-          else if (auto* atlas_texture = maybe_resolve(registry, *atlas_texture_ref); atlas_texture != nullptr)
+          else if (auto* atlas_texture = maybe_resolve(global_registry, *atlas_texture_ref); atlas_texture != nullptr)
           {
             ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{0, 50});
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
@@ -774,11 +774,11 @@ public:
     if (ImGui::InputText("name", kTileSetNameBuffer, sizeof(kTileSetNameBuffer), kTileSetNameFlags))
     {
       {
-        const auto id = registry.create();
-        registry.emplace<std::string>(id, kTileSetNameBuffer);
-        registry.emplace<TileSet>(id);
-        registry.emplace<AtlasTextureEditingState>(id);
-        registry.emplace<TileSetSelections>(id);
+        const auto id = local_registry_.create();
+        local_registry_.emplace<std::string>(id, kTileSetNameBuffer);
+        local_registry_.emplace<TileSet>(id);
+        local_registry_.emplace<AtlasTextureEditingState>(id);
+        local_registry_.emplace<TileSetSelections>(id);
         editing_tile_set_id_ = id;
       }
       std::strcpy(kTileSetNameBuffer, kTileSetNameBufferDefault);
@@ -798,6 +798,7 @@ private:
   std::optional<EntityID> editing_tile_set_id_;
   std::optional<EntityID> editing_tile_set_selection_id_;
   DragAndDropImages drag_and_drop_images_;
+  Registry local_registry_;
 };
 
 using namespace tyl::serialization;
@@ -813,7 +814,7 @@ TileSetCreator::TileSetCreator(const TileSetCreatorOptions& options, std::unique
     options_{options}, impl_{std::move(impl)}
 {}
 
-template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry) const
+template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const
 {
   ConstRegistryComponents<
     std::string,
@@ -822,11 +823,11 @@ template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& o
     TileSetSelection,
     TileSetSelections,
     Reference<Texture>>
-    tilesets{registry};
+    tilesets{local_registry_};
   oar << named{"tilesets", tilesets};
 }
 
-template <> void TileSetCreator::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
+template <> void TileSetCreator::LoadImpl(WidgetIArchive<file_handle_istream>& iar)
 {
   RegistryComponents<
     std::string,
@@ -835,7 +836,7 @@ template <> void TileSetCreator::LoadImpl(WidgetIArchive<file_handle_istream>& i
     TileSetSelection,
     TileSetSelections,
     Reference<Texture>>
-    tilesets{registry};
+    tilesets{local_registry_};
   iar >> named{"tilesets", tilesets};
 }
 
