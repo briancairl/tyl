@@ -155,10 +155,30 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
     [](Registry& registry, EntityID id, Image&& image) { registry.template emplace<Texture>(id, image.texture()); });
 
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_None;
-  if (ImGui::Begin(options_.load_bar_popup_title, nullptr, kStaticWindowFlags))
+  if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))
   {
-    ImGui::Text("textures loaded: [%lu]", texture_asset_status.loaded);
-    ImGui::Text("textures missed: [%lu]", texture_asset_status.missed);
+    if (ImGui::BeginTable("##AssetInfo", 3, ImGuiTableFlags_Resizable))
+    {
+      ImGui::TableSetupColumn("asset");
+      ImGui::TableSetupColumn("loaded");
+      ImGui::TableSetupColumn("missed");
+      ImGui::TableHeadersRow();
+
+      ImGui::TableNextColumn();
+      ImGui::TextUnformatted("textures");
+      ImGui::TableNextColumn();
+      ImGui::Text("%lu", texture_asset_status.loaded);
+      ImGui::TableNextColumn();
+      if (texture_asset_status.missed > 0)
+      {
+        ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%lu", texture_asset_status.missed);
+      }
+      else
+      {
+        ImGui::Text("%lu", texture_asset_status.missed);
+      }
+      ImGui::EndTable();
+    }
     if (const std::size_t n = texture_asset_status.loaded + texture_asset_status.missed; n < texture_asset_status.total)
     {
       ImGui::ProgressBar(static_cast<float>(n) / static_cast<float>(texture_asset_status.total));

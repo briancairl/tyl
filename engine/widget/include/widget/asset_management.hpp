@@ -14,7 +14,7 @@ class AssetManagement;
 
 struct AssetManagementOptions
 {
-  const char* load_bar_popup_title = "Asset Status";
+  const char* name = "Asset Status";
 };
 
 template <> struct WidgetOptions<AssetManagement>
