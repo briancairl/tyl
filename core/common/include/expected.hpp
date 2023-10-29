@@ -22,4 +22,9 @@ template <typename T, typename E> using expected = TYL_CORE_COMMON_EXPECTED_NAME
 
 template <typename E> using unexpected = TYL_CORE_COMMON_EXPECTED_NAMESPACE::unexpected<E>;
 
+template <class E> decltype(auto) make_unexpected(E&& e)
+{
+  return TYL_CORE_COMMON_EXPECTED_NAMESPACE::make_unexpected(std::forward<E>(e));
+}
+
 }  // namespace tyl

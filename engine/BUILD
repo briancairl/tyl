@@ -2,6 +2,14 @@ cc_binary(
   name="engine",
   srcs=["engine.cpp"],
   deps=[
+    "//core/ecs",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream",
     "//engine/window",
+    "//engine/widget:asset_management",
+    "//engine/widget:audio_browser",
+    "//engine/widget:perf_monitor",
+    "//engine/widget:tileset_creator",
+    "//engine/widget:texture_browser",
   ]
 )

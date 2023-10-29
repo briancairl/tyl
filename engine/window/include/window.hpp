@@ -7,20 +7,23 @@
 
 // C++ Standard Library
 #include <cctype>
+#include <filesystem>
 #include <iosfwd>
+#include <vector>
 
 // Tyl
 #include <tyl/clock.hpp>
 #include <tyl/engine/keyboard.hpp>
 #include <tyl/expected.hpp>
-#include <tyl/math/vec.hpp>
+#include <tyl/vec.hpp>
 
 namespace tyl::engine
 {
 
-struct WindowBehaviorOptions
+struct WindowRuntimeOptions
 {
   Clock::Duration scroll_timeout_duration = Clock::milliseconds(20);
+  std::filesystem::path gui_config_file_path = "/tmp/tyl_engine.ini";
 };
 
 struct WindowOptions
@@ -29,7 +32,7 @@ struct WindowOptions
   int initial_window_width = 500;
   const char* window_title = "app";
   bool enable_vsync = true;
-  WindowBehaviorOptions behavior = {};
+  WindowRuntimeOptions runtime = {};
 };
 
 struct WindowCallbacks
@@ -46,6 +49,8 @@ struct WindowState
   Vec2f cursor_position_normalized = Vec2f::Zero();
   Vec2f cursor_scroll = {};
   Clock::Time cursor_scroll_stamp = Clock::Time::min();
+  std::vector<std::filesystem::path> drop_payloads = {};
+  Vec2f drop_cursor_position = Vec2f::Zero();
   KeyInfo key_info = {};
   void* gui_context = nullptr;
   WindowCallbacks previous_callbacks = {};
@@ -77,7 +82,7 @@ public:
 
   ~Window();
 
-  [[nodiscard]] static expected<Window, WindowCreationError> create(const Options& settings);
+  [[nodiscard]] static expected<Window, WindowCreationError> create(Options&& option);
 
   template <typename UpdateStateCallbackT> WindowStatus update(UpdateStateCallbackT on_update)
   {
@@ -101,11 +106,11 @@ private:
   WindowStatus Begin();
   void End();
 
-  Window(void* const window_handle, State&& window_state, const WindowBehaviorOptions& window_behavior_options);
+  Window(void* const window_handle, State&& window_state, WindowRuntimeOptions&& window_runtime_options);
 
   State window_state_ = {};
   void* window_handle_ = nullptr;
-  WindowBehaviorOptions behavior_options_ = {};
+  WindowRuntimeOptions runtime_options_ = {};
 };
 
 std::ostream& operator<<(std::ostream& os, const WindowCreationError error_code);

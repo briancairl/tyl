@@ -12,7 +12,7 @@
 #include <type_traits>
 
 // Tyl
-#include <tyl/utility/bits.hpp>
+#include <tyl/bits.hpp>
 
 namespace tyl
 {
@@ -40,10 +40,20 @@ public:
     bit_count_ = bit_count;
   }
 
-  dynamic_bitset(const std::size_t bit_count, const bool initial_state)
+  dynamic_bitset(const std::size_t bit_count, const bool initial_state) :
+      block_data_{nullptr}, block_count_{bits::min_blocks<BlockT>(bit_count)}, bit_count_{bit_count}, allocator_{}
   {
-    dynamic_bitset::allocate(bits::min_blocks<BlockT>(bit_count));
-    bit_count_ = bit_count;
+    dynamic_bitset::allocate(block_count_);
+  }
+
+  dynamic_bitset(const dynamic_bitset& other) :
+      block_data_{other.block_data_},
+      block_count_{other.block_count_},
+      bit_count_{other.bit_count_},
+      allocator_{other.allocator_}
+  {
+    dynamic_bitset::allocate(block_count_);
+    std::memcpy(block_data_, other.block_data_, sizeof(BlockT) * block_count_);
   }
 
   dynamic_bitset(dynamic_bitset&& other) :
@@ -87,22 +97,22 @@ public:
 
   void set(const std::size_t bit) const
   {
-    bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::set(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   void flip(const std::size_t bit) const
   {
-    bits::flip(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::flip(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   void clear(const std::size_t bit) const
   {
-    bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    bits::clear(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   [[nodiscard]] constexpr bool test(const std::size_t bit) const
   {
-    return bits::check(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining_bits<BlockT>(bit));
+    return bits::check(block_data_[bits::whole_blocks<BlockT>(bit)], bits::remaining<BlockT>(bit));
   }
 
   [[nodiscard]] std::size_t count() const

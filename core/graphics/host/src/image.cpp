@@ -93,7 +93,7 @@ device::Texture Image::texture(const device::TextureOptions& options) const noex
     options};
 }
 
-tyl::expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
+expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
 {
   // Set flag determining whether image should be flipped on load
   stbi_set_flip_vertically_on_load(options.flags.flip_vertically);

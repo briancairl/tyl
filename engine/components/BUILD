@@ -1,0 +1,18 @@
+cc_library(
+  name="components",
+  hdrs=[
+    "include/asset.hpp",
+    "include/ecs.hpp"
+  ],
+  srcs=[
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//core/async",
+    "//core/common",
+    "//core/ecs",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)

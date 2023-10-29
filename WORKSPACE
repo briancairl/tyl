@@ -31,12 +31,12 @@ git_repository(
 )
 
 # ImGui
-http_archive(
+new_git_repository(
   name="imgui",
-  url="https://github.com/ocornut/imgui/archive/refs/tags/v1.89.6.zip",
-  sha256="96012e5dee6db965f45b04f27df58016815ec43e3214a7973cfe501b4a71395f",
+  remote="https://github.com/ocornut/imgui.git",
+  commit="2a6d7b1eaa1851e5b53d8c7a361a8d54f5a9ae8c",
+  shallow_since="1697651119 +0200",
   build_file="@//external:imgui.BUILD",
-  strip_prefix="imgui-1.89.6"
 )
 
 # ImGui

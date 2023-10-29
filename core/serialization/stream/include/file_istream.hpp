@@ -6,8 +6,10 @@
 #pragma once
 
 // C++ Standard Library
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 
 // Tyl
 #include <tyl/serialization/istream.hpp>
@@ -15,23 +17,20 @@
 namespace tyl::serialization
 {
 
-class file_istream final : public istream<file_istream>
+class file_handle_istream : public istream<file_handle_istream>
 {
-  friend class istream<file_istream>;
+  friend class istream<file_handle_istream>;
 
 public:
-  struct flags
+  explicit file_handle_istream(std::FILE* file_handle);
+
+  file_handle_istream(file_handle_istream&& other) :
+      file_bytes_remaining_{other.file_bytes_remaining_}, file_handle_{other.file_handle_}
   {
-    std::uint8_t nobuf : 1;
-  };
+    other.file_handle_ = nullptr;
+  }
 
-  static constexpr flags default_flags{.nobuf = true};
-
-  file_istream(const char* filename, const flags fileopt = default_flags);
-
-  file_istream(file_istream&& other);
-
-  ~file_istream();
+  ~file_handle_istream() = default;
 
 private:
   /**
@@ -39,7 +38,7 @@ private:
    */
   std::size_t read_impl(void* ptr, std::size_t len)
   {
-    const std::size_t read_bytes = std::fread(ptr, 1, len, file_handle_);
+    const std::size_t read_bytes = std::fread(ptr, sizeof(std::byte), len, file_handle_);
     file_bytes_remaining_ -= read_bytes;
     return read_bytes;
   }
@@ -59,11 +58,34 @@ private:
    */
   std::size_t available_impl() const { return file_bytes_remaining_; }
 
-  /// Native file handle
-  std::FILE* file_handle_ = nullptr;
-
   /// Number of remaining bytes in file
   std::size_t file_bytes_remaining_ = 0;
+
+protected:
+  /// Native file handle
+  std::FILE* file_handle_ = nullptr;
+};
+
+class file_istream final : public file_handle_istream
+{
+public:
+  struct flags
+  {
+    std::uint8_t nobuf : 1;
+    std::uint8_t binary : 1;
+  };
+
+  static constexpr flags default_flags{.nobuf = true, .binary = true};
+
+  explicit file_istream(const char* filename, const flags fileopt = default_flags);
+
+  explicit file_istream(const std::filesystem::path& path, const flags fileopt = default_flags) :
+      file_istream{path.c_str(), fileopt}
+  {}
+
+  file_istream(file_istream&& other) = default;
+
+  ~file_istream();
 };
 
 }  // namespace tyl::serialization

@@ -16,7 +16,7 @@
 #include <type_traits>
 
 // Tyl
-#include <tyl/debug/assert.hpp>
+#include <tyl/assert.hpp>
 #include <tyl/audio/device/typedef.hpp>
 
 namespace tyl::audio::device

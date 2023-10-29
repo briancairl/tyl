@@ -6,6 +6,7 @@ cc_library(
     "include/clock.hpp",
     "include/crtp.hpp",
     "include/dynamic_bitset.hpp",
+    "include/format.hpp",
     "include/expected.hpp",
   ],
   strip_include_prefix="include",

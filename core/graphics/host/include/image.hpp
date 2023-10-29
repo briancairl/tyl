@@ -7,6 +7,7 @@
 
 // C++ Standard Library
 #include <cstdint>
+#include <filesystem>
 
 // Tyl
 #include <tyl/expected.hpp>
@@ -94,6 +95,20 @@ public:
    */
   [[nodiscard]] static tyl::expected<Image, ErrorCode>
   load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
+
+  /**
+   * @brief Loads image from filesystem to image data on host
+   *
+   * @param path  path to image file
+   * @param options  image loading options
+   *
+   * @return image
+   */
+  [[nodiscard]] static tyl::expected<Image, ErrorCode>
+  load(const std::filesystem::path& path, const ImageOptions& options = ImageOptions{}) noexcept
+  {
+    return load(path.string().c_str(), options);
+  }
 
 private:
   Image(const ImageShape& shape_data, void* const data);

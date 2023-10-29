@@ -6,8 +6,10 @@
 #pragma once
 
 // C++ Standard Library
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 
 // Tyl
 #include <tyl/serialization/ostream.hpp>
@@ -28,7 +30,10 @@ private:
   /**
    * @copydoc ostream<file_ostream>::write
    */
-  std::size_t write_impl(const void* ptr, std::size_t len) { return std::fwrite(ptr, 1, len, file_handle_); }
+  std::size_t write_impl(const void* ptr, std::size_t len)
+  {
+    return std::fwrite(ptr, sizeof(std::byte), len, file_handle_);
+  }
 
   /**
    * @copydoc ostream<file_ostream>::flush
@@ -48,11 +53,16 @@ public:
   {
     std::uint8_t nobuf : 1;
     std::uint8_t append : 1;
+    std::uint8_t binary : 1;
   };
 
-  static constexpr flags default_flags{.nobuf = true, .append = false};
+  static constexpr flags default_flags{.nobuf = true, .append = false, .binary = true};
 
-  file_ostream(const char* filename, const flags fileopt = default_flags);
+  explicit file_ostream(const char* filename, const flags fileopt = default_flags);
+
+  explicit file_ostream(const std::filesystem::path& path, const flags fileopt = default_flags) :
+      file_ostream{path.c_str(), fileopt}
+  {}
 
   file_ostream(file_ostream&& other) = default;
 
