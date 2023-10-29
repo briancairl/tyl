@@ -21,8 +21,8 @@ namespace tyl::engine
  */
 struct Scene
 {
-  /// Registry holding game data for the scene
-  Registry registry;
+  /// Registry holding asset data for the scene
+  Registry assets;
 };
 
 }  // namespace tyl::engine
@@ -30,14 +30,14 @@ struct Scene
 namespace tyl::serialization
 {
 
-template <> struct save<binary_oarchive<file_ostream>, engine::Scene>
+template <> struct save<binary_oarchive<file_handle_ostream>, engine::Scene>
 {
-  void operator()(binary_oarchive<file_ostream>& ar, const engine::Scene& scene) const;
+  void operator()(binary_oarchive<file_handle_ostream>& ar, const engine::Scene& scene) const;
 };
 
-template <> struct load<binary_iarchive<file_istream>, engine::Scene>
+template <> struct load<binary_iarchive<file_handle_istream>, engine::Scene>
 {
-  void operator()(binary_iarchive<file_istream>& ar, engine::Scene& scene) const;
+  void operator()(binary_iarchive<file_handle_istream>& ar, engine::Scene& scene) const;
 };
 
 template <> struct save<binary_oarchive<mem_ostream>, engine::Scene>

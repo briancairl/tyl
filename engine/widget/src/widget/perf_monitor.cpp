@@ -13,23 +13,17 @@
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/format.hpp>
+#include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
-#include <tyl/serialization/packet.hpp>
+#include <tyl/serialization/std/chrono.hpp>
 #include <tyl/serialization/std/vector.hpp>
-
-namespace tyl::serialization
-{
-
-template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Clock::Time> : std::true_type
-{};
-
-}  // tyl::serialization
-
-using namespace tyl::serialization;
 
 namespace tyl::engine
 {
+
+using namespace tyl::serialization;
+
 class PerfMonitor::Impl
 {
 public:
@@ -74,7 +68,7 @@ public:
       ImGui::GetContentRegionAvail());
   }
 
-  template <typename OArchive> void Save(OArchive& ar, const Registry& registry) const
+  template <typename OArchive> void Save(OArchive& ar) const
   {
     ar << named{"update_time_seconds", update_time_seconds_};
     ar << named{"update_time_sample_count", update_time_sample_count_};
@@ -82,7 +76,7 @@ public:
     ar << named{"next_sample_time_point", next_sample_time_point_};
   }
 
-  template <typename IArchive> void Load(IArchive& ar, Registry& registry)
+  template <typename IArchive> void Load(IArchive& ar)
   {
     ar >> named{"update_time_seconds", update_time_seconds_};
     ar >> named{"update_time_sample_count", update_time_sample_count_};
@@ -108,18 +102,12 @@ PerfMonitor::PerfMonitor(const PerfMonitorOptions& options, std::unique_ptr<Impl
     options_{options}, impl_{std::move(impl)}
 {}
 
-template <> void PerfMonitor::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry) const
-{
-  impl_->Save(oar, registry);
-}
+template <> void PerfMonitor::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 
-template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
-{
-  impl_->Load(iar, registry);
-}
+template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
 
 WidgetStatus PerfMonitor::UpdateImpl(
-  [[maybe_unused]] Registry& registry,
+  [[maybe_unused]] Scene& scene,
   [[maybe_unused]] WidgetSharedState& shared,
   const WidgetResources& resources)
 {

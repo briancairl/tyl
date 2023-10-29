@@ -8,18 +8,66 @@
 // C++ Standard Library
 #include <filesystem>
 #include <string_view>
+#include <vector>
 
 // Tyl
+#include <tyl/async.hpp>
+#include <tyl/clock.hpp>
 #include <tyl/crtp.hpp>
 #include <tyl/ecs.hpp>
-#include <tyl/engine/internal/widget.hpp>
 #include <tyl/expected.hpp>
-#include <tyl/serialization/binary_archive.hpp>
-#include <tyl/serialization/named.hpp>
-#include <tyl/serialization/object.hpp>
+#include <tyl/rect.hpp>
+#include <tyl/serialization/archive_fwd.hpp>
 
 namespace tyl::engine
 {
+// Forward
+struct Scene;
+
+/**
+ * @brief Resources used to update a widget
+ */
+struct WidgetResources
+{
+  /// Current time
+  Clock::Time now = Clock::Time::min();
+  /// Handle to active engine GUI framework context
+  void* gui_context;
+  /// Drag-and-drop payloads
+  std::vector<std::filesystem::path> drop_payloads = {};
+  /// Location at which
+  Vec2f drop_cursor_position = Vec2f::Zero();
+};
+
+/**
+ * @brief Resources used to update a widget
+ */
+struct WidgetSharedState
+{
+  /// Thread pool for deferred work execution
+  async::ThreadPool thread_pool;
+};
+
+
+/**
+ * @brief Errors used on widget creation failures
+ */
+enum class WidgetCreationError
+{
+
+};
+
+/**
+ * @brief Statuses used on widget update
+ */
+enum class WidgetStatus
+{
+  kOk
+};
+
+template <typename IStreamT> using WidgetIArchive = tyl::serialization::binary_iarchive<IStreamT>;
+
+template <typename OStreamT> using WidgetOArchive = tyl::serialization::binary_oarchive<OStreamT>;
 
 template <typename WidgetT> struct WidgetOptions;
 // {
@@ -38,9 +86,9 @@ public:
 
   template <typename StreamT> void load(WidgetIArchive<StreamT>& iar) { this->derived().LoadImpl(iar); }
 
-  WidgetStatus update(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
+  WidgetStatus update(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
   {
-    return this->derived().UpdateImpl(registry, shared, resources);
+    return this->derived().UpdateImpl(scene, shared, resources);
   }
 
   [[nodiscard]] static expected<WidgetT, WidgetCreationError> create(const widget_options_t<WidgetT>& options)

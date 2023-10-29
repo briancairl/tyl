@@ -16,7 +16,7 @@ namespace tyl::engine
 {
 
 // clang-format off
-using SceneComponents = Components<
+using AssetComponents = Components<
   AssetLocation<tyl::graphics::device::Texture>
 >;
 // clang-format on
@@ -26,36 +26,36 @@ using SceneComponents = Components<
 namespace tyl::serialization
 {
 
-void save<binary_oarchive<file_ostream>, engine::Scene>::operator()(
-  binary_oarchive<file_ostream>& oar,
+void save<binary_oarchive<file_handle_ostream>, engine::Scene>::operator()(
+  binary_oarchive<file_handle_ostream>& oar,
   const engine::Scene& scene) const
 {
-  engine::serializable_registry_t<const engine::SceneComponents> registry{scene.registry};
-  oar << named{"registry", registry};
+  engine::serializable_registry_t<const engine::AssetComponents> assets{scene.assets};
+  oar << named{"assets", assets};
 }
 
-void load<binary_iarchive<file_istream>, engine::Scene>::operator()(
-  binary_iarchive<file_istream>& iar,
+void load<binary_iarchive<file_handle_istream>, engine::Scene>::operator()(
+  binary_iarchive<file_handle_istream>& iar,
   engine::Scene& scene) const
 {
-  engine::serializable_registry_t<engine::SceneComponents> registry{scene.registry};
-  iar >> named{"registry", registry};
+  engine::serializable_registry_t<engine::AssetComponents> assets{scene.assets};
+  iar >> named{"assets", assets};
 }
 
 void save<binary_oarchive<mem_ostream>, engine::Scene>::operator()(
   binary_oarchive<mem_ostream>& oar,
   const engine::Scene& scene) const
 {
-  engine::serializable_registry_t<const engine::SceneComponents> registry{scene.registry};
-  oar << named{"registry", registry};
+  engine::serializable_registry_t<const engine::AssetComponents> assets{scene.assets};
+  oar << named{"assets", assets};
 }
 
 void load<binary_iarchive<mem_istream>, engine::Scene>::operator()(
   binary_iarchive<mem_istream>& iar,
   engine::Scene& scene) const
 {
-  engine::serializable_registry_t<engine::SceneComponents> registry{scene.registry};
-  iar >> named{"registry", registry};
+  engine::serializable_registry_t<engine::AssetComponents> assets{scene.assets};
+  iar >> named{"assets", assets};
 }
 
 }  // namespace tyl::serialization

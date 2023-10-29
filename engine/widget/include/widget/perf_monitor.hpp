@@ -39,11 +39,11 @@ public:
 private:
   static expected<PerfMonitor, WidgetCreationError> CreateImpl(const PerfMonitorOptions& options);
 
-  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar, const Registry& registry) const;
+  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar) const;
 
-  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar, Registry& registry);
+  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar);
 
-  WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
+  WidgetStatus UpdateImpl(Scene& Scene, WidgetSharedState& shared, const WidgetResources& resources);
 
   PerfMonitorOptions options_;
 

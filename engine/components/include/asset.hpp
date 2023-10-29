@@ -77,6 +77,9 @@ struct AssetInfo
 namespace tyl::serialization
 {
 
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Clock::Time> : std::true_type
+{};
+
 template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::AssetLocationType> : std::true_type
 {};
 

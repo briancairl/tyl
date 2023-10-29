@@ -37,7 +37,11 @@ public:
 private:
   static expected<TextureBrowser, WidgetCreationError> CreateImpl(const TextureBrowserOptions& options);
 
-  WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
+  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar) const;
+
+  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar);
+
+  WidgetStatus UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources);
 
   TextureBrowserOptions options_;
 

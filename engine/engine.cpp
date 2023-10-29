@@ -9,15 +9,15 @@
 
 // Tyl
 #include <tyl/ecs.hpp>
+#include <tyl/engine/scene.hpp>
 #include <tyl/engine/widget/asset_management.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
 #include <tyl/engine/window.hpp>
-#include <tyl/serialization/binary_iarchive.hpp>
-#include <tyl/serialization/binary_oarchive.hpp>
-#include <tyl/serialization/file_istream.hpp>
-#include <tyl/serialization/file_ostream.hpp>
+#include <tyl/serialization/binary_archive.hpp>
+#include <tyl/serialization/file_stream.hpp>
+#include <tyl/serialization/named.hpp>
 
 using namespace tyl;
 using namespace tyl::engine;
@@ -71,14 +71,17 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  Scene scene;
+
   if (std::filesystem::exists(argv[1]))
   {
     serialization::file_istream fs{argv[1]};
     serialization::binary_iarchive iar{fs};
-    asset_management->load(iar, registry);
-    perf_monitor->load(iar, registry);
-    tileset_creator->load(iar, registry);
-    texture_browser->load(iar, registry);
+    iar >> serialization::named{"scene", scene};
+    asset_management->load(iar);
+    perf_monitor->load(iar);
+    tileset_creator->load(iar);
+    texture_browser->load(iar);
   }
 
   auto on_update = [&](WindowState& window_state) {
@@ -88,10 +91,10 @@ int main(int argc, char** argv)
     std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
     window_state.drop_payloads.clear();
 
-    asset_management->update(registry, shared, resources);
-    perf_monitor->update(registry, shared, resources);
-    tileset_creator->update(registry, shared, resources);
-    texture_browser->update(registry, shared, resources);
+    asset_management->update(scene, shared, resources);
+    perf_monitor->update(scene, shared, resources);
+    tileset_creator->update(scene, shared, resources);
+    texture_browser->update(scene, shared, resources);
     return true;
   };
 
@@ -114,10 +117,11 @@ int main(int argc, char** argv)
   {
     serialization::file_ostream ofs{argv[1]};
     serialization::binary_oarchive oar{ofs};
-    asset_management->save(oar, registry);
-    perf_monitor->save(oar, registry);
-    tileset_creator->save(oar, registry);
-    texture_browser->save(oar, registry);
+    oar << serialization::named{"scene", scene};
+    asset_management->save(oar);
+    perf_monitor->save(oar);
+    tileset_creator->save(oar);
+    texture_browser->save(oar);
   }
 
   return retcode;

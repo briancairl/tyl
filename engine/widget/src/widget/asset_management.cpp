@@ -14,6 +14,7 @@
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
+#include <tyl/engine/scene.hpp>
 #include <tyl/engine/widget/asset_management.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
@@ -58,22 +59,22 @@ ScanStatus scan(
     registry.template view<AssetLocationType>(entt::exclude_t<AssetInfo, AssetLoadingStateType>{})
       .each([&](EntityID id, const auto& asset_location) {
         ++status.total;
-        if (std::filesystem::exists(asset_location.uri))
+        if (std::filesystem::exists(asset_location.path))
         {
           registry.template emplace<AssetInfo>(
             id,
             resources.now,
-            AssetErrorCode::kNone,
-            std::filesystem::file_size(asset_location.uri),
-            std::filesystem::status(asset_location.uri).type());
+            AssetError::kNone,
+            std::filesystem::file_size(asset_location.path),
+            std::filesystem::status(asset_location.path).type());
 
           registry.template emplace<AssetLoadingStateType>(
-            id, async::post(shared.thread_pool, [uri = asset_location.uri, load]() { return load(uri); }));
+            id, async::post(shared.thread_pool, [path = asset_location.path, load]() { return load(path); }));
         }
         else
         {
           registry.template emplace<AssetInfo>(
-            id, resources.now, AssetErrorCode::kFailedToLocate, std::uintmax_t{0}, std::filesystem::file_type::none);
+            id, resources.now, AssetError::kFailedToLocate, std::uintmax_t{0}, std::filesystem::file_type::none);
         }
       });
   }
@@ -104,7 +105,7 @@ ScanStatus scan(
     registry.template view<AssetLocationType, AssetInfo>(entt::exclude_t<AssetLoadingStateType>{})
       .each([&](EntityID id, const auto& asset_location, const auto& asset_info) {
         ++status.total;
-        if (asset_info.error == AssetErrorCode::kNone)
+        if (asset_info.error == AssetError::kNone)
         {
           ++status.loaded;
         }
@@ -131,33 +132,24 @@ tyl::expected<AssetManagement, WidgetCreationError> AssetManagement::CreateImpl(
 
 AssetManagement::AssetManagement(const AssetManagementOptions& options) : options_{options} {}
 
-template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar, const Registry& registry)
-{
-  const ConstRegistryComponents<AssetLocation<Texture>> textures{registry};
-  oar << named{"textures", textures};
-}
+template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) {}
 
-template <> void AssetManagement::LoadImpl(WidgetIArchive<file_handle_istream>& iar, Registry& registry)
-{
-  RegistryComponents<AssetLocation<Texture>> textures{registry};
-  iar >> named{"textures", textures};
-}
+template <> void AssetManagement::LoadImpl(WidgetIArchive<file_handle_istream>& iar) {}
 
-WidgetStatus
-AssetManagement::UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources)
+WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
 {
   const auto texture_asset_status = scan<Texture, Image>(
-    registry,
+    scene.assets,
     shared,
     resources,
-    [](const std::filesystem::path& path) -> expected<Image, AssetErrorCode> {
+    [](const std::filesystem::path& path) -> expected<Image, AssetError> {
       if (auto image_or_error = Image::load(path); image_or_error.has_value())
       {
         return std::move(image_or_error).value();
       }
       else
       {
-        return make_unexpected(AssetErrorCode::kFailedToLoad);
+        return make_unexpected(AssetError::kFailedToLoad);
       }
     },
     [](Registry& registry, EntityID id, Image&& image) { registry.template emplace<Texture>(id, image.texture()); });

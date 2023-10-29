@@ -38,7 +38,7 @@ private:
 
   template <typename StreamT> static void LoadImpl(WidgetIArchive<StreamT>& iar);
 
-  WidgetStatus UpdateImpl(Registry& registry, WidgetSharedState& shared, const WidgetResources& resources);
+  WidgetStatus UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources);
 
   AssetManagementOptions options_;
 

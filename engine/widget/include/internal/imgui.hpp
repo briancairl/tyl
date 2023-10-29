@@ -15,6 +15,7 @@
 #include <imgui_internal.h>
 
 // Tyl
+#include <tyl/serialization/object.hpp>
 #include <tyl/vec.hpp>
 
 struct ImTransform
@@ -60,3 +61,17 @@ inline ImColor ImFadeColor(ImColor original, float alpha_multiplier)
   original.Value.w *= alpha_multiplier;
   return original;
 }
+
+namespace tyl::serialization
+{
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImTransform> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImColor> : std::true_type
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, ImVec2> : std::true_type
+{};
+
+}  // namespace tyl::serialization
