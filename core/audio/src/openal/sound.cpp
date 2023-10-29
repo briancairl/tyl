@@ -70,7 +70,7 @@ void Sound::set_data(
 
 Sound::~Sound() { alDeleteBuffers(1, &buffer_); }
 
-Sound load_sound_from_file(const char* filename)
+Sound Sound::load(const char* filename)
 {
   // Read WAV meta information
   WaveInfo* const wave = WaveOpenFileForReading(filename);

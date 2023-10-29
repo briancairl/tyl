@@ -11,6 +11,7 @@
 
 // Tyl
 #include <tyl/async.hpp>
+#include <tyl/audio/device/sound.hpp>
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
@@ -29,8 +30,11 @@ namespace tyl::serialization
 
 namespace tyl::engine
 {
+
 using Image = graphics::host::Image;
 using Texture = graphics::device::Texture;
+using Sound = audio::device::Sound;
+
 namespace
 {
 
@@ -151,6 +155,14 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
     },
     [](Registry& registry, EntityID id, Image&& image) { registry.emplace<Texture>(id, image.texture()); });
 
+  const auto sound_asset_status = scan<Sound>(
+    scene.assets,
+    shared,
+    resources,
+    [](const std::filesystem::path& path) -> expected<Sound, AssetError> { return Sound::load(path.c_str()); },
+    [](Registry& registry, EntityID id, Sound&& sound) { registry.emplace<Sound>(id, std::move(sound)); });
+
+
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_None;
   if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))
   {
@@ -174,9 +186,29 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
       {
         ImGui::Text("%lu", texture_asset_status.missed);
       }
+
+      ImGui::TableNextColumn();
+      ImGui::TextUnformatted("sounds");
+      ImGui::TableNextColumn();
+      ImGui::Text("%lu", sound_asset_status.loaded);
+      ImGui::TableNextColumn();
+      if (sound_asset_status.missed > 0)
+      {
+        ImGui::TextColored(ImVec4{1, 0, 0, 1}, "%lu", sound_asset_status.missed);
+      }
+      else
+      {
+        ImGui::Text("%lu", sound_asset_status.missed);
+      }
+
       ImGui::EndTable();
     }
-    if (const std::size_t n = texture_asset_status.loaded + texture_asset_status.missed; n < texture_asset_status.total)
+
+
+    if (const std::size_t n =
+          (texture_asset_status.loaded + texture_asset_status.missed + sound_asset_status.loaded +
+           sound_asset_status.missed);
+        n < (texture_asset_status.total + sound_asset_status.total))
     {
       ImGui::ProgressBar(static_cast<float>(n) / static_cast<float>(texture_asset_status.total));
     }

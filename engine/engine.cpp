@@ -11,6 +11,7 @@
 #include <tyl/ecs.hpp>
 #include <tyl/engine/scene.hpp>
 #include <tyl/engine/widget/asset_management.hpp>
+#include <tyl/engine/widget/audio_browser.hpp>
 #include <tyl/engine/widget/io.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
@@ -56,6 +57,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto audio_browser = AudioBrowser::create({});
+  if (!audio_browser.has_value())
+  {
+    return 1;
+  }
+
   auto perf_monitor = PerfMonitor::create({});
   if (!perf_monitor.has_value())
   {
@@ -86,6 +93,7 @@ int main(int argc, char** argv)
   }
 
   load(*asset_management, working_directory / "asset_management.bin");
+  load(*audio_browser, working_directory / "audio_browser.bin");
   load(*perf_monitor, working_directory / "perf_monitor.bin");
   load(*tileset_creator, working_directory / "tileset_creator.bin");
   load(*texture_browser, working_directory / "texture_browser.bin");
@@ -99,6 +107,7 @@ int main(int argc, char** argv)
     window_state.drop_payloads.clear();
 
     asset_management->update(scene, shared, resources);
+    audio_browser->update(scene, shared, resources);
     perf_monitor->update(scene, shared, resources);
     tileset_creator->update(scene, shared, resources);
     texture_browser->update(scene, shared, resources);
@@ -129,6 +138,7 @@ int main(int argc, char** argv)
   }
 
   save(*asset_management, working_directory / "asset_management.bin");
+  save(*audio_browser, working_directory / "audio_browser.bin");
   save(*perf_monitor, working_directory / "perf_monitor.bin");
   save(*tileset_creator, working_directory / "tileset_creator.bin");
   save(*texture_browser, working_directory / "texture_browser.bin");

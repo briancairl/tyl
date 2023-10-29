@@ -30,7 +30,7 @@ cc_library(
   strip_include_prefix="src/openal",
   include_prefix="tyl/audio/device",
   deps=[
-    "//lib/common/debug:assert",
+    "//core/common",
     ":audio_impl__openal_user_types",
   ],
   visibility=["//visibility:private"]
@@ -46,7 +46,7 @@ cc_library(
   ],
   deps=[
     "@openal//:openal",
-    "//lib/common/debug:assert",
+    "//core/common",
     ":audio_hdrs",
     ":audio_impl__openal_internal"
   ],
@@ -58,4 +58,5 @@ cc_library(
 alias(
   name="device",
   actual=":audio_impl__openal",
+  visibility=["//visibility:public"]
 )

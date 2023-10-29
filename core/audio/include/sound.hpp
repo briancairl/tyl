@@ -59,13 +59,13 @@ public:
    */
   constexpr buffer_handle_t get_buffer_handle() const { return buffer_; }
 
+  /**
+   * @brief Loads a sound from a file
+   */
+  static Sound load(const char* filename);
+
 private:
   buffer_handle_t buffer_;
 };
-
-/**
- * @brief Loads a sound from a file
- */
-Sound load_sound_from_file(const char* filename);
 
 }  // namespace tyl::audio::device

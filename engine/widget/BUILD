@@ -52,8 +52,27 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     ":widget",
+    "//core/audio:device",
     "//core/graphics/device",
     "//core/graphics/host:image",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="audio_browser",
+  hdrs=[
+    "include/widget/audio_browser.hpp"
+  ],
+  srcs=[
+    "src/widget/audio_browser.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":widget",
+    "//core/audio:device",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]
