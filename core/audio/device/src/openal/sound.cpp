@@ -33,9 +33,9 @@ inline ALenum to_al_channel_format(const ChannelFormat& format)
 
 }  // namespace anonymous
 
-Sound::Sound(Sound&& other) : buffer_{other.buffer_} { other.buffer_.reset(); }
+Sound::Sound(Sound&& other) : buffer_{other.buffer_} { other.buffer_ = 0; }
 
-Sound::Sound() { alGenBuffers(1, &buffer_.emplace()); }
+Sound::Sound() { alGenBuffers(1, &buffer_); }
 
 Sound::Sound(
   void* const data,
@@ -53,16 +53,16 @@ void Sound::set_data(
   const std::size_t bits_per_second,
   const ChannelFormat& format)
 {
-  TYL_ASSERT_NE(buffer_, std::nullopt);
+  TYL_ASSERT_NE(buffer_, kInvalidBufferHandle);
   TYL_ASSERT_NON_NULL(data);
-  TYL_AL_TEST_ERROR(alBufferData(*buffer_, to_al_channel_format(format), data, data_length, bits_per_second));
+  TYL_AL_TEST_ERROR(alBufferData(buffer_, to_al_channel_format(format), data, data_length, bits_per_second));
 }
 
 Sound::~Sound()
 {
-  if (buffer_.has_value())
+  if (Sound::is_valid())
   {
-    alDeleteBuffers(1, std::addressof(*buffer_));
+    alDeleteBuffers(1, &buffer_);
   }
 }
 

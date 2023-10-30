@@ -31,13 +31,20 @@ int main(int argc, char** argv)
   }
 
   device::Device audio_device;
+
+  if (!audio_device.enable())
+  {
+    std::fprintf(stderr, "[ERROR] %s\n", "Failed to enable device");
+    return 1;
+  }
+
   device::Listener audio_listener{audio_device};
 
   auto sound_or_error = host::SoundData::load(argv[1]);
 
   if (!sound_or_error.has_value())
   {
-    std::fprintf(stderr, "[ERROR] Failed to load sound: %d\n", static_cast<int>(sound_or_error.error()));
+    std::fprintf(stderr, "[ERROR] %s: %d\n", "Failed to load sound", static_cast<int>(sound_or_error.error()));
     return 1;
   }
 

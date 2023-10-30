@@ -19,6 +19,11 @@ class Listener
 {
 public:
   explicit Listener(const Device& device);
+
+  Listener(Listener&& other);
+
+  Listener(const Listener& other) = delete;
+
   ~Listener();
 
   /**
@@ -41,6 +46,11 @@ public:
    */
   void
   set_orientation(const float vx, const float vy, const float vz, const float ix, const float iy, const float iz) const;
+
+  /**
+   * @brief Returns true if Listener is valid
+   */
+  constexpr bool is_valid() const { return listener_ != kInvalidListenerHandle; }
 
 private:
   listener_handle_t listener_;

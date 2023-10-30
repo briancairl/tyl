@@ -18,6 +18,10 @@ namespace tyl::audio::device
 class Playback
 {
 public:
+  Playback(Playback&& other);
+
+  Playback(const Playback&) = delete;
+
   /**
    * @brief Fully stops playback when out of scope
    */
@@ -58,6 +62,11 @@ public:
    */
   void stop() const;
 
+  /**
+   * @brief Returns true if Playback is valid
+   */
+  constexpr bool is_valid() const { return playback_source_ != kInvalidSourceHandle; }
+
 private:
   Playback(const source_handle_t source, const source_handle_t buffer);
 
@@ -73,10 +82,13 @@ private:
 class Source
 {
 public:
-  Source();
-  ~Source();
+  Source(Source&& other);
 
-  constexpr source_handle_t get_source_handle() const { return source_; }
+  Source(const Source&) = delete;
+
+  Source();
+
+  ~Source();
 
   /**
    * @brief Sets the volume of the sound source, between [0, 1]
@@ -116,6 +128,16 @@ public:
    * @brief Plays a sound
    */
   Playback play(const Sound& sound);
+
+  /**
+   * @brief Returns true if Playback is valid
+   */
+  constexpr bool is_valid() const { return source_ != kInvalidSourceHandle; }
+
+  /**
+   * @brief Returns opaque native handle to source
+   */
+  constexpr source_handle_t get_source_handle() const { return source_; }
 
 private:
   source_handle_t source_;

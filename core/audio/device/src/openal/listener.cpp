@@ -33,14 +33,19 @@ Listener::Listener(const Device& device) :
   TYL_AL_TEST_ERROR(alListenerfv(AL_ORIENTATION, listener_orientation));
 }
 
+Listener::Listener(Listener&& other) : listener_{other.listener_} { other.listener_ = kInvalidListenerHandle; }
+
 Listener::~Listener()
 {
-  TYL_ASSERT_NON_NULL(listener_);
-  alcDestroyContext(reinterpret_cast<ALCcontext*>(listener_));
+  if (Listener::is_valid())
+  {
+    alcDestroyContext(reinterpret_cast<ALCcontext*>(listener_));
+  }
 }
 
 void Listener::set_position(const float x, const float y, const float z) const
 {
+  TYL_ASSERT_TRUE(Listener::is_valid());
   const bool success = alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(listener_));
   TYL_ASSERT_TRUE(success);
   TYL_AL_TEST_ERROR(alListener3f(AL_POSITION, x, y, z));
@@ -48,6 +53,7 @@ void Listener::set_position(const float x, const float y, const float z) const
 
 void Listener::set_velocity(const float x, const float y, const float z) const
 {
+  TYL_ASSERT_TRUE(Listener::is_valid());
   const bool success = alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(listener_));
   TYL_ASSERT_TRUE(success);
   TYL_AL_TEST_ERROR(alListener3f(AL_VELOCITY, x, y, z));
@@ -61,6 +67,7 @@ void Listener::set_orientation(
   const float iy,
   const float iz) const
 {
+  TYL_ASSERT_TRUE(Listener::is_valid());
   const bool success = alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(listener_));
   TYL_ASSERT_TRUE(success);
   const ALfloat listener_orientation[] = {vx, vy, vz, ix, iy, iz};
