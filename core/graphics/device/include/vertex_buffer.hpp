@@ -146,17 +146,17 @@ class VertexBuffer
 public:
   enum class BufferMode
   {
-    Stream,
-    Static,
-    Dynamic,
+    kStream,
+    kStatic,
+    kDynamic,
   };
 
   enum class DrawMode
   {
-    Points,
-    Lines,
-    LineStrip,
-    Triangles,
+    kPoints,
+    kLines,
+    kLineStrip,
+    kTriangles,
   };
 
   template <typename... VertexAttributes> static auto create(const BufferMode buffer_mode, VertexAttributes&&... attrs)

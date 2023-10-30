@@ -159,7 +159,7 @@ ShaderSource& ShaderSource::operator=(ShaderSource&& other)
   return *this;
 }
 
-tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+tyl::expected<ShaderSource, ShaderSource::Error>
 ShaderSource::vertex(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
@@ -168,7 +168,7 @@ ShaderSource::vertex(std::string_view code, std::string* const error_details) no
   return ShaderSource::create(oss.str(), ShaderType::VERTEX, error_details);
 }
 
-tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+tyl::expected<ShaderSource, ShaderSource::Error>
 ShaderSource::fragment(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
@@ -177,7 +177,7 @@ ShaderSource::fragment(std::string_view code, std::string* const error_details) 
   return ShaderSource::create(oss.str(), ShaderType::FRAGMENT, error_details);
 }
 
-tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+tyl::expected<ShaderSource, ShaderSource::Error>
 ShaderSource::geometry(std::string_view code, std::string* const error_details) noexcept
 {
   std::ostringstream oss;
@@ -186,7 +186,7 @@ ShaderSource::geometry(std::string_view code, std::string* const error_details) 
   return ShaderSource::create(oss.str(), ShaderType::GEOMETRY, error_details);
 }
 
-tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+tyl::expected<ShaderSource, ShaderSource::Error>
 ShaderSource::create(std::string_view code, const ShaderType type, std::string* const error_details) noexcept
 {
 
@@ -194,12 +194,12 @@ ShaderSource::create(std::string_view code, const ShaderType type, std::string* 
 
   if (!validate_gl_shader_compilation(shader_source.shader_id_, type, error_details))
   {
-    return unexpected<ErrorCode>{ErrorCode::COMPILATION_FAILURE};
+    return unexpected<Error>{Error::kCompilationFailure};
   }
   return shader_source;
 }
 
-tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+tyl::expected<ShaderSource, ShaderSource::Error>
 ShaderSource::load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble) noexcept
 {
   if (std::ifstream ifs{filename}; ifs.is_open())
@@ -220,7 +220,7 @@ ShaderSource::load_from_file(const char* filename, const ShaderType type, const 
   }
   else
   {
-    return unexpected<ErrorCode>{ErrorCode::LOAD_FAILURE};
+    return unexpected<Error>{Error::LOAD_FAILURE};
   }
 }
 
@@ -380,7 +380,7 @@ void Shader::setMat4(const char* var_name, const float* data) const
   glUniformMatrix4fv(glGetUniformLocation(shader_id_, var_name), 1, GL_FALSE, data);
 }
 
-tyl::expected<Shader, Shader::ErrorCode> Shader::create(
+tyl::expected<Shader, Shader::Error> Shader::create(
   const ShaderSource& vertex_source,
   const ShaderSource& fragment_source,
   std::string* const error_details) noexcept
@@ -390,7 +390,7 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
 
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<Error>{Error::kLinkageFailure};
   }
 
   // Detach all component shaders no longer in use
@@ -400,7 +400,7 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
   return shader;
 }
 
-tyl::expected<Shader, Shader::ErrorCode> Shader::create(
+tyl::expected<Shader, Shader::Error> Shader::create(
   const ShaderSource& vertex_source,
   const ShaderSource& fragment_source,
   const ShaderSource& geometry_source,
@@ -411,7 +411,7 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
 
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<Error>{Error::kLinkageFailure};
   }
 
   // Detach all component shaders no longer in use
@@ -422,13 +422,13 @@ tyl::expected<Shader, Shader::ErrorCode> Shader::create(
   return shader;
 }
 
-tyl::expected<Shader, Shader::ErrorCode>
+tyl::expected<Shader, Shader::Error>
 Shader::create(const ShaderProgramHost& shader_host, std::string* const error_details) noexcept
 {
   Shader shader{shader_host};
   if (!validate_gl_shader_linkage(shader.shader_id_, error_details))
   {
-    return unexpected<ErrorCode>{ErrorCode::LINKAGE_FAILURE};
+    return unexpected<Error>{Error::kLinkageFailure};
   }
   return shader;
 }

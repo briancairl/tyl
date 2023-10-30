@@ -17,22 +17,22 @@
 namespace tyl::graphics::device
 {
 
-expected<RenderTargetTexture, RenderTargetTexture::ErrorCode>
+expected<RenderTargetTexture, RenderTargetTexture::Error>
 RenderTargetTexture::create(const Shape2D& shape, const Options& options)
 {
   if (shape.height < 1)
   {
-    return unexpected<ErrorCode>{ErrorCode::INVALID_TEXTURE_HEIGHT};
+    return unexpected<Error>{Error::kInvalidTextureHeight};
   }
   else if (shape.width < 1)
   {
-    return unexpected<ErrorCode>{ErrorCode::INVALID_TEXTURE_WIDTH};
+    return unexpected<Error>{Error::kInvalidTextureWidth};
   }
 
   Texture texture{shape, options.texture_depth, options.texture_channels};
   if (texture.get_id() == invalid_texture_id)
   {
-    return unexpected<ErrorCode>{ErrorCode::TEXTURE_CREATION_FAILURE};
+    return unexpected<Error>{Error::kTextureCreationFailure};
   }
 
   // Create a new frame buffer
@@ -64,7 +64,7 @@ RenderTargetTexture::create(const Shape2D& shape, const Options& options)
   {
     return RenderTargetTexture{std::move(texture), frame_buffer_id, depth_buffer_id};
   }
-  return unexpected<ErrorCode>{ErrorCode::DEVICE_CONFIGURATION_FAILURE};
+  return unexpected<Error>{Error::kDeviceConfigurationFailure};
 }
 
 void RenderTargetTexture::bind() const

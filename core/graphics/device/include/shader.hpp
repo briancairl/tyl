@@ -39,10 +39,10 @@ public:
   /**
    * @brief Possible ShaderSource creation errors
    */
-  enum class ErrorCode
+  enum class Error
   {
-    LOAD_FAILURE,
-    COMPILATION_FAILURE,
+    kLinkageFailure,
+    kCompilationFailure,
   };
 
   ShaderSource(ShaderSource&&);
@@ -63,31 +63,31 @@ public:
   /**
    * @brief Creates vertex shader source with detected graphics library version header
    */
-  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::Error>
   vertex(std::string_view code, std::string* const error_details = nullptr) noexcept;
 
   /**
    * @brief Creates fragment shader source with detected graphics library version header
    */
-  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::Error>
   fragment(std::string_view code, std::string* const error_details = nullptr) noexcept;
 
   /**
    * @brief Creates geometry shader source with detected graphics library version header
    */
-  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::Error>
   geometry(std::string_view code, std::string* const error_details = nullptr) noexcept;
 
   /**
    * @brief Creates a ShaderSource from code
    */
-  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::Error>
   create(std::string_view code, const ShaderType type, std::string* const error_details = nullptr) noexcept;
 
   /**
    * @brief Loads shader source code from a file
    */
-  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::ErrorCode>
+  [[nodiscard]] static tyl::expected<ShaderSource, ShaderSource::Error>
   load_from_file(const char* filename, const ShaderType type, const bool fill_version_preamble = true) noexcept;
 
 private:
@@ -145,7 +145,7 @@ public:
   /**
    * @brief Possible ShaderSource creation errors
    */
-  enum class ErrorCode
+  enum class Error
   {
     LINKAGE_FAILURE,
   };
@@ -181,7 +181,7 @@ public:
   /**
    * @brief Creates a shader from vertex/fragment sources
    */
-  [[nodiscard]] static tyl::expected<Shader, ErrorCode> create(
+  [[nodiscard]] static tyl::expected<Shader, Error> create(
     const ShaderSource& vertex_source,
     const ShaderSource& fragment_source,
     std::string* const error_details = nullptr) noexcept;
@@ -189,7 +189,7 @@ public:
   /**
    * @brief Creates a shader from vertex/fragment/geomtery sources
    */
-  [[nodiscard]] static tyl::expected<Shader, ErrorCode> create(
+  [[nodiscard]] static tyl::expected<Shader, Error> create(
     const ShaderSource& vertex_source,
     const ShaderSource& fragment_source,
     const ShaderSource& geometry_source,
@@ -198,7 +198,7 @@ public:
   /**
    * @brief Creates a binary shader blob managed by the host
    */
-  [[nodiscard]] static tyl::expected<Shader, ErrorCode>
+  [[nodiscard]] static tyl::expected<Shader, Error>
   create(const ShaderProgramHost& shader_host, std::string* const error_details = nullptr) noexcept;
 
 private:
