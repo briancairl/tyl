@@ -43,13 +43,15 @@ static inline const char* al_error_to_str(const ALenum error)
 }  // tyl::audio::device
 
 #ifndef NDEBUG
-    #define TYL_AL_CHECK_LAST_ERROR() \
+    #define TYL_AL_CHECK_LAST_ERROR(statement) \
     {\
         const ALenum __last_openal_err = alGetError();\
+        TYL_ASSERT_MSG_COND(__last_openal_err == AL_NO_ERROR, ">>>   %s   <<<\n", statement);\
         TYL_ASSERT(__last_openal_err == AL_NO_ERROR, al_error_to_str(__last_openal_err));\
     }
 #else
-    #define TYL_AL_CHECK_LAST_ERROR()
+    #define TYL_AL_CHECK_LAST_ERROR(statement)
 #endif // NDEBUG
 
-#define TYL_AL_TEST_ERROR(statement) (statement); TYL_AL_CHECK_LAST_ERROR();
+#define TYL_AL_TEST_ERROR_STATEMENT_STR(x) #x
+#define TYL_AL_TEST_ERROR(statement) (statement); TYL_AL_CHECK_LAST_ERROR(TYL_AL_TEST_ERROR_STATEMENT_STR(statement));

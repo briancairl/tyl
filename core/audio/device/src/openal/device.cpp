@@ -15,8 +15,7 @@
 namespace tyl::audio::device
 {
 
-Device::Device(const char* device_name) :
-    device_name_{device_name}, device_{reinterpret_cast<device_handle_t>(alcOpenDevice(device_name))}
+Device::Device(const char* device_name) : device_{reinterpret_cast<device_handle_t>(alcOpenDevice(device_name))}
 {
   TYL_ASSERT_NON_NULL(device_);
 }

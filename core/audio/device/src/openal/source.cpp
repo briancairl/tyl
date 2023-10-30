@@ -19,8 +19,8 @@ namespace tyl::audio::device
 Playback::Playback(const source_handle_t source, const source_handle_t buffer) :
     playback_source_{source}, playback_buffer_{buffer}
 {
-  alSourcei(playback_source_, AL_BUFFER, playback_buffer_);
-  alSourcePlay(playback_source_);
+  TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
+  TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
 }
 
 Playback::~Playback() { Playback::stop(); }
@@ -60,7 +60,7 @@ void Playback::resume() const { TYL_AL_TEST_ERROR(alSourcePlay(playback_source_)
 
 Source::Source()
 {
-  alGenSources(1, &source_);
+  TYL_AL_TEST_ERROR(alGenSources(1, &source_));
 
   // Set some reasonable defaults
   TYL_AL_TEST_ERROR(alSourcef(source_, AL_GAIN, 1.f));  // device volume
@@ -91,6 +91,10 @@ void Source::set_velocity(const float vx, const float vy, const float vz) const
 
 void Source::set_looped(const bool looped) const { TYL_AL_TEST_ERROR(alSourcei(source_, AL_LOOPING, looped)); }
 
-Playback Source::play(const Sound& sound) { return Playback{source_, sound.get_buffer_handle()}; }
+Playback Source::play(const Sound& sound)
+{
+  TYL_ASSERT_TRUE(sound.is_valid());
+  return Playback{source_, sound.get_buffer_handle()};
+}
 
 }  // namespace tyl::audio::device

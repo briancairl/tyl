@@ -112,6 +112,9 @@ public:
    */
   void set_looped(const bool looped) const;
 
+  /**
+   * @brief Plays a sound
+   */
   Playback play(const Sound& sound);
 
 private:

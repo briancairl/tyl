@@ -1,12 +1,13 @@
 /**
  * @copyright 2022-present Brian Cairl
  *
- * @file source.hpp
+ * @file sound.hpp
  */
 #pragma once
 
 // C++ Standard Library
 #include <cstdint>
+#include <optional>
 
 // Tyl
 #include <tyl/audio/device/fwd.hpp>
@@ -21,10 +22,10 @@ namespace tyl::audio::device
 struct ChannelFormat
 {
   /// Number of channels e.g. (1 := mono, 2 := stereo)
-  std::uint32_t count;
+  std::uint32_t count = 0;
 
   /// Number of bits per channel data element
-  std::uint32_t bit_depth;
+  std::uint32_t bit_depth = 0;
 };
 
 /**
@@ -33,7 +34,12 @@ struct ChannelFormat
 class Sound
 {
 public:
+  Sound(const Sound&) = delete;
+
+  Sound(Sound&& other);
+
   Sound();
+
   ~Sound();
 
   /**
@@ -42,7 +48,7 @@ public:
   Sound(
     void* const data,
     const std::size_t data_length,
-    const std::int32_t bits_per_second,
+    const std::size_t bits_per_second,
     const ChannelFormat& format);
 
   /**
@@ -51,21 +57,21 @@ public:
   void set_data(
     void* const data,
     const std::size_t data_length,
-    const std::int32_t bits_per_second,
+    const std::size_t bits_per_second,
     const ChannelFormat& format);
+
+  /**
+   * @brief Returns true if sound is valid
+   */
+  constexpr bool is_valid() const { return buffer_.has_value(); }
 
   /**
    * @brief Returns opaque native handle to sound buffer
    */
-  constexpr buffer_handle_t get_buffer_handle() const { return buffer_; }
-
-  /**
-   * @brief Loads a sound from a file
-   */
-  static Sound load(const char* filename);
+  constexpr buffer_handle_t get_buffer_handle() const { return *buffer_; }
 
 private:
-  buffer_handle_t buffer_;
+  std::optional<buffer_handle_t> buffer_;
 };
 
 }  // namespace tyl::audio::device
