@@ -16,8 +16,8 @@
 namespace tyl::audio::device
 {
 
-Playback::Playback(const source_handle_t source, const source_handle_t buffer) :
-    playback_source_{source}, playback_buffer_{buffer}
+Playback::Playback(source_handle_t source, source_handle_t buffer, std::size_t playback_buffer_length) :
+    playback_source_{source}, playback_buffer_{buffer}, playback_buffer_length_{playback_buffer_length}
 {
   TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
   TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
@@ -87,6 +87,14 @@ void Playback::resume() const
   TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
 }
 
+float Playback::progress() const
+{
+  TYL_ASSERT_TRUE(Playback::is_valid());
+  ALint byte_offset;
+  TYL_AL_TEST_ERROR(alGetSourcei(playback_source_, AL_BYTE_OFFSET, &byte_offset));
+  return static_cast<float>(byte_offset) / static_cast<float>(playback_buffer_length_);
+}
+
 Source::Source()
 {
   TYL_AL_TEST_ERROR(alGenSources(1, &source_));
@@ -139,10 +147,10 @@ void Source::set_looped(const bool looped) const
   TYL_AL_TEST_ERROR(alSourcei(source_, AL_LOOPING, looped));
 }
 
-Playback Source::play(const Sound& sound)
+Playback Source::play(Sound& sound)
 {
   TYL_ASSERT_TRUE(sound.is_valid());
-  return Playback{source_, sound.get_buffer_handle()};
+  return Playback{source_, sound.get_buffer_handle(), sound.get_buffer_length()};
 }
 
 }  // namespace tyl::audio::device

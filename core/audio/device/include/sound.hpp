@@ -46,7 +46,7 @@ public:
    */
   Sound(
     void* const data,
-    const std::size_t data_length,
+    const std::size_t buffer_length,
     const std::size_t bits_per_second,
     const ChannelFormat& format);
 
@@ -55,7 +55,7 @@ public:
    */
   void set_data(
     void* const data,
-    const std::size_t data_length,
+    const std::size_t buffer_length,
     const std::size_t bits_per_second,
     const ChannelFormat& format);
 
@@ -69,8 +69,14 @@ public:
    */
   constexpr buffer_handle_t get_buffer_handle() const { return buffer_; }
 
+  /**
+   * @brief Returns the size of sound buffer on device, in bytes
+   */
+  constexpr std::size_t get_buffer_length() const { return buffer_length_; }
+
 private:
   buffer_handle_t buffer_;
+  std::size_t buffer_length_;
 };
 
 }  // namespace tyl::audio::device

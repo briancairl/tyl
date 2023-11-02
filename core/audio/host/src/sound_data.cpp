@@ -30,7 +30,7 @@ template <typename T, typename D> std::unique_ptr<T, D> make_wave_uptr(T* p, D d
 
 expected<SoundData, SoundData::Error> SoundData::create(
   void* data,
-  const std::size_t data_length,
+  const std::size_t buffer_length,
   const std::size_t bits_per_second,
   const ChannelFormat& channel_format)
 {
@@ -46,12 +46,12 @@ expected<SoundData, SoundData::Error> SoundData::create(
     return make_unexpected(Error::kInvalidChannelBitDepth);
   }
 
-  return SoundData{data, data_length, bits_per_second, channel_format};
+  return SoundData{data, buffer_length, bits_per_second, channel_format};
 }
 
 SoundData::SoundData(SoundData&& other) :
     data_{other.data_},
-    data_length_{other.data_length_},
+    buffer_length_{other.buffer_length_},
     bits_per_second_{other.bits_per_second_},
     channel_format_{other.channel_format_}
 {
@@ -60,10 +60,10 @@ SoundData::SoundData(SoundData&& other) :
 
 SoundData::SoundData(
   void* const data,
-  const std::size_t data_length,
+  const std::size_t buffer_length,
   const std::size_t bits_per_second,
   const ChannelFormat& channel_format) :
-    data_{data}, data_length_{data_length}, bits_per_second_{bits_per_second}, channel_format_{channel_format}
+    data_{data}, buffer_length_{buffer_length}, bits_per_second_{bits_per_second}, channel_format_{channel_format}
 {}
 
 SoundData::~SoundData()
@@ -75,7 +75,7 @@ SoundData::~SoundData()
   std::free(data_);
 }
 
-device::Sound SoundData::sound() const { return {data_, data_length_, bits_per_second_, channel_format_}; }
+device::Sound SoundData::sound() const { return {data_, buffer_length_, bits_per_second_, channel_format_}; }
 
 expected<SoundData, SoundData::Error> SoundData::load(const std::filesystem::path& path)
 {

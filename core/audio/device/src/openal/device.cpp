@@ -44,13 +44,13 @@ Device::~Device()
 bool Device::enable() const
 {
   TYL_ASSERT_TRUE(Device::is_valid());
-  return alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(context_));
+  return alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(context_)) == ALC_TRUE;
 }
 
 bool Device::disable() const
 {
   TYL_ASSERT_TRUE(Device::is_valid());
-  return alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(kInvalidContextHandle));
+  return alcMakeContextCurrent(reinterpret_cast<ALCcontext*>(kInvalidContextHandle)) == ALC_TRUE;
 }
 
 }  // namespace tyl::audio::device

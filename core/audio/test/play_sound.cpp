@@ -4,13 +4,9 @@
  * @file play_sound.cpp
  */
 
-//
-// A simple test program which draws VBO colored with a texture
-// Also downloads/re-uploads texture data
-//
-
 // C++ Standard Library
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <thread>
 
@@ -40,20 +36,33 @@ int main(int argc, char** argv)
 
   device::Listener audio_listener{audio_device};
 
-  auto sound_or_error = host::SoundData::load(argv[1]);
-
-  if (!sound_or_error.has_value())
+  auto sound_data_or_error = host::SoundData::load(argv[1]);
+  if (!sound_data_or_error.has_value())
   {
-    std::fprintf(stderr, "[ERROR] %s: %d\n", "Failed to load sound", static_cast<int>(sound_or_error.error()));
+    std::fprintf(stderr, "[ERROR] %s: %d\n", "Failed to load sound", static_cast<int>(sound_data_or_error.error()));
     return 1;
   }
 
+  auto sound = sound_data_or_error->sound();
+
   device::Source audio_source;
-  auto playback = audio_source.play(sound_or_error->sound());
+  audio_source.set_pitch_scaling(2.5);
+  audio_source.set_volume(2.0);
+
+  auto playback = audio_source.play(sound);
 
   while (playback.is_playing())
   {
-    std::this_thread::sleep_for(std::chrono::seconds{1});
+    const float p = playback.progress();
+    std::fprintf(stderr, "progress: %f\n", p);
+    audio_listener.set_position(std::cos(2 * p), std::sin(2 * p), 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    if (p > 0.5)
+    {
+      playback.stop();
+      break;
+    }
   }
 
   return 0;

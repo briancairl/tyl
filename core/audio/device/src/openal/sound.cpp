@@ -33,36 +33,37 @@ inline ALenum to_al_channel_format(const ChannelFormat& format)
 
 }  // namespace anonymous
 
-Sound::Sound(Sound&& other) : buffer_{other.buffer_} { other.buffer_ = 0; }
+Sound::Sound(Sound&& other) : buffer_{other.buffer_} { other.buffer_ = kInvalidBufferHandle; }
 
-Sound::Sound() { alGenBuffers(1, &buffer_); }
+Sound::Sound() { TYL_AL_TEST_ERROR(alGenBuffers(1, &buffer_)); }
 
 Sound::Sound(
   void* const data,
-  const std::size_t data_length,
+  const std::size_t buffer_length,
   const std::size_t bits_per_second,
   const ChannelFormat& format) :
     Sound{}
 {
-  Sound::set_data(data, data_length, bits_per_second, format);
+  Sound::set_data(data, buffer_length, bits_per_second, format);
 }
 
 void Sound::set_data(
   void* const data,
-  const std::size_t data_length,
+  const std::size_t buffer_length,
   const std::size_t bits_per_second,
   const ChannelFormat& format)
 {
   TYL_ASSERT_NE(buffer_, kInvalidBufferHandle);
   TYL_ASSERT_NON_NULL(data);
-  TYL_AL_TEST_ERROR(alBufferData(buffer_, to_al_channel_format(format), data, data_length, bits_per_second));
+  TYL_AL_TEST_ERROR(alBufferData(buffer_, to_al_channel_format(format), data, buffer_length, bits_per_second));
+  buffer_length_ = buffer_length;
 }
 
 Sound::~Sound()
 {
   if (Sound::is_valid())
   {
-    alDeleteBuffers(1, &buffer_);
+    TYL_AL_TEST_ERROR(alDeleteBuffers(1, &buffer_));
   }
 }
 

@@ -63,15 +63,21 @@ public:
   void stop() const;
 
   /**
+   * @brief Returns playback progress as a value between 0 and 1
+   */
+  float progress() const;
+
+  /**
    * @brief Returns true if Playback is valid
    */
   constexpr bool is_valid() const { return playback_source_ != kInvalidSourceHandle; }
 
 private:
-  Playback(const source_handle_t source, const source_handle_t buffer);
+  Playback(source_handle_t source, source_handle_t buffer, std::size_t playback_buffer_length);
 
   source_handle_t playback_source_;
   buffer_handle_t playback_buffer_;
+  std::size_t playback_buffer_length_;
 
   friend class Source;
 };
@@ -106,14 +112,14 @@ public:
   void set_pitch_scaling(const float pitch_scaling) const;
 
   /**
-   * @brief Sets the position of the sound sourc in the current audio field context
+   * @brief Sets the position of the sound source in the current audio field context
    *
    * @warning Only applies for single-channel (mono) sounds
    */
   void set_position(const float px, const float py, const float pz) const;
 
   /**
-   * @brief Sets the velocity of the sound sourc in the current audio field context
+   * @brief Sets the velocity of the sound source in the current audio field context
    *
    * @warning Only applies for single-channel (mono) sounds
    */
@@ -126,8 +132,10 @@ public:
 
   /**
    * @brief Plays a sound
+   *
+   * @note input as lvalue reference prevents rvalue/binding temporaries
    */
-  Playback play(const Sound& sound);
+  Playback play(Sound& sound);
 
   /**
    * @brief Returns true if Playback is valid

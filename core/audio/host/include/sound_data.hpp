@@ -50,7 +50,7 @@ public:
    */
   static expected<SoundData, Error> create(
     void* data,
-    const std::size_t data_length,
+    const std::size_t buffer_length,
     const std::size_t bits_per_second,
     const ChannelFormat& channel_format);
 
@@ -62,7 +62,7 @@ public:
   /**
    * @brief Number of bytes used to store sound data
    */
-  constexpr std::size_t size_in_bytes() const { return data_length_; };
+  constexpr std::size_t get_buffer_length() const { return buffer_length_; };
 
   /**
    * @brief Intended bit-rate of sound data
@@ -80,14 +80,14 @@ private:
    */
   SoundData(
     void* data,
-    const std::size_t data_length,
+    const std::size_t buffer_length,
     const std::size_t bits_per_second,
     const ChannelFormat& channel_format);
 
   /// Sound data buffer
   void* data_ = nullptr;
   /// Length of buffer, in bytes
-  std::size_t data_length_ = 0;
+  std::size_t buffer_length_ = 0;
   /// Bit rate
   std::size_t bits_per_second_ = 0;
   /// Sound channel formatting
