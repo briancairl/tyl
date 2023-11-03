@@ -16,8 +16,10 @@
 namespace tyl::audio::device
 {
 
-Playback::Playback(source_handle_t source, source_handle_t buffer, std::size_t playback_buffer_length) :
-    playback_source_{source}, playback_buffer_{buffer}, playback_buffer_length_{playback_buffer_length}
+Playback::Playback(const Source& source, const Sound& sound) :
+    playback_source_{source.get_source_handle()},
+    playback_buffer_{sound.get_buffer_handle()},
+    playback_buffer_length_{sound.get_buffer_length()}
 {
   TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
   TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
@@ -147,10 +149,10 @@ void Source::set_looped(const bool looped) const
   TYL_AL_TEST_ERROR(alSourcei(source_, AL_LOOPING, looped));
 }
 
-Playback Source::play(Sound& sound)
+Playback Source::play(Sound& sound) const
 {
   TYL_ASSERT_TRUE(sound.is_valid());
-  return Playback{source_, sound.get_buffer_handle(), sound.get_buffer_length()};
+  return Playback{*this, sound};
 }
 
 }  // namespace tyl::audio::device

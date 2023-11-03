@@ -63,8 +63,8 @@
 #define TYL_ASSERT_LT(val_lhs, val_rhs)                                                                                \
   TYL_ASSERT_LT_MSG(val_lhs, val_rhs, "expected left value to be less than right value")
 #define TYL_ASSERT_LE(val_lhs, val_rhs)                                                                                \
-  TYL_ASSERT_LE_MSG((val_lhs <= val_rhs), "expected left value to be less or equal to than right value")
+  TYL_ASSERT_LE_MSG(val_lhs, val_rhs, "expected left value to be less or equal to than right value")
 #define TYL_ASSERT_GT(val_lhs, val_rhs)                                                                                \
-  TYL_ASSERT_GT_MSG((val_lhs > val_rhs), "expected left value to be greater than right value")
+  TYL_ASSERT_GT_MSG(val_lhs, val_rhs, "expected left value to be greater than right value")
 #define TYL_ASSERT_GE(val_lhs, val_rhs)                                                                                \
-  TYL_ASSERT_GE_MSG((val_lhs >= val_rhs), "expected left value to be greater than or equal to right value")
+  TYL_ASSERT_GE_MSG(val_lhs, val_rhs, "expected left value to be greater than or equal to right value")

@@ -53,8 +53,10 @@ void Sound::set_data(
   const std::size_t bits_per_second,
   const ChannelFormat& format)
 {
-  TYL_ASSERT_NE(buffer_, kInvalidBufferHandle);
   TYL_ASSERT_NON_NULL(data);
+  TYL_ASSERT_GT(buffer_length, 0);
+  TYL_ASSERT_GT(bits_per_second, 0);
+  TYL_ASSERT_NE(buffer_, kInvalidBufferHandle);
   TYL_AL_TEST_ERROR(alBufferData(buffer_, to_al_channel_format(format), data, buffer_length, bits_per_second));
   buffer_length_ = buffer_length;
 }

@@ -22,6 +22,8 @@ public:
 
   Playback(const Playback&) = delete;
 
+  Playback(const Source& source, const Sound& sound);
+
   /**
    * @brief Fully stops playback when out of scope
    */
@@ -30,17 +32,17 @@ public:
   /**
    * @brief Returns \c true if sound is currently being played by a sound device
    */
-  bool is_playing() const;
+  [[nodiscard]] bool is_playing() const;
 
   /**
    * @brief Returns \c true if sound is currently paused during playback
    */
-  bool is_paused() const;
+  [[nodiscard]] bool is_paused() const;
 
   /**
    * @brief Returns \c true if sound is currently stopped
    */
-  bool is_stopped() const;
+  [[nodiscard]] bool is_stopped() const;
 
   /**
    * @brief Resets sound to start of playback
@@ -65,16 +67,14 @@ public:
   /**
    * @brief Returns playback progress as a value between 0 and 1
    */
-  float progress() const;
+  [[nodiscard]] float progress() const;
 
   /**
    * @brief Returns true if Playback is valid
    */
-  constexpr bool is_valid() const { return playback_source_ != kInvalidSourceHandle; }
+  [[nodiscard]] constexpr bool is_valid() const { return playback_source_ != kInvalidSourceHandle; }
 
 private:
-  Playback(source_handle_t source, source_handle_t buffer, std::size_t playback_buffer_length);
-
   source_handle_t playback_source_;
   buffer_handle_t playback_buffer_;
   std::size_t playback_buffer_length_;
@@ -135,17 +135,17 @@ public:
    *
    * @note input as lvalue reference prevents rvalue/binding temporaries
    */
-  Playback play(Sound& sound);
+  [[nodiscard]] Playback play(Sound& sound) const;
 
   /**
    * @brief Returns true if Playback is valid
    */
-  constexpr bool is_valid() const { return source_ != kInvalidSourceHandle; }
+  [[nodiscard]] constexpr bool is_valid() const { return source_ != kInvalidSourceHandle; }
 
   /**
    * @brief Returns opaque native handle to source
    */
-  constexpr source_handle_t get_source_handle() const { return source_; }
+  [[nodiscard]] constexpr source_handle_t get_source_handle() const { return source_; }
 
 private:
   source_handle_t source_;

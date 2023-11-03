@@ -12,6 +12,7 @@
 // Tyl
 #include <tyl/async.hpp>
 #include <tyl/audio/device/sound.hpp>
+#include <tyl/audio/host/sound_data.hpp>
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
@@ -33,6 +34,7 @@ namespace tyl::engine
 
 using Image = graphics::host::Image;
 using Texture = graphics::device::Texture;
+using SoundData = audio::host::SoundData;
 using Sound = audio::device::Sound;
 
 namespace
@@ -155,13 +157,23 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
     },
     [](Registry& registry, EntityID id, Image&& image) { registry.emplace<Texture>(id, image.texture()); });
 
-  const auto sound_asset_status = scan<Sound>(
+  const auto sound_asset_status = scan<Sound, SoundData>(
     scene.assets,
     shared,
     resources,
-    [](const std::filesystem::path& path) -> expected<Sound, AssetError> { return Sound::load(path.c_str()); },
-    [](Registry& registry, EntityID id, Sound&& sound) { registry.emplace<Sound>(id, std::move(sound)); });
+    [](const std::filesystem::path& path) -> expected<SoundData, AssetError> {
+      if (path.extension() != ".wav")
+      {
+        return make_unexpected(AssetError::kFailedToLoad);
+      }
 
+      if (auto sound_or_error = SoundData::load(path.c_str()); sound_or_error.has_value())
+      {
+        return std::move(sound_or_error).value();
+      }
+      return make_unexpected(AssetError::kFailedToLoad);
+    },
+    [](Registry& registry, EntityID id, SoundData&& sound_data) { registry.emplace<Sound>(id, sound_data.sound()); });
 
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_None;
   if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))

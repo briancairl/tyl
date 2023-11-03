@@ -40,12 +40,12 @@ public:
   /**
    * @brief Returns opaque native handle to device
    */
-  constexpr device_handle_t get_device_handle() const { return device_; }
+  [[nodiscard]] constexpr device_handle_t get_device_handle() const { return device_; }
 
   /**
    * @brief Returns true if Device is valid
    */
-  constexpr bool is_valid() const { return device_ != kInvalidDeviceHandle; }
+  [[nodiscard]] constexpr bool is_valid() const { return device_ != kInvalidDeviceHandle; }
 
 private:
   /// Handle to device

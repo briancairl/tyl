@@ -29,7 +29,7 @@ public:
   /**
    * @brief Returns opaque native handle to listener
    */
-  constexpr listener_handle_t get_listener_handle() const { return listener_; }
+  [[nodiscard]] constexpr listener_handle_t get_listener_handle() const { return listener_; }
 
   /**
    * @brief Sets the position of the listener in the current audio field context
@@ -50,7 +50,7 @@ public:
   /**
    * @brief Returns true if Listener is valid
    */
-  constexpr bool is_valid() const { return listener_ != kInvalidListenerHandle; }
+  [[nodiscard]] constexpr bool is_valid() const { return listener_ != kInvalidListenerHandle; }
 
 private:
   listener_handle_t listener_;

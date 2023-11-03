@@ -45,7 +45,7 @@ public:
    */
   enum class Error
   {
-    kDeviceConfigutationFailure,
+    kDeviceConfigurationFailure,
     kTextureCreationFailure,
     kInvalidTextureHeight,
     kInvalidTextureWidth,

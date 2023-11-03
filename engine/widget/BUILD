@@ -52,7 +52,8 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     ":widget",
-    "//core/audio:device",
+    "//core/audio/device",
+    "//core/audio/host",
     "//core/graphics/device",
     "//core/graphics/host:image",
     "//core/serialization/std",
@@ -72,7 +73,7 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     ":widget",
-    "//core/audio:device",
+    "//core/audio/device",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]

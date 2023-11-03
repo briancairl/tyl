@@ -25,9 +25,9 @@ namespace tyl::graphics::device
  */
 enum class ShaderType
 {
-  VERTEX,
-  FRAGMENT,
-  GEOMETRY,
+  kVertex,
+  kFragment,
+  kGeometry,
 };
 
 /**
@@ -41,6 +41,7 @@ public:
    */
   enum class Error
   {
+    kLoadFailure,
     kLinkageFailure,
     kCompilationFailure,
   };
@@ -147,7 +148,7 @@ public:
    */
   enum class Error
   {
-    LINKAGE_FAILURE,
+    kLinkageFailure,
   };
 
   Shader(Shader&& other);

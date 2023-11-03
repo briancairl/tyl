@@ -62,7 +62,7 @@ public:
   /**
    * @brief Returns true if sound is valid
    */
-  constexpr bool is_valid() const { return buffer_ != kInvalidBufferHandle; }
+  [[nodiscard]] constexpr bool is_valid() const { return buffer_ != kInvalidBufferHandle; }
 
   /**
    * @brief Returns opaque native handle to sound buffer

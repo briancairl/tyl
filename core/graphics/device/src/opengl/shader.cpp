@@ -24,11 +24,11 @@ inline GLuint to_gl_shader_code(const ShaderType shader_type)
 {
   switch (shader_type)
   {
-  case ShaderType::VERTEX:
+  case ShaderType::kVertex:
     return GL_VERTEX_SHADER;
-  case ShaderType::FRAGMENT:
+  case ShaderType::kFragment:
     return GL_FRAGMENT_SHADER;
-  case ShaderType::GEOMETRY:
+  case ShaderType::kGeometry:
     return GL_GEOMETRY_SHADER;
   default:
     break;
@@ -41,11 +41,11 @@ inline const char* to_gl_shader_str(const ShaderType shader_type)
 {
   switch (shader_type)
   {
-  case ShaderType::VERTEX:
+  case ShaderType::kVertex:
     return "GL_VERTEX_SHADER";
-  case ShaderType::FRAGMENT:
+  case ShaderType::kFragment:
     return "GL_FRAGMENT_SHADER";
-  case ShaderType::GEOMETRY:
+  case ShaderType::kGeometry:
     return "GL_GEOMETRY_SHADER";
   default:
     break;
@@ -165,7 +165,7 @@ ShaderSource::vertex(std::string_view code, std::string* const error_details) no
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource::create(oss.str(), ShaderType::VERTEX, error_details);
+  return ShaderSource::create(oss.str(), ShaderType::kVertex, error_details);
 }
 
 tyl::expected<ShaderSource, ShaderSource::Error>
@@ -174,7 +174,7 @@ ShaderSource::fragment(std::string_view code, std::string* const error_details) 
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource::create(oss.str(), ShaderType::FRAGMENT, error_details);
+  return ShaderSource::create(oss.str(), ShaderType::kFragment, error_details);
 }
 
 tyl::expected<ShaderSource, ShaderSource::Error>
@@ -183,7 +183,7 @@ ShaderSource::geometry(std::string_view code, std::string* const error_details) 
   std::ostringstream oss;
   put_shader_version_preamble(oss);
   oss << code;
-  return ShaderSource::create(oss.str(), ShaderType::GEOMETRY, error_details);
+  return ShaderSource::create(oss.str(), ShaderType::kGeometry, error_details);
 }
 
 tyl::expected<ShaderSource, ShaderSource::Error>
@@ -220,7 +220,7 @@ ShaderSource::load_from_file(const char* filename, const ShaderType type, const 
   }
   else
   {
-    return unexpected<Error>{Error::LOAD_FAILURE};
+    return unexpected<Error>{Error::kLoadFailure};
   }
 }
 
