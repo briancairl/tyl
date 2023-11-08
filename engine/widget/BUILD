@@ -109,8 +109,7 @@ cc_library(
   deps=[
     ":widget",
     "@imgui-file-dialogue",
-    "//core/graphics/device",
-    "//core/graphics/host:image"
+    "//engine/graphics",
   ],
   visibility=["//visibility:public"]
 )
@@ -128,8 +127,7 @@ cc_library(
   deps=[
     ":widget",
     "@imgui-file-dialogue",
-    "//core/graphics/device",
-    "//core/graphics/host:image"
+    "//engine/graphics",
   ],
   visibility=["//visibility:public"]
 )

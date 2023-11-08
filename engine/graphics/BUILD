@@ -1,19 +1,17 @@
 cc_library(
-  name="common",
+  name="graphics",
   hdrs=[
-    "include/asset.hpp",
-    "include/ecs.hpp",
-    "include/math.hpp"
+    "include/tileset.hpp",
   ],
   srcs=[
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    "//core/async",
-    "//core/common",
-    "//core/ecs",
+    "//engine/common",
     "//core/serialization/std",
+    "//core/graphics/device",
+    "//core/graphics/host:image",
   ],
   visibility=["//visibility:public"]
 )

@@ -15,6 +15,7 @@
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
+#include <tyl/engine/tileset.hpp>
 #include <tyl/engine/widget/tileset_creator.hpp>
 #include <tyl/format.hpp>
 #include <tyl/graphics/device/texture.hpp>
@@ -61,12 +62,6 @@ struct AtlasTextureEditingState
   ImColor texture_tint = ImColor{1.f, 1.f, 1.f, 1.f};
   ImTransform window_to_texture;
   std::optional<ImTransform> window_to_texture_on_nav_start = std::nullopt;
-};
-
-struct TileSet
-{
-  Vec2f tile_size = {16, 16};
-  std::vector<Rect2f> tiles;
 };
 
 ImVec2 DrawGrid(
@@ -756,7 +751,7 @@ public:
       {
         const auto id = local_registry_.create();
         local_registry_.emplace<std::string>(id, kTileSetNameBuffer);
-        local_registry_.emplace<TileSet>(id);
+        local_registry_.emplace<TileSet>(id, Vec2f{16, 16});
         local_registry_.emplace<AtlasTextureEditingState>(id);
         local_registry_.emplace<TileSetSelections>(id);
         local_registry_.emplace<Reference<Texture>>(id);
@@ -849,19 +844,8 @@ WidgetStatus TileSetCreator::UpdateImpl(Scene& scene, WidgetSharedState& shared,
 namespace tyl::serialization
 {
 
-template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Vec2f> : std::true_type
-{};
-
-template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, Rect2f> : std::true_type
-{};
-
 template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::TileSetSelection> : std::true_type
 {};
-
-template <typename ArchiveT> struct serialize<ArchiveT, engine::TileSetSelections>
-{
-  void operator()(ArchiveT& ar, engine::TileSetSelections& selections) { ar& named{"selections", selections}; }
-};
 
 template <typename ArchiveT> struct serialize<ArchiveT, engine::AtlasTextureEditingState>
 {
@@ -875,15 +859,6 @@ template <typename ArchiveT> struct serialize<ArchiveT, engine::AtlasTextureEdit
     ar& named{"texture_tint", editing_state.texture_tint};
     ar& named{"window_to_texture", editing_state.window_to_texture};
     // [NOT SERIALIZED] ar& named{"window_to_texture_on_nav_start", editing_state.window_to_texture_on_nav_start};
-  }
-};
-
-template <typename ArchiveT> struct serialize<ArchiveT, engine::TileSet>
-{
-  void operator()(ArchiveT& ar, engine::TileSet& tile_set)
-  {
-    ar& named{"tile_size", tile_set.tile_size};
-    ar& named{"tiles", tile_set.tiles};
   }
 };
 
