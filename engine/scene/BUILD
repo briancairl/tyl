@@ -9,7 +9,7 @@ cc_library(
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    "//engine/components",
+    "//engine/common",
     "//core/ecs",
     "//core/serialization:object",
     "//core/serialization/stream:file_stream",

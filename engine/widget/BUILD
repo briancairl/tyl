@@ -34,7 +34,7 @@ cc_library(
     "//core/math",
     "//core/serialization/archive:binary_archive",
     "//core/serialization/stream:file_stream",
-    "//engine/components",
+    "//engine/common",
     "//engine/scene",
   ],
   visibility=["//visibility:public"]
