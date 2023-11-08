@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <thread>
 
 // Tyl
@@ -43,24 +44,64 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  auto sound = sound_data_or_error->sound();
+  std::optional<device::Sound> sound;
+  {
+    auto sound_src = sound_data_or_error->sound();
+    sound.emplace(std::move(sound_src));
+  }
 
   device::Source audio_source;
-  audio_source.set_pitch_scaling(2.5);
+  audio_source.set_pitch_scaling(1.5);
   audio_source.set_volume(2.0);
 
-  auto playback = audio_source.play(sound);
-
-  while (playback.is_playing())
+  std::optional<device::Playback> playback;
   {
-    const float p = playback.progress();
+    auto playback_src = audio_source.play(*sound);
+    playback.emplace(std::move(playback_src));
+  }
+
+  {
+    const float p = playback->progress();
+    std::fprintf(stderr, "restart progress: %f -- is_playing=%d\n", p, playback->is_playing());
+  }
+
+  while (playback->is_playing())
+  {
+    const float p = playback->progress();
     std::fprintf(stderr, "progress: %f\n", p);
     audio_listener.set_position(std::cos(2 * p), std::sin(2 * p), 0);
     std::this_thread::sleep_for(std::chrono::milliseconds{50});
 
     if (p > 0.5)
     {
-      playback.stop();
+      playback->stop();
+      break;
+    }
+  }
+
+  playback->restart();
+  {
+    auto playback_src = audio_source.play(*sound);
+    playback.emplace(std::move(playback_src));
+  }
+
+  {
+    const float p = playback->progress();
+    std::fprintf(stderr, "restart progress: %f -- is_playing=%d\n", p, playback->is_playing());
+    playback->restart();
+    std::fprintf(stderr, "restart progress: %f -- is_playing=%d\n", p, playback->is_playing());
+  }
+
+  while (playback->is_playing())
+  {
+    const float p = playback->progress();
+    std::fprintf(stderr, "progress: %f\n", p);
+    audio_listener.set_position(std::cos(2 * p), std::sin(2 * p), 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds{50});
+
+    if (p > 0.5)
+    {
+      playback->stop();
       break;
     }
   }

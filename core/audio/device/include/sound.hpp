@@ -33,13 +33,13 @@ struct ChannelFormat
 class Sound
 {
 public:
-  Sound(const Sound&) = delete;
-
-  Sound(Sound&& other);
+  ~Sound();
 
   Sound();
+  Sound(const Sound&) = delete;
+  Sound(Sound&& other);
 
-  ~Sound();
+  Sound& operator==(const Sound& other) = delete;
 
   /**
    * @brief Instances sound from sound data

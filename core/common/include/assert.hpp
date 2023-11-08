@@ -12,6 +12,7 @@
 // C++ Standard Library
 #include <cstdio>
 #include <cstdlib>
+#include <thread>
 #include <type_traits>
 
 #ifdef NDEBUG
@@ -32,11 +33,12 @@
   if (!(cond))                                                                                                         \
   {                                                                                                                    \
     TYL_ASSERT_MSG(                                                                                                    \
-      "\n***RUNTIME ASSERTION FAILED***\n\ncondition : %s\nmessage   : %s\nfile      : %s\nline      : %d\n",          \
+      "\n***RUNTIME ASSERTION FAILED***\n\ncondition : %s\nmessage   : %s\nfile      : %s:%d\nthread    : %lu\n",      \
       #cond,                                                                                                           \
       message,                                                                                                         \
       __FILE__,                                                                                                        \
-      __LINE__);                                                                                                       \
+      __LINE__,                                                                                                        \
+      std::hash<std::thread::id>{}(std::this_thread::get_id()));                                                       \
     std::abort();                                                                                                      \
   }
 

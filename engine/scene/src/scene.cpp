@@ -12,11 +12,17 @@ namespace tyl::graphics::device
 class Texture;
 }  // tyl::graphics::device
 
+namespace tyl::audio::device
+{
+class Sound;
+}  // tyl::audio::device
+
 namespace tyl::engine
 {
 
 // clang-format off
 using AssetComponents = Components<
+  AssetLocation<tyl::audio::device::Sound>,
   AssetLocation<tyl::graphics::device::Texture>
 >;
 // clang-format on

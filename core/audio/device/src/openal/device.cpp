@@ -36,6 +36,7 @@ Device::~Device()
   if (Device::is_valid())
   {
     TYL_ASSERT_TRUE(Device::is_valid());
+    disable();
     alcCloseDevice(reinterpret_cast<ALCdevice*>(device_));
     alcDestroyContext(reinterpret_cast<ALCcontext*>(context_));
   }

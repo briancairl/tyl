@@ -51,14 +51,14 @@ int main(int argc, char** argv)
     std::fprintf(stderr, "[INFO] created working directory: %s\n", working_directory.string().c_str());
   }
 
-  auto asset_management = AssetManagement::create({});
-  if (!asset_management.has_value())
+  auto audio_browser = AudioBrowser::create({});
+  if (!audio_browser.has_value())
   {
     return 1;
   }
 
-  auto audio_browser = AudioBrowser::create({});
-  if (!audio_browser.has_value())
+  auto asset_management = AssetManagement::create({});
+  if (!asset_management.has_value())
   {
     return 1;
   }

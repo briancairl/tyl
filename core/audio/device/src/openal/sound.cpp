@@ -7,6 +7,7 @@
 // C++ Standard Library
 #include <cstdio>
 #include <cstdlib>
+#include <new>
 
 // Tyl
 #include <tyl/audio/device/al.inl>
@@ -33,7 +34,11 @@ inline ALenum to_al_channel_format(const ChannelFormat& format)
 
 }  // namespace anonymous
 
-Sound::Sound(Sound&& other) : buffer_{other.buffer_} { other.buffer_ = kInvalidBufferHandle; }
+Sound::Sound(Sound&& other) : buffer_{other.buffer_}, buffer_length_{other.buffer_length_}
+{
+  other.buffer_ = kInvalidBufferHandle;
+  other.buffer_length_ = 0;
+}
 
 Sound::Sound() { TYL_AL_TEST_ERROR(alGenBuffers(1, &buffer_)); }
 

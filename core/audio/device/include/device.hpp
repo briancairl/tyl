@@ -17,15 +17,14 @@ namespace tyl::audio::device
 class Device
 {
 public:
+  ~Device();
+
   explicit Device(const char* device_name);
-
+  Device();
   Device(Device&& other);
-
   Device(const Device& other) = delete;
 
-  Device();
-
-  ~Device();
+  Device& operator==(const Device& other) = delete;
 
   /**
    * @brief Sets a device active

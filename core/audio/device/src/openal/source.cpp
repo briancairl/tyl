@@ -21,15 +21,24 @@ Playback::Playback(const Source& source, const Sound& sound) :
     playback_buffer_{sound.get_buffer_handle()},
     playback_buffer_length_{sound.get_buffer_length()}
 {
-  TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
-  TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
+  ALint previous_buffer;
+  TYL_AL_TEST_ERROR(alGetSourcei(playback_source_, AL_BUFFER, &previous_buffer));
+  std::fprintf(stderr, "!!! %d : %d != %d\n", playback_source_, previous_buffer, playback_buffer_);
+  if (previous_buffer != playback_buffer_)
+  {
+    TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
+  }
+  Playback::restart();
 }
 
 Playback::Playback(Playback&& other) :
-    playback_source_{other.playback_source_}, playback_buffer_{other.playback_buffer_}
+    playback_source_{other.playback_source_},
+    playback_buffer_{other.playback_buffer_},
+    playback_buffer_length_{other.playback_buffer_length_}
 {
   other.playback_source_ = kInvalidSourceHandle;
   other.playback_buffer_ = kInvalidBufferHandle;
+  other.playback_buffer_length_ = 0;
 }
 
 Playback::~Playback()
@@ -37,6 +46,15 @@ Playback::~Playback()
   if (Playback::is_valid())
   {
     Playback::stop();
+    TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, kInvalidSourceHandle));
+
+    ALint previous_buffer;
+    TYL_AL_TEST_ERROR(alGetSourcei(playback_source_, AL_BUFFER, &previous_buffer));
+    std::fprintf(stderr, "~~~ %d : %d != %d\n", playback_source_, previous_buffer, playback_buffer_);
+    if (previous_buffer != playback_buffer_)
+    {
+      TYL_AL_TEST_ERROR(alSourcei(playback_source_, AL_BUFFER, playback_buffer_));
+    }
   }
 }
 
@@ -67,7 +85,11 @@ bool Playback::is_paused() const
 void Playback::restart() const
 {
   TYL_ASSERT_TRUE(Playback::is_valid());
-  TYL_AL_TEST_ERROR(alSourceRewind(playback_source_));
+
+  ALint previous_buffer;
+  TYL_AL_TEST_ERROR(alGetSourcei(playback_source_, AL_BUFFER, &previous_buffer));
+
+  // TYL_AL_TEST_ERROR(alSourceRewind(playback_source_));
   TYL_AL_TEST_ERROR(alSourcePlay(playback_source_));
 }
 
@@ -102,11 +124,11 @@ Source::Source()
   TYL_AL_TEST_ERROR(alGenSources(1, &source_));
 
   // Set some reasonable defaults
+  TYL_AL_TEST_ERROR(alSourcei(source_, AL_LOOPING, false));  // one-shot
   TYL_AL_TEST_ERROR(alSourcef(source_, AL_GAIN, 1.f));  // device volume
   TYL_AL_TEST_ERROR(alSourcef(source_, AL_PITCH, 1.f));  // default pitch
   TYL_AL_TEST_ERROR(alSource3f(source_, AL_POSITION, 0.f, 0.f, 0.f));  // centered
   TYL_AL_TEST_ERROR(alSource3f(source_, AL_VELOCITY, 0.f, 0.f, 0.f));  // stationary
-  TYL_AL_TEST_ERROR(alSourcei(source_, AL_LOOPING, false));  // one-shot
 }
 
 Source::Source(Source&& other) : source_{other.source_} { other.source_ = kInvalidSourceHandle; }

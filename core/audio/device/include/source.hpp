@@ -19,10 +19,10 @@ class Playback
 {
 public:
   Playback(Playback&& other);
-
   Playback(const Playback&) = delete;
-
   Playback(const Source& source, const Sound& sound);
+
+  Playback& operator=(const Playback&) = delete;
 
   /**
    * @brief Fully stops playback when out of scope
@@ -88,13 +88,13 @@ private:
 class Source
 {
 public:
-  Source(Source&& other);
-
-  Source(const Source&) = delete;
+  ~Source();
 
   Source();
+  Source(Source&& other);
+  Source(const Source&) = delete;
 
-  ~Source();
+  Source& operator=(const Source&) = delete;
 
   /**
    * @brief Sets the volume of the sound source, between [0, 1]

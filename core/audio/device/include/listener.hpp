@@ -18,13 +18,14 @@ namespace tyl::audio::device
 class Listener
 {
 public:
+  ~Listener();
+
   explicit Listener(const Device& device);
 
   Listener(Listener&& other);
-
   Listener(const Listener& other) = delete;
 
-  ~Listener();
+  Listener& operator==(const Listener& other) = delete;
 
   /**
    * @brief Returns opaque native handle to listener

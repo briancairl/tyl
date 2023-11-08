@@ -46,7 +46,7 @@ using namespace tyl::serialization;
 class AudioBrowser::Impl
 {
 public:
-  Impl() : audio_device_{}, audio_listener_{audio_device_} { audio_device_.enable(); }
+  Impl() : audio_device_{}, audio_listener_{audio_device_}, audio_source_{} { audio_device_.enable(); }
 
   ~Impl() { audio_device_.disable(); }
 
