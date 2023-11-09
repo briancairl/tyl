@@ -15,8 +15,8 @@
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
-#include <tyl/engine/tileset.hpp>
-#include <tyl/engine/widget/tileset_creator.hpp>
+#include <tyl/engine/tile_set.hpp>
+#include <tyl/engine/widget/tile_set_creator.hpp>
 #include <tyl/format.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
@@ -807,10 +807,6 @@ tyl::expected<TileSetCreator, WidgetCreationError> TileSetCreator::CreateImpl(co
 TileSetCreator::TileSetCreator(const TileSetCreatorOptions& options, std::unique_ptr<Impl>&& impl) :
     options_{options}, impl_{std::move(impl)}
 {}
-
-using TileSetComponents = Components<
-
-  >;
 
 template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 

@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file tileset.hpp
+ * @file tile_set.hpp
  */
 #pragma once
 

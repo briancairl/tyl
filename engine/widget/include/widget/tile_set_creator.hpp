@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file widget_tileset_creator.hpp
+ * @file tile_set_creator.hpp
  */
 #pragma once
 

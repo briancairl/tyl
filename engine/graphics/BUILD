@@ -1,7 +1,7 @@
 cc_library(
   name="graphics",
   hdrs=[
-    "include/tileset.hpp",
+    "include/tile_set.hpp",
   ],
   srcs=[
   ],

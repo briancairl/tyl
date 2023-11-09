@@ -115,12 +115,12 @@ cc_library(
 )
 
 cc_library(
-  name="tileset_creator",
+  name="tile_set_creator",
   hdrs=[
-    "include/widget/tileset_creator.hpp"
+    "include/widget/tile_set_creator.hpp"
   ],
   srcs=[
-    "src/widget/tileset_creator.cpp"
+    "src/widget/tile_set_creator.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
