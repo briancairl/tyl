@@ -16,13 +16,13 @@ cc_library(
 )
 
 cc_library(
-  name="widget",
+  name="script",
   hdrs=[
-    "include/widget/widget.hpp",
-    "include/widget/io.hpp",
+    "include/script/script.hpp",
+    "include/script/io.hpp",
   ],
   srcs=[
-    "src/widget/widget.cpp",
+    "src/script/script.cpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
@@ -43,15 +43,15 @@ cc_library(
 cc_library(
   name="asset_management",
   hdrs=[
-    "include/widget/asset_management.hpp"
+    "include/script/asset_management.hpp"
   ],
   srcs=[
-    "src/widget/asset_management.cpp"
+    "src/script/asset_management.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "//core/audio/device",
     "//core/audio/host",
     "//core/graphics/device",
@@ -64,15 +64,15 @@ cc_library(
 cc_library(
   name="audio_browser",
   hdrs=[
-    "include/widget/audio_browser.hpp"
+    "include/script/audio_browser.hpp"
   ],
   srcs=[
-    "src/widget/audio_browser.cpp"
+    "src/script/audio_browser.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "//core/audio/device",
     "//core/serialization/std",
   ],
@@ -82,16 +82,34 @@ cc_library(
 cc_library(
   name="perf_monitor",
   hdrs=[
-    "include/widget/perf_monitor.hpp"
+    "include/script/perf_monitor.hpp"
   ],
   srcs=[
-    "src/widget/perf_monitor.cpp"
+    "src/script/perf_monitor.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="render_pipeline_2D",
+  hdrs=[
+    "include/script/render_pipeline_2D.hpp"
+  ],
+  srcs=[
+    "src/script/render_pipeline_2D.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
   ],
   visibility=["//visibility:public"]
 )
@@ -99,15 +117,15 @@ cc_library(
 cc_library(
   name="texture_browser",
   hdrs=[
-    "include/widget/texture_browser.hpp"
+    "include/script/texture_browser.hpp"
   ],
   srcs=[
-    "src/widget/texture_browser.cpp"
+    "src/script/texture_browser.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "@imgui-file-dialogue",
     "//engine/graphics",
   ],
@@ -117,15 +135,15 @@ cc_library(
 cc_library(
   name="tile_set_creator",
   hdrs=[
-    "include/widget/tile_set_creator.hpp"
+    "include/script/tile_set_creator.hpp"
   ],
   srcs=[
-    "src/widget/tile_set_creator.cpp"
+    "src/script/tile_set_creator.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "@imgui-file-dialogue",
     "//engine/graphics",
   ],
@@ -135,15 +153,15 @@ cc_library(
 cc_library(
   name="tile_map_creator",
   hdrs=[
-    "include/widget/tile_map_creator.hpp"
+    "include/script/tile_map_creator.hpp"
   ],
   srcs=[
-    "src/widget/tile_map_creator.cpp"
+    "src/script/tile_map_creator.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
-    ":widget",
+    ":script",
     "@imgui-file-dialogue",
     "//engine/graphics",
   ],

@@ -9,21 +9,21 @@
 #include <filesystem>
 
 // Tyl
-#include <tyl/engine/widget/widget.hpp>
+#include <tyl/engine/script/script.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 
 namespace tyl::engine
 {
 
-template <typename WidgetT> void save(const WidgetBase<WidgetT>& widget, const std::filesystem::path& path)
+template <typename ScriptT> void save(const ScriptBase<ScriptT>& script, const std::filesystem::path& path)
 {
   serialization::file_ostream ofs{path};
   serialization::binary_oarchive oar{ofs};
-  widget.save(oar);
+  script.save(oar);
 }
 
-template <typename WidgetT> bool load(WidgetBase<WidgetT>& widget, const std::filesystem::path& path)
+template <typename ScriptT> bool load(ScriptBase<ScriptT>& script, const std::filesystem::path& path)
 {
   if (!std::filesystem::exists(path))
   {
@@ -31,7 +31,7 @@ template <typename WidgetT> bool load(WidgetBase<WidgetT>& widget, const std::fi
   }
   serialization::file_istream ifs{path};
   serialization::binary_iarchive iar{ifs};
-  widget.load(iar);
+  script.load(iar);
   return true;
 }
 

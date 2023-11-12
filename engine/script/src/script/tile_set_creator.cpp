@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file widget_tileset_creator.cpp
+ * @file script_tileset_creator.cpp
  */
 
 // C++ Standard Library
@@ -15,8 +15,8 @@
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
+#include <tyl/engine/script/tile_set_creator.hpp>
 #include <tyl/engine/tile_set.hpp>
-#include <tyl/engine/widget/tile_set_creator.hpp>
 #include <tyl/format.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
@@ -151,14 +151,14 @@ class TileSetCreator::Impl
 public:
   Impl() {}
 
-  void Browser(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void Browser(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     TileSetPreview(scene, resources);
     TileSetCreateMenuPopUp();
     TileSetCreateNamedPopUp();
   }
 
-  void Creator(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void Creator(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     time_elapsed_seconds_ += ImGui::GetIO().DeltaTime;
     time_elapsed_fadeosc_ = 0.5f + 0.5 * std::sin(2.f * time_elapsed_seconds_);
@@ -202,7 +202,7 @@ public:
     }
   }
 
-  void TileSetPreview(Scene& scene, const WidgetResources& resources)
+  void TileSetPreview(Scene& scene, const ScriptResources& resources)
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
@@ -308,7 +308,7 @@ public:
     }
   }
 
-  void AtlasTexturePreview(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void AtlasTexturePreview(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     if (!editing_tile_set_id_)
     {
@@ -800,7 +800,7 @@ using namespace tyl::serialization;
 
 TileSetCreator::~TileSetCreator() = default;
 
-tyl::expected<TileSetCreator, WidgetCreationError> TileSetCreator::CreateImpl(const TileSetCreatorOptions& options)
+tyl::expected<TileSetCreator, ScriptCreationError> TileSetCreator::CreateImpl(const TileSetCreatorOptions& options)
 {
   return TileSetCreator{options, std::make_unique<Impl>()};
 }
@@ -809,11 +809,11 @@ TileSetCreator::TileSetCreator(const TileSetCreatorOptions& options, std::unique
     options_{options}, impl_{std::move(impl)}
 {}
 
-template <> void TileSetCreator::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
+template <> void TileSetCreator::SaveImpl(ScriptOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 
-template <> void TileSetCreator::LoadImpl(WidgetIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
+template <> void TileSetCreator::LoadImpl(ScriptIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
 
-WidgetStatus TileSetCreator::UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+ScriptStatus TileSetCreator::UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
   if (ImGui::Begin(
@@ -833,7 +833,7 @@ WidgetStatus TileSetCreator::UpdateImpl(Scene& scene, WidgetSharedState& shared,
     impl_->Creator(scene, shared, resources);
   }
   ImGui::End();
-  return WidgetStatus::kOk;
+  return ScriptStatus::kOk;
 }
 
 }  // namespace tyl::engine

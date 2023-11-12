@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file widget_texture_browser.cpp
+ * @file script_texture_browser.cpp
  */
 
 // C++ Standard Library
@@ -17,7 +17,7 @@
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
-#include <tyl/engine/widget/asset_management.hpp>
+#include <tyl/engine/script/asset_management.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/packet.hpp>
@@ -50,8 +50,8 @@ struct ScanStatus
 template <typename AssetT, typename IntermediateAssetT = AssetT, typename LoadT, typename AddToRegistryT>
 ScanStatus scan(
   Registry& registry,
-  WidgetSharedState& shared,
-  const WidgetResources& resources,
+  ScriptSharedState& shared,
+  const ScriptResources& resources,
   LoadT load,
   AddToRegistryT add_to_registry)
 {
@@ -131,18 +131,18 @@ using namespace tyl::serialization;
 
 AssetManagement::~AssetManagement() = default;
 
-tyl::expected<AssetManagement, WidgetCreationError> AssetManagement::CreateImpl(const AssetManagementOptions& options)
+tyl::expected<AssetManagement, ScriptCreationError> AssetManagement::CreateImpl(const AssetManagementOptions& options)
 {
   return AssetManagement{options};
 }
 
 AssetManagement::AssetManagement(const AssetManagementOptions& options) : options_{options} {}
 
-template <> void AssetManagement::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) {}
+template <> void AssetManagement::SaveImpl(ScriptOArchive<file_handle_ostream>& oar) {}
 
-template <> void AssetManagement::LoadImpl(WidgetIArchive<file_handle_istream>& iar) {}
+template <> void AssetManagement::LoadImpl(ScriptIArchive<file_handle_istream>& iar) {}
 
-WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+ScriptStatus AssetManagement::UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
 {
   const auto texture_asset_status = scan<Texture, Image>(
     scene.assets,
@@ -226,7 +226,7 @@ WidgetStatus AssetManagement::UpdateImpl(Scene& scene, WidgetSharedState& shared
     }
   }
   ImGui::End();
-  return WidgetStatus::kOk;
+  return ScriptStatus::kOk;
 }
 
 }  // namespace tyl::engine

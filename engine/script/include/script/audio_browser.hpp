@@ -9,7 +9,7 @@
 #include <memory>
 
 // Tyl
-#include <tyl/engine/widget/widget.hpp>
+#include <tyl/engine/script/script.hpp>
 
 namespace tyl::engine
 {
@@ -20,14 +20,14 @@ struct AudioBrowserOptions
   const char* name = "Audio Browser";
 };
 
-template <> struct WidgetOptions<AudioBrowser>
+template <> struct ScriptOptions<AudioBrowser>
 {
   using type = AudioBrowserOptions;
 };
 
-class AudioBrowser : public WidgetBase<AudioBrowser>
+class AudioBrowser : public ScriptBase<AudioBrowser>
 {
-  friend class WidgetBase<AudioBrowser>;
+  friend class ScriptBase<AudioBrowser>;
 
 public:
   AudioBrowser(AudioBrowser&&) = default;
@@ -35,13 +35,13 @@ public:
   ~AudioBrowser();
 
 private:
-  static expected<AudioBrowser, WidgetCreationError> CreateImpl(const AudioBrowserOptions& options);
+  static expected<AudioBrowser, ScriptCreationError> CreateImpl(const AudioBrowserOptions& options);
 
-  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar) const;
+  template <typename StreamT> void SaveImpl(ScriptOArchive<StreamT>& oar) const;
 
-  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar);
+  template <typename StreamT> void LoadImpl(ScriptIArchive<StreamT>& iar);
 
-  WidgetStatus UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources);
+  ScriptStatus UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources);
 
   AudioBrowserOptions options_;
 

@@ -16,7 +16,7 @@
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
-#include <tyl/engine/widget/audio_browser.hpp>
+#include <tyl/engine/script/audio_browser.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
@@ -50,7 +50,7 @@ public:
 
   ~Impl() { audio_device_.disable(); }
 
-  void Update(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void Update(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     DragAndDropExternalSink(scene, shared, resources);
     AddAudioBrowserPreviewState(scene);
@@ -166,7 +166,7 @@ public:
     ImGui::EndDragDropSource();
   }
 
-  void DragAndDropExternalSink(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void DragAndDropExternalSink(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     for (const auto& path : resources.drop_payloads)
     {
@@ -192,11 +192,11 @@ private:
 
 AudioBrowser::~AudioBrowser() = default;
 
-template <> void AudioBrowser::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
+template <> void AudioBrowser::SaveImpl(ScriptOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 
-template <> void AudioBrowser::LoadImpl(WidgetIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
+template <> void AudioBrowser::LoadImpl(ScriptIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
 
-tyl::expected<AudioBrowser, WidgetCreationError> AudioBrowser::CreateImpl(const AudioBrowserOptions& options)
+tyl::expected<AudioBrowser, ScriptCreationError> AudioBrowser::CreateImpl(const AudioBrowserOptions& options)
 {
   return AudioBrowser{options, std::make_unique<Impl>()};
 }
@@ -205,7 +205,7 @@ AudioBrowser::AudioBrowser(const AudioBrowserOptions& options, std::unique_ptr<I
     options_{options}, impl_{std::move(impl)}
 {}
 
-WidgetStatus AudioBrowser::UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+ScriptStatus AudioBrowser::UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_HorizontalScrollbar;
   if (ImGui::Begin(
@@ -214,7 +214,7 @@ WidgetStatus AudioBrowser::UpdateImpl(Scene& scene, WidgetSharedState& shared, c
     impl_->Update(scene, shared, resources);
   }
   ImGui::End();
-  return WidgetStatus::kOk;
+  return ScriptStatus::kOk;
 }
 
 }  // namespace tyl::engine

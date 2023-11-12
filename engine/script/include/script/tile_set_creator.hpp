@@ -9,7 +9,7 @@
 #include <memory>
 
 // Tyl
-#include <tyl/engine/widget/widget.hpp>
+#include <tyl/engine/script/script.hpp>
 
 namespace tyl::engine
 {
@@ -21,14 +21,14 @@ struct TileSetCreatorOptions
   const char* creator_name = "Tile Set Creator";
 };
 
-template <> struct WidgetOptions<TileSetCreator>
+template <> struct ScriptOptions<TileSetCreator>
 {
   using type = TileSetCreatorOptions;
 };
 
-class TileSetCreator : public WidgetBase<TileSetCreator>
+class TileSetCreator : public ScriptBase<TileSetCreator>
 {
-  friend class WidgetBase<TileSetCreator>;
+  friend class ScriptBase<TileSetCreator>;
 
 public:
   TileSetCreator(TileSetCreator&&) = default;
@@ -36,13 +36,13 @@ public:
   ~TileSetCreator();
 
 private:
-  static expected<TileSetCreator, WidgetCreationError> CreateImpl(const TileSetCreatorOptions& options);
+  static expected<TileSetCreator, ScriptCreationError> CreateImpl(const TileSetCreatorOptions& options);
 
-  template <typename StreamT> void SaveImpl(WidgetOArchive<StreamT>& oar) const;
+  template <typename StreamT> void SaveImpl(ScriptOArchive<StreamT>& oar) const;
 
-  template <typename StreamT> void LoadImpl(WidgetIArchive<StreamT>& iar);
+  template <typename StreamT> void LoadImpl(ScriptIArchive<StreamT>& iar);
 
-  WidgetStatus UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources);
+  ScriptStatus UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources);
 
   TileSetCreatorOptions options_;
 

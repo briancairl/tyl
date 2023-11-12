@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file widget_texture_browser.cpp
+ * @file script_texture_browser.cpp
  */
 
 // C++ Standard Library
@@ -11,7 +11,7 @@
 
 // Tyl
 #include <tyl/engine/internal/imgui.hpp>
-#include <tyl/engine/widget/perf_monitor.hpp>
+#include <tyl/engine/script/perf_monitor.hpp>
 #include <tyl/format.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
@@ -29,7 +29,7 @@ class PerfMonitor::Impl
 public:
   Impl() { update_time_seconds_.resize(50, 0.f); }
 
-  void Update(const PerfMonitorOptions& options, const WidgetResources& resources)
+  void Update(const PerfMonitorOptions& options, const ScriptResources& resources)
   {
     if (resources.now > next_sample_time_point_)
     {
@@ -93,7 +93,7 @@ private:
 
 PerfMonitor::~PerfMonitor() = default;
 
-tyl::expected<PerfMonitor, WidgetCreationError> PerfMonitor::CreateImpl(const PerfMonitorOptions& options)
+tyl::expected<PerfMonitor, ScriptCreationError> PerfMonitor::CreateImpl(const PerfMonitorOptions& options)
 {
   return PerfMonitor{options, std::make_unique<Impl>()};
 }
@@ -102,14 +102,14 @@ PerfMonitor::PerfMonitor(const PerfMonitorOptions& options, std::unique_ptr<Impl
     options_{options}, impl_{std::move(impl)}
 {}
 
-template <> void PerfMonitor::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
+template <> void PerfMonitor::SaveImpl(ScriptOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 
-template <> void PerfMonitor::LoadImpl(WidgetIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
+template <> void PerfMonitor::LoadImpl(ScriptIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
 
-WidgetStatus PerfMonitor::UpdateImpl(
+ScriptStatus PerfMonitor::UpdateImpl(
   [[maybe_unused]] Scene& scene,
-  [[maybe_unused]] WidgetSharedState& shared,
-  const WidgetResources& resources)
+  [[maybe_unused]] ScriptSharedState& shared,
+  const ScriptResources& resources)
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_None;
   if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))
@@ -117,7 +117,7 @@ WidgetStatus PerfMonitor::UpdateImpl(
     impl_->Update(options_, resources);
   }
   ImGui::End();
-  return WidgetStatus::kOk;
+  return ScriptStatus::kOk;
 }
 
 }  // namespace tyl::engine

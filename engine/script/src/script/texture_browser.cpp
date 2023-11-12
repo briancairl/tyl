@@ -1,7 +1,7 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file widget_texture_browser.cpp
+ * @file script_texture_browser.cpp
  */
 
 // C++ Standard Library
@@ -11,7 +11,7 @@
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/internal/imgui.hpp>
 #include <tyl/engine/scene.hpp>
-#include <tyl/engine/widget/texture_browser.hpp>
+#include <tyl/engine/script/texture_browser.hpp>
 #include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/host/image.hpp>
 #include <tyl/serialization/binary_archive.hpp>
@@ -66,7 +66,7 @@ class TextureBrowser::Impl
 public:
   Impl() {}
 
-  void Update(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void Update(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     DragAndDropExternalSink(scene, shared, resources);
 
@@ -229,7 +229,7 @@ public:
     return true;
   }
 
-  void DragAndDropExternalSink(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+  void DragAndDropExternalSink(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     for (const auto& path : resources.drop_payloads)
     {
@@ -251,11 +251,11 @@ private:
 
 TextureBrowser::~TextureBrowser() = default;
 
-template <> void TextureBrowser::SaveImpl(WidgetOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
+template <> void TextureBrowser::SaveImpl(ScriptOArchive<file_handle_ostream>& oar) const { impl_->Save(oar); }
 
-template <> void TextureBrowser::LoadImpl(WidgetIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
+template <> void TextureBrowser::LoadImpl(ScriptIArchive<file_handle_istream>& iar) { impl_->Load(iar); }
 
-tyl::expected<TextureBrowser, WidgetCreationError> TextureBrowser::CreateImpl(const TextureBrowserOptions& options)
+tyl::expected<TextureBrowser, ScriptCreationError> TextureBrowser::CreateImpl(const TextureBrowserOptions& options)
 {
   return TextureBrowser{options, std::make_unique<Impl>()};
 }
@@ -264,7 +264,7 @@ TextureBrowser::TextureBrowser(const TextureBrowserOptions& options, std::unique
     options_{options}, impl_{std::move(impl)}
 {}
 
-WidgetStatus TextureBrowser::UpdateImpl(Scene& scene, WidgetSharedState& shared, const WidgetResources& resources)
+ScriptStatus TextureBrowser::UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_HorizontalScrollbar;
   if (ImGui::Begin(
@@ -273,7 +273,7 @@ WidgetStatus TextureBrowser::UpdateImpl(Scene& scene, WidgetSharedState& shared,
     impl_->Update(scene, shared, resources);
   }
   ImGui::End();
-  return WidgetStatus::kOk;
+  return ScriptStatus::kOk;
 }
 
 }  // namespace tyl::engine
