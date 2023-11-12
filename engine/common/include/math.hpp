@@ -20,69 +20,34 @@ namespace tyl::serialization
 template <typename ArchiveT, typename T> struct is_trivially_serializable<ArchiveT, Rect<T>> : std::true_type
 {};
 
-template <typename ArchiveT, typename T, Eigen::Index M, Eigen::Index N>
-struct is_trivially_serializable<ArchiveT, Eigen::Matrix<T, M, N>>
-    : std::integral_constant<bool, ((M != Eigen::Dynamic) and (M != Eigen::Dynamic))>
-{};
 
-template <typename IArchiveT, typename T, Eigen::Index M> struct load<IArchiveT, Eigen::Matrix<T, M, Eigen::Dynamic>>
+template <typename IArchiveT, typename T, int M, int N, int Options>
+struct load<IArchiveT, Eigen::Matrix<T, M, N, Options>>
 {
-  void operator()(IArchiveT& ar, Eigen::Matrix<T, M, Eigen::Dynamic>& mat)
+  void operator()(IArchiveT& ar, Eigen::Matrix<T, M, N, Options>& mat)
   {
-    Eigen::Index n;
-    ar >> named{"cols", n};
-    mat.resize(M, n);
+    if constexpr (N == Eigen::Dynamic || M == Eigen::Dynamic)
+    {
+      Eigen::Index rows, cols;
+      ar >> named{"rows", rows};
+      ar >> named{"cols", cols};
+      mat.resize(rows, cols);
+    }
     ar >> named{"data", make_packet(mat.data(), mat.size())};
   }
 };
 
-template <typename IArchiveT, typename T, Eigen::Index N> struct load<IArchiveT, Eigen::Matrix<T, Eigen::Dynamic, N>>
-{
-  void operator()(IArchiveT& ar, Eigen::Matrix<T, Eigen::Dynamic, N>& mat)
-  {
-    Eigen::Index m;
-    ar >> named{"rows", m};
-    mat.resize(m, N);
-    ar >> named{"data", make_packet(mat.data(), mat.size())};
-  }
-};
 
-template <typename IArchiveT, typename T> struct load<IArchiveT, Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>
+template <typename OArchiveT, typename T, int M, int N, int Options>
+struct save<OArchiveT, Eigen::Matrix<T, M, N, Options>>
 {
-  void operator()(IArchiveT& ar, Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& mat)
+  void operator()(OArchiveT& ar, const Eigen::Matrix<T, M, N, Options>& mat)
   {
-    Eigen::Index m, n;
-    ar >> named{"rows", m};
-    ar >> named{"cols", n};
-    mat.resize(m, n);
-    ar >> named{"data", make_packet(mat.data(), mat.size())};
-  }
-};
-
-template <typename OArchiveT, typename T, Eigen::Index M> struct save<OArchiveT, Eigen::Matrix<T, M, Eigen::Dynamic>>
-{
-  void operator()(OArchiveT& ar, const Eigen::Matrix<T, M, Eigen::Dynamic>& mat)
-  {
-    ar << named{"cols", mat.cols()};
-    ar << named{"data", make_packet(mat.data(), mat.size())};
-  }
-};
-
-template <typename OArchiveT, typename T, Eigen::Index N> struct save<OArchiveT, Eigen::Matrix<T, Eigen::Dynamic, N>>
-{
-  void operator()(OArchiveT& ar, const Eigen::Matrix<T, Eigen::Dynamic, N>& mat)
-  {
-    ar << named{"rows", mat.rows()};
-    ar << named{"data", make_packet(mat.data(), mat.size())};
-  }
-};
-
-template <typename OArchiveT, typename T> struct save<OArchiveT, Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>
-{
-  void operator()(OArchiveT& ar, const Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>& mat)
-  {
-    ar << named{"rows", mat.rows()};
-    ar << named{"cols", mat.cols()};
+    if constexpr (N == Eigen::Dynamic || M == Eigen::Dynamic)
+    {
+      ar << named{"rows", mat.rows()};
+      ar << named{"cols", mat.cols()};
+    }
     ar << named{"data", make_packet(mat.data(), mat.size())};
   }
 };

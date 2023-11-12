@@ -23,6 +23,8 @@ struct Scene
 {
   /// Registry holding asset data for the scene
   Registry assets;
+  /// Registry holding 2D graphics data for the scene
+  Registry graphics_2D;
 };
 
 }  // namespace tyl::engine

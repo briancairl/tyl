@@ -10,6 +10,7 @@ cc_library(
   include_prefix="tyl/engine",
   deps=[
     "//engine/common",
+    "//engine/graphics",
     "//core/ecs",
     "//core/serialization:object",
     "//core/serialization/stream:file_stream",

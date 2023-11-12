@@ -20,7 +20,7 @@ namespace tyl::engine
 struct TileMap
 {
   /// Represents an MxN grid of TileMapSections
-  Mat<Entity, Eigen::Dynamic, Eigen::Dynamic> sections;
+  Mat<EntityID, Eigen::Dynamic, Eigen::Dynamic> sections;
 };
 
 struct TileMapSection

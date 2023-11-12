@@ -13,6 +13,7 @@ cc_library(
     "//core/async",
     "//core/common",
     "//core/ecs",
+    "//core/math",
     "//core/serialization/std",
   ],
   visibility=["//visibility:public"]
