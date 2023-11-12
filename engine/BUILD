@@ -6,11 +6,12 @@ cc_binary(
     "//core/serialization/archive:binary_archive",
     "//core/serialization/stream:file_stream",
     "//engine/window",
-    "//engine/widget:asset_management",
-    "//engine/widget:audio_browser",
-    "//engine/widget:perf_monitor",
-    "//engine/widget:tile_set_creator",
-    "//engine/widget:tile_map_creator",
-    "//engine/widget:texture_browser",
+    "//engine/script:asset_management",
+    "//engine/script:audio_browser",
+    "//engine/script:perf_monitor",
+    "//engine/script:render_pipeline_2D",
+    "//engine/script:tile_set_creator",
+    "//engine/script:tile_map_creator",
+    "//engine/script:texture_browser",
   ]
 )

@@ -10,13 +10,14 @@
 // Tyl
 #include <tyl/ecs.hpp>
 #include <tyl/engine/scene.hpp>
-#include <tyl/engine/widget/asset_management.hpp>
-#include <tyl/engine/widget/audio_browser.hpp>
-#include <tyl/engine/widget/io.hpp>
-#include <tyl/engine/widget/perf_monitor.hpp>
-#include <tyl/engine/widget/texture_browser.hpp>
-#include <tyl/engine/widget/tile_map_creator.hpp>
-#include <tyl/engine/widget/tile_set_creator.hpp>
+#include <tyl/engine/script/asset_management.hpp>
+#include <tyl/engine/script/audio_browser.hpp>
+#include <tyl/engine/script/io.hpp>
+#include <tyl/engine/script/perf_monitor.hpp>
+#include <tyl/engine/script/render_pipeline_2D.hpp>
+#include <tyl/engine/script/texture_browser.hpp>
+#include <tyl/engine/script/tile_map_creator.hpp>
+#include <tyl/engine/script/tile_set_creator.hpp>
 #include <tyl/engine/window.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
@@ -70,6 +71,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto render_pipeline_2D = RenderPipeline2D::create({});
+  if (!render_pipeline_2D.has_value())
+  {
+    return 1;
+  }
+
   auto tile_set_creator = TileSetCreator::create({});
   if (!tile_set_creator.has_value())
   {
@@ -89,8 +96,8 @@ int main(int argc, char** argv)
   }
 
   Scene scene;
-  WidgetSharedState shared;
-  WidgetResources resources;
+  ScriptSharedState shared;
+  ScriptResources resources;
 
   if (const auto path = (working_directory / "scene.bin"); std::filesystem::exists(path))
   {
@@ -102,6 +109,7 @@ int main(int argc, char** argv)
   load(*asset_management, working_directory / "asset_management.bin");
   load(*audio_browser, working_directory / "audio_browser.bin");
   load(*perf_monitor, working_directory / "perf_monitor.bin");
+  load(*render_pipeline_2D, working_directory / "render_pipeline_2D.bin");
   load(*tile_set_creator, working_directory / "tile_set_creator.bin");
   load(*tile_map_creator, working_directory / "tile_map_creator.bin");
   load(*texture_browser, working_directory / "texture_browser.bin");
@@ -117,6 +125,7 @@ int main(int argc, char** argv)
     asset_management->update(scene, shared, resources);
     audio_browser->update(scene, shared, resources);
     perf_monitor->update(scene, shared, resources);
+    render_pipeline_2D->update(scene, shared, resources);
     tile_set_creator->update(scene, shared, resources);
     tile_map_creator->update(scene, shared, resources);
     texture_browser->update(scene, shared, resources);
@@ -149,6 +158,7 @@ int main(int argc, char** argv)
   save(*asset_management, working_directory / "asset_management.bin");
   save(*audio_browser, working_directory / "audio_browser.bin");
   save(*perf_monitor, working_directory / "perf_monitor.bin");
+  save(*render_pipeline_2D, working_directory / "render_pipeline_2D.bin");
   save(*tile_set_creator, working_directory / "tile_set_creator.bin");
   save(*tile_map_creator, working_directory / "tile_map_creator.bin");
   save(*texture_browser, working_directory / "texture_browser.bin");

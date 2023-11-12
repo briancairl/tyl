@@ -1,5 +1,6 @@
 // Tyl
 #include <tyl/engine/asset.hpp>
+#include <tyl/engine/drawing.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/scene.hpp>
 #include <tyl/engine/tile_map.hpp>
@@ -26,9 +27,17 @@ using AssetComponents = Components<
   AssetLocation<tyl::audio::device::Sound>,
   AssetLocation<tyl::graphics::device::Texture>
 >;
-using Graphics2DComponents = Components<
+using GraphicsComponents = Components<
   TileMap,
-  TileMapSection
+  TileMapSection,
+  Color,
+  ColorList,
+  LineList2D,
+  LineList3D,
+  LineStrip2D,
+  LineStrip3D,
+  Points2D,
+  Points3D
 >;
 // clang-format on
 
@@ -44,8 +53,8 @@ template <typename OArchiveT> void save_scene(OArchiveT& oar, const engine::Scen
     oar << named{"assets", assets};
   }
   {
-    engine::serializable_registry_t<const engine::Graphics2DComponents> graphics_2D{scene.graphics_2D};
-    oar << named{"graphics_2D", graphics_2D};
+    engine::serializable_registry_t<const engine::GraphicsComponents> graphics{scene.graphics};
+    oar << named{"graphics", graphics};
   }
 }
 
@@ -56,8 +65,8 @@ template <typename IArchiveT> void load_scene(IArchiveT& iar, engine::Scene& sce
     iar >> named{"assets", assets};
   }
   {
-    engine::serializable_registry_t<engine::Graphics2DComponents> graphics_2D{scene.graphics_2D};
-    iar >> named{"graphics_2D", graphics_2D};
+    engine::serializable_registry_t<engine::GraphicsComponents> graphics{scene.graphics};
+    iar >> named{"graphics", graphics};
   }
 }
 

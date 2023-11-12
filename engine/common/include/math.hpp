@@ -10,6 +10,7 @@
 
 // Tyl
 #include <tyl/rect.hpp>
+#include <tyl/serialization/named.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/packet.hpp>
 #include <tyl/vec.hpp>
