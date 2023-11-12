@@ -24,6 +24,7 @@
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/named.hpp>
+#include <tyl/serialization/named_ignored.hpp>
 #include <tyl/serialization/packet.hpp>
 #include <tyl/serialization/std/optional.hpp>
 #include <tyl/serialization/std/string.hpp>
@@ -854,7 +855,7 @@ template <typename ArchiveT> struct serialize<ArchiveT, engine::AtlasTextureEdit
     ar& named{"zoom_sensivity", editing_state.zoom_sensivity};
     ar& named{"texture_tint", editing_state.texture_tint};
     ar& named{"window_to_texture", editing_state.window_to_texture};
-    // [NOT SERIALIZED] ar& named{"window_to_texture_on_nav_start", editing_state.window_to_texture_on_nav_start};
+    ar& named_ignored{"window_to_texture_on_nav_start", editing_state.window_to_texture_on_nav_start};
   }
 };
 

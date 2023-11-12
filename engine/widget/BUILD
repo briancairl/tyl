@@ -131,3 +131,21 @@ cc_library(
   ],
   visibility=["//visibility:public"]
 )
+
+cc_library(
+  name="tile_map_creator",
+  hdrs=[
+    "include/widget/tile_map_creator.hpp"
+  ],
+  srcs=[
+    "src/widget/tile_map_creator.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":widget",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)

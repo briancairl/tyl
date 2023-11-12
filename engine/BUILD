@@ -10,6 +10,7 @@ cc_binary(
     "//engine/widget:audio_browser",
     "//engine/widget:perf_monitor",
     "//engine/widget:tile_set_creator",
+    "//engine/widget:tile_map_creator",
     "//engine/widget:texture_browser",
   ]
 )

@@ -15,6 +15,7 @@
 #include <tyl/engine/widget/io.hpp>
 #include <tyl/engine/widget/perf_monitor.hpp>
 #include <tyl/engine/widget/texture_browser.hpp>
+#include <tyl/engine/widget/tile_map_creator.hpp>
 #include <tyl/engine/widget/tile_set_creator.hpp>
 #include <tyl/engine/window.hpp>
 #include <tyl/serialization/binary_archive.hpp>
@@ -75,6 +76,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto tile_map_creator = TileMapCreator::create({});
+  if (!tile_map_creator.has_value())
+  {
+    return 1;
+  }
+
   auto texture_browser = TextureBrowser::create({});
   if (!texture_browser.has_value())
   {
@@ -96,6 +103,7 @@ int main(int argc, char** argv)
   load(*audio_browser, working_directory / "audio_browser.bin");
   load(*perf_monitor, working_directory / "perf_monitor.bin");
   load(*tile_set_creator, working_directory / "tile_set_creator.bin");
+  load(*tile_map_creator, working_directory / "tile_map_creator.bin");
   load(*texture_browser, working_directory / "texture_browser.bin");
 
 
@@ -110,6 +118,7 @@ int main(int argc, char** argv)
     audio_browser->update(scene, shared, resources);
     perf_monitor->update(scene, shared, resources);
     tile_set_creator->update(scene, shared, resources);
+    tile_map_creator->update(scene, shared, resources);
     texture_browser->update(scene, shared, resources);
     return true;
   };
@@ -141,6 +150,7 @@ int main(int argc, char** argv)
   save(*audio_browser, working_directory / "audio_browser.bin");
   save(*perf_monitor, working_directory / "perf_monitor.bin");
   save(*tile_set_creator, working_directory / "tile_set_creator.bin");
+  save(*tile_map_creator, working_directory / "tile_map_creator.bin");
   save(*texture_browser, working_directory / "texture_browser.bin");
 
   return retcode;
