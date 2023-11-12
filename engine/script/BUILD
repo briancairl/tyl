@@ -1,0 +1,169 @@
+cc_library(
+  name="internal",
+  hdrs=[
+    "include/internal/imgui.hpp",
+  ],
+  srcs=[
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//core/math",
+    "//core/serialization:object",
+    "@imgui//:imgui",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="script",
+  hdrs=[
+    "include/script/script.hpp",
+    "include/script/io.hpp",
+  ],
+  srcs=[
+    "src/script/script.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":internal",
+    "//core/async",
+    "//core/common",
+    "//core/ecs",
+    "//core/math",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream",
+    "//engine/common",
+    "//engine/scene",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="asset_management",
+  hdrs=[
+    "include/script/asset_management.hpp"
+  ],
+  srcs=[
+    "src/script/asset_management.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "//core/audio/device",
+    "//core/audio/host",
+    "//core/graphics/device",
+    "//core/graphics/host:image",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="audio_browser",
+  hdrs=[
+    "include/script/audio_browser.hpp"
+  ],
+  srcs=[
+    "src/script/audio_browser.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "//core/audio/device",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="perf_monitor",
+  hdrs=[
+    "include/script/perf_monitor.hpp"
+  ],
+  srcs=[
+    "src/script/perf_monitor.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="render_pipeline_2D",
+  hdrs=[
+    "include/script/render_pipeline_2D.hpp"
+  ],
+  srcs=[
+    "src/script/render_pipeline_2D.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="texture_browser",
+  hdrs=[
+    "include/script/texture_browser.hpp"
+  ],
+  srcs=[
+    "src/script/texture_browser.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="tile_set_creator",
+  hdrs=[
+    "include/script/tile_set_creator.hpp"
+  ],
+  srcs=[
+    "src/script/tile_set_creator.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="tile_map_creator",
+  hdrs=[
+    "include/script/tile_map_creator.hpp"
+  ],
+  srcs=[
+    "src/script/tile_map_creator.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)

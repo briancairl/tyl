@@ -43,16 +43,15 @@ public:
   /**
    * @brief Possible RenderTargetTexture creation errors
    */
-  enum class ErrorCode
+  enum class Error
   {
-    DEVICE_CONFIGURATION_FAILURE,
-    TEXTURE_CREATION_FAILURE,
-    INVALID_TEXTURE_HEIGHT,
-    INVALID_TEXTURE_WIDTH,
+    kDeviceConfigurationFailure,
+    kTextureCreationFailure,
+    kInvalidTextureHeight,
+    kInvalidTextureWidth,
   };
 
-  [[nodiscard]] static expected<RenderTargetTexture, ErrorCode>
-  create(const Shape2D& shape, const Options& options = {});
+  [[nodiscard]] static expected<RenderTargetTexture, Error> create(const Shape2D& shape, const Options& options = {});
 
   template <typename DrawToTextureT> void draw_to(DrawToTextureT draw_to_texture)
   {

@@ -146,17 +146,17 @@ class VertexBuffer
 public:
   enum class BufferMode
   {
-    Stream,
-    Static,
-    Dynamic,
+    kStream,
+    kStatic,
+    kDynamic,
   };
 
   enum class DrawMode
   {
-    Points,
-    Lines,
-    LineStrip,
-    Triangles,
+    kPoints,
+    kLines,
+    kLineStrip,
+    kTriangles,
   };
 
   template <typename... VertexAttributes> static auto create(const BufferMode buffer_mode, VertexAttributes&&... attrs)
@@ -216,9 +216,9 @@ public:
     set(layout, static_cast<const void* const>(data));
   }
 
-  void draw(const std::size_t count, const DrawMode mode = DrawMode::Triangles) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::kTriangles) const;
 
-  void draw(const VertexAttributeBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const
+  void draw(const VertexAttributeBufferLayout& layout, const DrawMode mode = DrawMode::kTriangles) const
   {
     VertexBuffer::draw(layout.length, mode);
   }
@@ -310,11 +310,11 @@ public:
   void draw_instanced(
     const VertexElementBufferLayout& layout,
     const std::size_t instance_count,
-    const DrawMode mode = DrawMode::Triangles) const;
+    const DrawMode mode = DrawMode::kTriangles) const;
 
-  void draw(const std::size_t count, const DrawMode mode = DrawMode::Triangles) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::kTriangles) const;
 
-  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::Triangles) const
+  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::kTriangles) const
   {
     VertexElementBuffer::draw(layout.length, mode);
   }

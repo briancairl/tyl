@@ -59,9 +59,9 @@ public:
   /**
    * @brief Error codes pertaining to Image
    */
-  enum class ErrorCode
+  enum class Error
   {
-    LOAD_FAILURE,
+    kInvalidImageFile,
   };
 
   Image(const Image& other) = delete;
@@ -93,7 +93,7 @@ public:
    *
    * @return image
    */
-  [[nodiscard]] static tyl::expected<Image, ErrorCode>
+  [[nodiscard]] static tyl::expected<Image, Error>
   load(const char* path, const ImageOptions& options = ImageOptions{}) noexcept;
 
   /**
@@ -104,7 +104,7 @@ public:
    *
    * @return image
    */
-  [[nodiscard]] static tyl::expected<Image, ErrorCode>
+  [[nodiscard]] static tyl::expected<Image, Error>
   load(const std::filesystem::path& path, const ImageOptions& options = ImageOptions{}) noexcept
   {
     return load(path.string().c_str(), options);

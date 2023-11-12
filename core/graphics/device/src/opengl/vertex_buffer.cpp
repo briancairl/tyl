@@ -23,11 +23,11 @@ inline static GLuint to_gl_buffer_mode(const VertexBuffer::BufferMode mode)
 {
   switch (mode)
   {
-  case VertexBuffer::BufferMode::Stream:
+  case VertexBuffer::BufferMode::kStream:
     return GL_STREAM_DRAW;
-  case VertexBuffer::BufferMode::Static:
+  case VertexBuffer::BufferMode::kStatic:
     return GL_STATIC_DRAW;
-  case VertexBuffer::BufferMode::Dynamic:
+  case VertexBuffer::BufferMode::kDynamic:
     return GL_DYNAMIC_DRAW;
   default:
     break;
@@ -39,13 +39,13 @@ inline static GLuint to_gl_draw_mode(const VertexBuffer::DrawMode mode)
 {
   switch (mode)
   {
-  case VertexBuffer::DrawMode::Points:
+  case VertexBuffer::DrawMode::kPoints:
     return GL_POINTS;
-  case VertexBuffer::DrawMode::Triangles:
+  case VertexBuffer::DrawMode::kTriangles:
     return GL_TRIANGLES;
-  case VertexBuffer::DrawMode::LineStrip:
+  case VertexBuffer::DrawMode::kLineStrip:
     return GL_LINE_STRIP;
-  case VertexBuffer::DrawMode::Lines:
+  case VertexBuffer::DrawMode::kLines:
     return GL_LINES;
   default:
     break;

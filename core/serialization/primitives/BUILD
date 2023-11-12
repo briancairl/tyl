@@ -3,6 +3,7 @@ cc_library(
   hdrs=["include/packet.hpp",
         "include/label.hpp",
         "include/named.hpp",
+        "include/named_ignored.hpp",
         "include/sequence.hpp"],
   strip_include_prefix="include",
   include_prefix="tyl/serialization",

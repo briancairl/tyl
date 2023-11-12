@@ -112,21 +112,21 @@ struct TextureOptions
 {
   enum class Wrapping : std::uint8_t
   {
-    CLAMP_TO_BORDER,
-    REPEAT
+    kClampToBorder,
+    kRepeat
   };
 
   enum class Sampling : std::uint8_t
   {
-    LINEAR,
-    NEAREST
+    kLinear,
+    kNearest
   };
 
-  Wrapping u_wrapping = Wrapping::CLAMP_TO_BORDER;
-  Wrapping v_wrapping = Wrapping::CLAMP_TO_BORDER;
+  Wrapping u_wrapping = Wrapping::kClampToBorder;
+  Wrapping v_wrapping = Wrapping::kClampToBorder;
 
-  Sampling min_sampling = Sampling::NEAREST;
-  Sampling mag_sampling = Sampling::NEAREST;
+  Sampling min_sampling = Sampling::kNearest;
+  Sampling mag_sampling = Sampling::kNearest;
 
   struct
   {

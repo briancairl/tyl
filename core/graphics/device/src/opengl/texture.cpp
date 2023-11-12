@@ -59,9 +59,9 @@ GLenum wrapping_mode_to_gl(const TextureOptions::Wrapping mode)
 {
   switch (mode)
   {
-  case TextureOptions::Wrapping::CLAMP_TO_BORDER:
+  case TextureOptions::Wrapping::kClampToBorder:
     return GL_CLAMP_TO_BORDER;
-  case TextureOptions::Wrapping::REPEAT:
+  case TextureOptions::Wrapping::kRepeat:
     return GL_REPEAT;
   default:
     break;
@@ -73,9 +73,9 @@ GLenum sampling_mode_to_gl(const TextureOptions::Sampling mode)
 {
   switch (mode)
   {
-  case TextureOptions::Sampling::LINEAR:
+  case TextureOptions::Sampling::kLinear:
     return GL_LINEAR;
-  case TextureOptions::Sampling::NEAREST:
+  case TextureOptions::Sampling::kNearest:
     return GL_NEAREST;
   default:
     break;
@@ -106,13 +106,13 @@ TextureOptions::Wrapping wrapping_mode_from_gl(const GLenum mode)
   switch (mode)
   {
   case GL_CLAMP_TO_BORDER:
-    return TextureOptions::Wrapping::CLAMP_TO_BORDER;
+    return TextureOptions::Wrapping::kClampToBorder;
   case GL_REPEAT:
-    return TextureOptions::Wrapping::REPEAT;
+    return TextureOptions::Wrapping::kRepeat;
   default:
     break;
   }
-  return TextureOptions::Wrapping::CLAMP_TO_BORDER;
+  return TextureOptions::Wrapping::kClampToBorder;
 }
 
 TextureOptions::Sampling sampling_mode_from_gl(const GLenum mode)
@@ -120,13 +120,13 @@ TextureOptions::Sampling sampling_mode_from_gl(const GLenum mode)
   switch (mode)
   {
   case GL_LINEAR:
-    return TextureOptions::Sampling::LINEAR;
+    return TextureOptions::Sampling::kLinear;
   case GL_NEAREST:
-    return TextureOptions::Sampling::NEAREST;
+    return TextureOptions::Sampling::kNearest;
   default:
     break;
   }
-  return TextureOptions::Sampling::NEAREST;
+  return TextureOptions::Sampling::kNearest;
 }
 
 texture_id_t gen_gl_texture_2d(const TextureOptions& options)

@@ -1,0 +1,20 @@
+cc_library(
+  name="common",
+  hdrs=[
+    "include/asset.hpp",
+    "include/ecs.hpp",
+    "include/math.hpp"
+  ],
+  srcs=[
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    "//core/async",
+    "//core/common",
+    "//core/ecs",
+    "//core/math",
+    "//core/serialization/std",
+  ],
+  visibility=["//visibility:public"]
+)

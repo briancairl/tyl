@@ -93,7 +93,7 @@ device::Texture Image::texture(const device::TextureOptions& options) const noex
     options};
 }
 
-expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptions& options) noexcept
+expected<Image, Image::Error> Image::load(const char* path, const ImageOptions& options) noexcept
 {
   // Set flag determining whether image should be flipped on load
   stbi_set_flip_vertically_on_load(options.flags.flip_vertically);
@@ -110,7 +110,7 @@ expected<Image, Image::ErrorCode> Image::load(const char* path, const ImageOptio
   // Check if image point is valid
   if (image_data_ptr == nullptr)
   {
-    return unexpected<ErrorCode>{ErrorCode::LOAD_FAILURE};
+    return unexpected<Error>{Error::kInvalidImageFile};
   }
 
   // Resolve number of channels if channel count was forced with 'options'
