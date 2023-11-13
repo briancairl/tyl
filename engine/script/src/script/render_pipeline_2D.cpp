@@ -8,6 +8,7 @@
 #include <type_traits>
 
 // Tyl
+#include <tyl/assert.hpp>
 #include <tyl/engine/camera.hpp>
 #include <tyl/engine/drawing.hpp>
 #include <tyl/engine/scene.hpp>
@@ -167,6 +168,76 @@ void DrawPrimitivesSingleColor(PrimitivesVertexBuffer& dvb, const Registry& regi
   }
 }
 
+template <typename PrimitiveT, typename SetVertexT>
+void DrawPrimitivesMultiColor(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVertexT set_vertex)
+{
+  static constexpr bool IsLineStrip =
+    std::is_same<PrimitiveT, LineStrip2D>() or std::is_same<PrimitiveT, LineStrip3D>();
+
+  auto view = registry.template view<PrimitiveT, ColorList>();
+  std::size_t vertex_pos = 0;
+  {
+    auto mapped = dvb.vb.get_mapped_vertex_buffer();
+    auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
+    auto* const color_ptr = reinterpret_cast<tyl::Vec4f*>(mapped(dvb.color));
+
+    for (const auto e : view)
+    {
+      const auto& vertices = view.template get<PrimitiveT>(e).values;
+      const auto& colors = view.template get<ColorList>(e).values;
+
+      TYL_ASSERT_EQ(vertices.size(), colors.size());
+
+      // Skip empty vertex lists
+      if (vertices.empty())
+      {
+        continue;
+      }
+
+      // Add dummy line for batched vertex strips
+      if constexpr (IsLineStrip)
+      {
+        if (vertex_pos != 0 and vertex_pos < dvb.max_vertex_count)
+        {
+          set_vertex(position_ptr[vertex_pos], vertices.front());
+          color_ptr[vertex_pos] = Vec4f::Zero();
+          ++vertex_pos;
+        }
+      }
+
+      // Stop adding vertices if we will go past the max vertex count
+      if (vertex_pos + vertices.size() > dvb.max_vertex_count)
+      {
+        break;
+      }
+
+      // Add vertex data
+      for (std::size_t i = 0; i < vertices.size(); ++i)
+      {
+        set_vertex(position_ptr[vertex_pos], vertices[i]);
+        color_ptr[vertex_pos] = colors[i].rgba;
+        ++vertex_pos;
+      }
+
+      // Add dummy line for batched vertex strips
+      if constexpr (IsLineStrip)
+      {
+        if (vertex_pos < dvb.max_vertex_count)
+        {
+          set_vertex(position_ptr[vertex_pos], vertices.back());
+          color_ptr[vertex_pos] = Vec4f::Zero();
+          ++vertex_pos;
+        }
+      }
+    }
+  }
+
+  if (vertex_pos > 0)
+  {
+    dvb.vb.draw(vertex_pos, PrimitiveDrawMode<PrimitiveT>());
+  }
+}
+
 }  // namespace
 
 class RenderPipeline2D::Impl
@@ -192,6 +263,9 @@ public:
       DrawPrimitivesSingleColor<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
       DrawPrimitivesSingleColor<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
       DrawPrimitivesSingleColor<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitivesMultiColor<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitivesMultiColor<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitivesMultiColor<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
     });
   }
 
