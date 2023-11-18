@@ -100,14 +100,15 @@ template <>
 struct PrimitiveDrawMode<Points2D> : std::integral_constant<VertexBuffer::DrawMode, VertexBuffer::DrawMode::kPoints>
 {};
 
-template <typename PrimitiveT, typename SetVertexT>
-void DrawPrimitivesSingleColor(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVertexT set_vertex)
+template <typename PrimitiveT, typename ColorT, typename SetVertexT>
+std::size_t
+AddPrimitives(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVertexT set_vertex, std::size_t vertex_pos = 0)
 {
   static constexpr bool IsLineStrip =
     std::is_same<PrimitiveT, LineStrip2D>() or std::is_same<PrimitiveT, LineStrip3D>();
+  static constexpr bool IsSingleColor = std::is_same_v<ColorT, Color>;
 
-  auto view = registry.template view<PrimitiveT, Color>();
-  std::size_t vertex_pos = 0;
+  auto view = registry.template view<PrimitiveT, ColorT>();
   {
     auto mapped = dvb.vb.get_mapped_vertex_buffer();
     auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
@@ -116,6 +117,7 @@ void DrawPrimitivesSingleColor(PrimitivesVertexBuffer& dvb, const Registry& regi
     for (const auto e : view)
     {
       const auto& vertices = view.template get<PrimitiveT>(e).values;
+      const auto& vertex_color = view.template get<ColorT>(e);
 
       // Skip empty vertex lists
       if (vertices.empty())
@@ -141,12 +143,17 @@ void DrawPrimitivesSingleColor(PrimitivesVertexBuffer& dvb, const Registry& regi
       }
 
       // Add vertex data
-      const auto& vertex_color = view.template get<Color>(e);
-      for (const auto& v : vertices)
+      for (std::size_t i = 0; i < vertices.size(); ++i, ++vertex_pos)
       {
-        set_vertex(position_ptr[vertex_pos], v);
-        color_ptr[vertex_pos] = vertex_color.rgba;
-        ++vertex_pos;
+        set_vertex(position_ptr[vertex_pos], vertices[i]);
+        if constexpr (IsSingleColor)
+        {
+          color_ptr[vertex_pos] = vertex_color.rgba;
+        }
+        else
+        {
+          color_ptr[vertex_pos] = vertex_color.values[i].rgba;
+        }
       }
 
       // Add dummy line for batched vertex strips
@@ -161,77 +168,17 @@ void DrawPrimitivesSingleColor(PrimitivesVertexBuffer& dvb, const Registry& regi
       }
     }
   }
-
-  if (vertex_pos > 0)
-  {
-    dvb.vb.draw(vertex_pos, PrimitiveDrawMode<PrimitiveT>());
-  }
+  return vertex_pos;
 }
 
 template <typename PrimitiveT, typename SetVertexT>
-void DrawPrimitivesMultiColor(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVertexT set_vertex)
+void DrawPrimitives(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVertexT&& set_vertex)
 {
-  static constexpr bool IsLineStrip =
-    std::is_same<PrimitiveT, LineStrip2D>() or std::is_same<PrimitiveT, LineStrip3D>();
-
-  auto view = registry.template view<PrimitiveT, ColorList>();
   std::size_t vertex_pos = 0;
-  {
-    auto mapped = dvb.vb.get_mapped_vertex_buffer();
-    auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
-    auto* const color_ptr = reinterpret_cast<tyl::Vec4f*>(mapped(dvb.color));
-
-    for (const auto e : view)
-    {
-      const auto& vertices = view.template get<PrimitiveT>(e).values;
-      const auto& colors = view.template get<ColorList>(e).values;
-
-      TYL_ASSERT_EQ(vertices.size(), colors.size());
-
-      // Skip empty vertex lists
-      if (vertices.empty())
-      {
-        continue;
-      }
-
-      // Add dummy line for batched vertex strips
-      if constexpr (IsLineStrip)
-      {
-        if (vertex_pos != 0 and vertex_pos < dvb.max_vertex_count)
-        {
-          set_vertex(position_ptr[vertex_pos], vertices.front());
-          color_ptr[vertex_pos] = Vec4f::Zero();
-          ++vertex_pos;
-        }
-      }
-
-      // Stop adding vertices if we will go past the max vertex count
-      if (vertex_pos + vertices.size() > dvb.max_vertex_count)
-      {
-        break;
-      }
-
-      // Add vertex data
-      for (std::size_t i = 0; i < vertices.size(); ++i)
-      {
-        set_vertex(position_ptr[vertex_pos], vertices[i]);
-        color_ptr[vertex_pos] = colors[i].rgba;
-        ++vertex_pos;
-      }
-
-      // Add dummy line for batched vertex strips
-      if constexpr (IsLineStrip)
-      {
-        if (vertex_pos < dvb.max_vertex_count)
-        {
-          set_vertex(position_ptr[vertex_pos], vertices.back());
-          color_ptr[vertex_pos] = Vec4f::Zero();
-          ++vertex_pos;
-        }
-      }
-    }
-  }
-
+  vertex_pos =
+    AddPrimitives<PrimitiveT, Color, SetVertexT>(dvb, registry, std::forward<SetVertexT>(set_vertex), vertex_pos);
+  vertex_pos =
+    AddPrimitives<PrimitiveT, ColorList, SetVertexT>(dvb, registry, std::forward<SetVertexT>(set_vertex), vertex_pos);
   if (vertex_pos > 0)
   {
     dvb.vb.draw(vertex_pos, PrimitiveDrawMode<PrimitiveT>());
@@ -256,16 +203,12 @@ public:
       dst[2] = 1.f;
     };
 
-
     scene.graphics.view<TopDownCamera2D>().each([&](const TopDownCamera2D& camera) {
       const auto camera_matrix = ToInverseCameraMatrix(camera);
       primitives_shader_.setMat3("uCameraTransform", camera_matrix.data());
-      DrawPrimitivesSingleColor<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawPrimitivesSingleColor<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawPrimitivesSingleColor<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawPrimitivesMultiColor<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawPrimitivesMultiColor<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawPrimitivesMultiColor<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawAllPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawAllPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawAllPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
     });
   }
 
