@@ -10,6 +10,7 @@ cc_binary(
     "//engine/script:audio_browser",
     "//engine/script:perf_monitor",
     "//engine/script:render_pipeline_2D",
+    "//engine/script:scene_management",
     "//engine/script:tile_set_creator",
     "//engine/script:tile_map_creator",
     "//engine/script:texture_browser",

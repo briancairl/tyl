@@ -115,6 +115,24 @@ cc_library(
 )
 
 cc_library(
+  name="scene_management",
+  hdrs=[
+    "include/script/scene_management.hpp"
+  ],
+  srcs=[
+    "src/script/scene_management.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="texture_browser",
   hdrs=[
     "include/script/texture_browser.hpp"

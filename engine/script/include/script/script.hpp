@@ -37,6 +37,8 @@ struct ScriptResources
   std::vector<std::filesystem::path> drop_payloads = {};
   /// Location at which
   Vec2f drop_cursor_position = Vec2f::Zero();
+  /// Size of current view port
+  Vec2f viewport_size = Vec2f::Zero();
 };
 
 /**

@@ -1,3 +1,6 @@
+// S++ Standard Library
+#include <string>
+
 // Tyl
 #include <tyl/engine/asset.hpp>
 #include <tyl/engine/drawing.hpp>
@@ -28,6 +31,7 @@ using AssetComponents = Components<
   AssetLocation<tyl::graphics::device::Texture>
 >;
 using GraphicsComponents = Components<
+  std::string,
   TileMap,
   TileMapSection,
   Color,

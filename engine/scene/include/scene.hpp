@@ -6,6 +6,7 @@
 #pragma once
 
 // C++ Standard Library
+#include <optional>
 
 // Tyl
 #include <tyl/ecs.hpp>
@@ -25,6 +26,8 @@ struct Scene
   Registry assets;
   /// Registry holding graphics data for the scene
   Registry graphics;
+  /// Active camera
+  std::optional<EntityID> active_camera;
 };
 
 }  // namespace tyl::engine
