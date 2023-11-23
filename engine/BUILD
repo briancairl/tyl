@@ -7,6 +7,7 @@ cc_binary(
     "//core/serialization/stream:file_stream",
     "//engine/window",
     "//engine/script:asset_management",
+    "//engine/script:drawing_2D",
     "//engine/script:audio_browser",
     "//engine/script:perf_monitor",
     "//engine/script:render_pipeline_2D",

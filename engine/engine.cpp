@@ -12,6 +12,7 @@
 #include <tyl/engine/scene.hpp>
 #include <tyl/engine/script/asset_management.hpp>
 #include <tyl/engine/script/audio_browser.hpp>
+#include <tyl/engine/script/drawing_2D.hpp>
 #include <tyl/engine/script/io.hpp>
 #include <tyl/engine/script/perf_monitor.hpp>
 #include <tyl/engine/script/render_pipeline_2D.hpp>
@@ -66,6 +67,12 @@ int main(int argc, char** argv)
     return 1;
   }
 
+  auto drawing_2D = Drawing2D::create({});
+  if (!drawing_2D.has_value())
+  {
+    return 1;
+  }
+
   auto perf_monitor = PerfMonitor::create({});
   if (!perf_monitor.has_value())
   {
@@ -115,6 +122,7 @@ int main(int argc, char** argv)
 
   load(*asset_management, working_directory / "asset_management.bin");
   load(*audio_browser, working_directory / "audio_browser.bin");
+  load(*drawing_2D, working_directory / "drawing_2D.bin");
   load(*perf_monitor, working_directory / "perf_monitor.bin");
   load(*render_pipeline_2D, working_directory / "render_pipeline_2D.bin");
   load(*scene_management, working_directory / "scene_management.bin");
@@ -133,6 +141,7 @@ int main(int argc, char** argv)
 
     asset_management->update(scene, shared, resources);
     audio_browser->update(scene, shared, resources);
+    drawing_2D->update(scene, shared, resources);
     perf_monitor->update(scene, shared, resources);
     render_pipeline_2D->update(scene, shared, resources);
     scene_management->update(scene, shared, resources);
@@ -167,6 +176,7 @@ int main(int argc, char** argv)
 
   save(*asset_management, working_directory / "asset_management.bin");
   save(*audio_browser, working_directory / "audio_browser.bin");
+  save(*drawing_2D, working_directory / "drawing_2D.bin");
   save(*perf_monitor, working_directory / "perf_monitor.bin");
   save(*render_pipeline_2D, working_directory / "render_pipeline_2D.bin");
   save(*scene_management, working_directory / "scene_management.bin");

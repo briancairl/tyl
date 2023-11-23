@@ -41,6 +41,11 @@ struct Points2D : DrawingAttributeList<Vec2f>
 struct Points3D : DrawingAttributeList<Vec3f>
 {};
 
+struct Rect2D : Rect2f
+{
+  using Rect2f::Rect2f;
+};
+
 }  // namespace tyl::engine
 
 namespace tyl::serialization
@@ -74,6 +79,9 @@ struct serialize<ArchiveT, engine::Points2D> : serialize<ArchiveT, engine::Drawi
 {};
 template <typename ArchiveT>
 struct serialize<ArchiveT, engine::Points3D> : serialize<ArchiveT, engine::DrawingAttributeList<Vec3f>>
+{};
+
+template <typename ArchiveT> struct is_trivially_serializable<ArchiveT, engine::Rect2D> : std::true_type
 {};
 
 }  // namespace tyl::serialization

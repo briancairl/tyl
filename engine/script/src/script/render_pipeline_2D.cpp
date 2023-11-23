@@ -189,9 +189,9 @@ std::size_t SubmitPrimitives(
   return vertex_count;
 }
 
-std::size_t SubmitRect2fAsLineStrips(PrimitivesVertexBuffer& dvb, const Registry& registry, std::size_t vertex_count)
+std::size_t SubmitRectsAsLineStrips(PrimitivesVertexBuffer& dvb, const Registry& registry, std::size_t vertex_count)
 {
-  auto view = registry.view<Rect2f, Color>();
+  auto view = registry.view<Rect2D, Color>();
   {
     auto mapped = dvb.vb.get_mapped_vertex_buffer();
     auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
@@ -201,7 +201,7 @@ std::size_t SubmitRect2fAsLineStrips(PrimitivesVertexBuffer& dvb, const Registry
     {
       static constexpr std::size_t kPoints = 5;
 
-      const auto& rect = view.template get<Rect2f>(e);
+      const auto& rect = view.template get<Rect2D>(e);
       const auto& color = view.template get<Color>(e);
 
       // Stop adding vertices if we will go past the max vertex count
@@ -272,7 +272,7 @@ public:
       {
         std::size_t vertex_count = 0;
         vertex_count = SubmitPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
-        vertex_count = SubmitRect2fAsLineStrips(primitives_vb_, scene.graphics, vertex_count);
+        vertex_count = SubmitRectsAsLineStrips(primitives_vb_, scene.graphics, vertex_count);
         DrawPrimitives<LineStrip2D>(primitives_vb_, vertex_count);
       }
       {

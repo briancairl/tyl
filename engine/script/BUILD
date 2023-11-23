@@ -80,6 +80,23 @@ cc_library(
 )
 
 cc_library(
+  name="drawing_2D",
+  hdrs=[
+    "include/script/drawing_2D.hpp"
+  ],
+  srcs=[
+    "src/script/drawing_2D.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="perf_monitor",
   hdrs=[
     "include/script/perf_monitor.hpp"

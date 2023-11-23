@@ -41,7 +41,8 @@ using GraphicsComponents = Components<
   LineStrip2D,
   LineStrip3D,
   Points2D,
-  Points3D
+  Points3D,
+  Rect2D
 >;
 // clang-format on
 

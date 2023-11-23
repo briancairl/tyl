@@ -51,7 +51,7 @@ ScriptStatus SceneManagement::UpdateImpl(Scene& scene, ScriptSharedState& shared
         const auto camera = scene.graphics.create();
         scene.graphics.emplace<std::string>(camera, kCameraLabelBuffer);
         scene.graphics.emplace<TopDownCamera2D>(camera, Vec2f{0, 0}, 1.f, resources.viewport_size);
-        scene.graphics.emplace<Rect2f>(camera, Vec2f{0, 0}, resources.viewport_size * 0.1);
+        scene.graphics.emplace<Rect2D>(camera, Vec2f{-1, -1}, Vec2f{1, 1});
         scene.graphics.emplace<Color>(camera, Vec4f{1, 1, 1, 1});
         scene.active_camera = camera;
         std::strcpy(kCameraLabelBuffer, kDefaultCameraName);
@@ -60,9 +60,9 @@ ScriptStatus SceneManagement::UpdateImpl(Scene& scene, ScriptSharedState& shared
     ImGui::BeginChild("cameras");
     {
       ImGui::Separator();
-      scene.graphics.view<TopDownCamera2D, Rect2f, std::string>().each(
+      scene.graphics.view<TopDownCamera2D, Rect2D, std::string>().each(
         [&scene, &viewport_size = resources.viewport_size](
-          EntityID id, TopDownCamera2D& camera, Rect2f& camera_rect, const std::string& label) {
+          EntityID id, TopDownCamera2D& camera, Rect2D& camera_rect, const std::string& label) {
           camera.viewport_size = viewport_size;
 
           ImGui::PushID(static_cast<int>(id));
@@ -72,11 +72,7 @@ ScriptStatus SceneManagement::UpdateImpl(Scene& scene, ScriptSharedState& shared
             scene.active_camera = id;
           }
 
-          if (ImGui::InputFloat2("translation", camera.translation.data()))
-          {
-            camera_rect.min() = camera.translation;
-            camera_rect.max() = camera.translation + camera.viewport_size;
-          }
+          ImGui::InputFloat2("translation", camera.translation.data());
 
           ImGui::InputFloat("scaling", &camera.scaling);
 
