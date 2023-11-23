@@ -216,11 +216,14 @@ public:
     set(layout, static_cast<const void* const>(data));
   }
 
-  void draw(const std::size_t count, const DrawMode mode = DrawMode::kTriangles) const;
+  void draw(const std::size_t count, const DrawMode mode = DrawMode::kTriangles, const float size = 1.f) const;
 
-  void draw(const VertexAttributeBufferLayout& layout, const DrawMode mode = DrawMode::kTriangles) const
+  void draw(
+    const VertexAttributeBufferLayout& layout,
+    const DrawMode mode = DrawMode::kTriangles,
+    const float size = 1.f) const
   {
-    VertexBuffer::draw(layout.length, mode);
+    VertexBuffer::draw(layout.length, mode, size);
   }
 
 protected:
@@ -314,9 +317,12 @@ public:
 
   void draw(const std::size_t count, const DrawMode mode = DrawMode::kTriangles) const;
 
-  void draw(const VertexElementBufferLayout& layout, const DrawMode mode = DrawMode::kTriangles) const
+  void draw(
+    const VertexElementBufferLayout& layout,
+    const DrawMode mode = DrawMode::kTriangles,
+    const float size = 1.0f) const
   {
-    VertexElementBuffer::draw(layout.length, mode);
+    VertexElementBuffer::draw(layout.length, mode, size);
   }
 
   ~VertexElementBuffer();

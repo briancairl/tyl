@@ -181,7 +181,7 @@ void DrawPrimitives(PrimitivesVertexBuffer& dvb, const Registry& registry, SetVe
     AddPrimitives<PrimitiveT, ColorList, SetVertexT>(dvb, registry, std::forward<SetVertexT>(set_vertex), vertex_pos);
   if (vertex_pos > 0)
   {
-    dvb.vb.draw(vertex_pos, PrimitiveDrawMode<PrimitiveT>());
+    dvb.vb.draw(vertex_pos, PrimitiveDrawMode<PrimitiveT>(), 5.0);
   }
 }
 
@@ -206,9 +206,9 @@ public:
     scene.graphics.view<TopDownCamera2D>().each([&](const TopDownCamera2D& camera) {
       const auto camera_matrix = ToInverseCameraMatrix(camera);
       primitives_shader_.setMat3("uCameraTransform", camera_matrix.data());
-      DrawAllPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawAllPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
-      DrawAllPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
+      DrawPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D);
     });
   }
 

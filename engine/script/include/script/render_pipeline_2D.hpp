@@ -18,7 +18,7 @@ class RenderPipeline2D;
 struct RenderPipeline2DOptions
 {
   const char* name = "Render Pipeline 2D";
-  std::size_t max_vertex_count = 1000;
+  std::size_t max_vertex_count = 10000;
 };
 
 template <> struct ScriptOptions<RenderPipeline2D>
