@@ -35,10 +35,14 @@ struct ScriptResources
   void* gui_context;
   /// Drag-and-drop payloads
   std::vector<std::filesystem::path> drop_payloads = {};
-  /// Location at which
+  /// Location of cursor at time of drop
   Vec2f drop_cursor_position = Vec2f::Zero();
   /// Size of current view port
   Vec2f viewport_size = Vec2f::Zero();
+  /// Current position of cursor in viewport
+  Vec2f viewport_cursor_position = Vec2f::Zero();
+  /// Current position of cursor in viewport (normalized)
+  Vec2f viewport_cursor_position_normalized = Vec2f::Zero();
 };
 
 /**

@@ -135,6 +135,8 @@ int main(int argc, char** argv)
     resources.gui_context = window_state.gui_context;
     resources.now = window_state.now;
     resources.viewport_size = window_state.window_size.cast<float>();
+    resources.viewport_cursor_position = window_state.cursor_position;
+    resources.viewport_cursor_position_normalized = window_state.cursor_position_normalized;
     std::swap(window_state.drop_payloads, resources.drop_payloads);
     std::swap(window_state.drop_cursor_position, resources.drop_cursor_position);
     window_state.drop_payloads.clear();

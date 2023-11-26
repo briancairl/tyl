@@ -46,6 +46,10 @@ inline ImTransform operator*(const ImTransform& lhs, const ImTransform& rhs)
     .scaling = (lhs.scaling * rhs.scaling)};
 }
 
+inline ImVec2 ToImVec2_(const tyl::Vec2f& v) { return {v.x(), v.y()}; }
+
+inline tyl::Vec2f FromImVec2_(const ImVec2& v) { return {v.x, v.y}; }
+
 inline ImVec2 ToImVec2(const tyl::Vec2f& v) { return {v.y(), v.x()}; }
 
 inline tyl::Vec2f FromImVec2(const ImVec2& v) { return {v.y, v.x}; }
