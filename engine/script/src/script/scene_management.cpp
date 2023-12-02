@@ -74,7 +74,7 @@ ScriptStatus SceneManagement::UpdateImpl(Scene& scene, ScriptSharedState& shared
 
           ImGui::InputFloat2("translation", camera.translation.data());
 
-          ImGui::InputFloat("scaling", &camera.scaling);
+          ImGui::SliderFloat("scaling", &camera.scaling, 0.01F, 100.0F);
 
           if (ImGui::Button("delete"))
           {

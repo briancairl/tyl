@@ -189,7 +189,7 @@ std::size_t SubmitPrimitives(
   return vertex_count;
 }
 
-std::size_t SubmitRectsAsLineStrips(PrimitivesVertexBuffer& dvb, const Registry& registry, std::size_t vertex_count)
+std::size_t SubmitRectsAsLineList(PrimitivesVertexBuffer& dvb, const Registry& registry, std::size_t vertex_count)
 {
   auto view = registry.view<Rect2D, Color>();
   {
@@ -197,33 +197,38 @@ std::size_t SubmitRectsAsLineStrips(PrimitivesVertexBuffer& dvb, const Registry&
     auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
     auto* const color_ptr = reinterpret_cast<tyl::Vec4f*>(mapped(dvb.color));
 
+    auto add_vertex =
+      [position_ptr, color_ptr, &vertex_count](const float x, const float y, const Vec4f& color) mutable {
+        position_ptr[vertex_count] << x, y, 0;
+        color_ptr[vertex_count] = color;
+        ++vertex_count;
+      };
+
     for (const auto e : view)
     {
-      static constexpr std::size_t kPoints = 5;
+      static constexpr std::size_t kPoints = 4;
+      static constexpr std::size_t kVerticesAdded = 2 * kPoints;
 
       const auto& rect = view.template get<Rect2D>(e);
       const auto& color = view.template get<Color>(e);
 
       // Stop adding vertices if we will go past the max vertex count
-      if (vertex_count + kPoints > dvb.max_vertex_count)
+      if (vertex_count + kVerticesAdded > dvb.max_vertex_count)
       {
         break;
       }
 
-      const Vec3f corners[kPoints] = {
-        {rect.min().x(), rect.min().y(), 0.f},
-        {rect.min().x(), rect.max().y(), 0.f},
-        {rect.max().x(), rect.max().y(), 0.f},
-        {rect.max().x(), rect.min().y(), 0.f},
-        {rect.min().x(), rect.min().y(), 0.f},
-      };
+      add_vertex(rect.min().x(), rect.min().y(), color.rgba);
+      add_vertex(rect.min().x(), rect.max().y(), color.rgba);
 
-      for (const auto& pos : corners)
-      {
-        position_ptr[vertex_count] = pos;
-        color_ptr[vertex_count] = color.rgba;
-        ++vertex_count;
-      }
+      add_vertex(rect.min().x(), rect.max().y(), color.rgba);
+      add_vertex(rect.max().x(), rect.max().y(), color.rgba);
+
+      add_vertex(rect.max().x(), rect.max().y(), color.rgba);
+      add_vertex(rect.max().x(), rect.min().y(), color.rgba);
+
+      add_vertex(rect.max().x(), rect.min().y(), color.rgba);
+      add_vertex(rect.min().x(), rect.min().y(), color.rgba);
     }
   }
   return vertex_count;
@@ -233,7 +238,7 @@ template <typename PrimitiveT> void DrawPrimitives(PrimitivesVertexBuffer& dvb, 
 {
   if (vertex_count > 0)
   {
-    dvb.vb.draw(vertex_count, PrimitiveDrawMode<PrimitiveT>(), 5.0);
+    dvb.vb.draw(vertex_count, PrimitiveDrawMode<PrimitiveT>(), 1.0);
   }
 }
 
@@ -267,12 +272,12 @@ public:
       {
         std::size_t vertex_count = 0;
         vertex_count = SubmitPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
+        vertex_count = SubmitRectsAsLineList(primitives_vb_, scene.graphics, vertex_count);
         DrawPrimitives<LineList2D>(primitives_vb_, vertex_count);
       }
       {
         std::size_t vertex_count = 0;
         vertex_count = SubmitPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
-        vertex_count = SubmitRectsAsLineStrips(primitives_vb_, scene.graphics, vertex_count);
         DrawPrimitives<LineStrip2D>(primitives_vb_, vertex_count);
       }
       {
