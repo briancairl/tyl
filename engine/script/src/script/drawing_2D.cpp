@@ -29,7 +29,19 @@ namespace tyl::engine
 namespace
 {
 
+enum class DrawNext : int
+{
+  kRectangle,
+  kLineStrip,
+  kITEMS
+};
+
 struct EditingRectangle
+{
+  EntityID id;
+};
+
+struct EditingLineStrip
 {
   EntityID id;
 };
@@ -37,13 +49,14 @@ struct EditingRectangle
 struct Drawing2DProperties
 {
   bool show_cursor_position = false;
-  std::variant<std::monostate, EditingRectangle> editing;
+  std::variant<std::monostate, EditingRectangle, EditingLineStrip> editing;
 };
 
 class EditingBehavior
 {
 public:
-  explicit EditingBehavior(Registry& reg, const Vec2f& cursor_position) : reg_{&reg}, cursor_position_{cursor_position}
+  explicit EditingBehavior(Registry& reg, Vec4f& active_color, const Vec2f& cursor_position) :
+      reg_{&reg}, active_color_{&active_color}, cursor_position_{cursor_position}
   {}
 
   constexpr bool operator()([[maybe_unused]] std::monostate _) const { return false; };
@@ -51,13 +64,34 @@ public:
   bool operator()(EditingRectangle& editing)
   {
     auto [rect, color] = reg_->get<Rect2D, Color>(editing.id);
-    ImGui::ColorPicker3("rectangle color", color.rgba.data());
     rect.max() = cursor_position_;
+    color.rgba = *active_color_;
     return ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+  };
+
+  bool operator()(EditingLineStrip& editing)
+  {
+    if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
+      return true;
+    }
+    auto [linelist, color] = reg_->get<LineStrip2D, Color>(editing.id);
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || linelist.values.empty())
+    {
+      linelist.values.push_back(cursor_position_);
+      linelist.values.push_back(cursor_position_);
+    }
+    else if (linelist.values.size() > 0)
+    {
+      linelist.values.back() = cursor_position_;
+    }
+    color.rgba = *active_color_;
+    return false;
   };
 
 private:
   Registry* reg_;
+  const Vec4f* active_color_;
   Vec2f cursor_position_;
 };
 
@@ -72,10 +106,33 @@ public:
 
   void Update(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
-
     allow_drawing_ = !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow);
 
-    ShowCursorPosition(resources);
+    HandleShowCursorPosition(resources);
+    {
+      const char* items[] = {"Rectangle", "LineStrip"};
+      int index = static_cast<int>(draw_next_);
+      if (ImGui::BeginCombo("next shape", items[index]))
+      {
+        for (int n = 0; n < static_cast<int>(DrawNext::kITEMS); n++)
+        {
+          const bool is_selected = (index == n);
+          if (ImGui::Selectable(items[n], is_selected))
+          {
+            index = n;
+          }
+
+          // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+          if (is_selected)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+      draw_next_ = static_cast<DrawNext>(index);
+    }
+    ImGui::ColorPicker3("color", active_color_.data());
 
     const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
     const auto inverse_camera_matrix = ToInverseCameraMatrix(camera);
@@ -91,20 +148,36 @@ public:
       else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
       {
         const auto id = scene.graphics.create();
-        scene.graphics.emplace<Rect2D>(id, cursor_position_in_scene.head<2>(), cursor_position_in_scene.head<2>());
-        scene.graphics.emplace<Color>(id, Color{{1, 1, 1, 1}});
-        properties_.editing = EditingRectangle{id};
+        switch (draw_next_)
+        {
+        case DrawNext::kRectangle: {
+          scene.graphics.emplace<Rect2D>(id, cursor_position_in_scene.head<2>(), cursor_position_in_scene.head<2>());
+          scene.graphics.emplace<Color>(id, Color{active_color_});
+          properties_.editing = EditingRectangle{id};
+          break;
+        }
+        case DrawNext::kLineStrip: {
+          scene.graphics.emplace<LineStrip2D>(id);
+          scene.graphics.emplace<Color>(id, Color{active_color_});
+          properties_.editing = EditingLineStrip{id};
+          break;
+        }
+        case DrawNext::kITEMS: {
+          break;
+        }
+        }
       }
     }
     else if (
-      std::visit(EditingBehavior{scene.graphics, cursor_position_in_scene.head<2>()}, properties_.editing) &&
+      std::visit(
+        EditingBehavior{scene.graphics, active_color_, cursor_position_in_scene.head<2>()}, properties_.editing) &&
       allow_drawing_)
     {
       properties_.editing = std::monostate{};
     }
   }
 
-  void ShowCursorPosition(const ScriptResources& resources)
+  void HandleShowCursorPosition(const ScriptResources& resources)
   {
     ImGui::Checkbox("show cursor position", &properties_.show_cursor_position);
     if (properties_.show_cursor_position and !ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
@@ -131,6 +204,8 @@ public:
 
 private:
   bool allow_drawing_ = false;
+  Vec4f active_color_ = {1, 1, 1, 1};
+  DrawNext draw_next_ = DrawNext::kRectangle;
   Drawing2DProperties properties_ = {};
 };
 
