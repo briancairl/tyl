@@ -3,6 +3,7 @@
 
 // Tyl
 #include <tyl/engine/asset.hpp>
+#include <tyl/engine/camera.hpp>
 #include <tyl/engine/drawing.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/scene.hpp>
@@ -11,6 +12,7 @@
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/mem_stream.hpp>
 #include <tyl/serialization/named.hpp>
+#include <tyl/serialization/std/optional.hpp>
 
 namespace tyl::graphics::device
 {
@@ -42,7 +44,8 @@ using GraphicsComponents = Components<
   LineStrip3D,
   Points2D,
   Points3D,
-  Rect2D
+  Rect2D,
+  TopDownCamera2D
 >;
 // clang-format on
 
@@ -61,6 +64,7 @@ template <typename OArchiveT> void save_scene(OArchiveT& oar, const engine::Scen
     engine::serializable_registry_t<const engine::GraphicsComponents> graphics{scene.graphics};
     oar << named{"graphics", graphics};
   }
+  oar << named{"active_camera", scene.active_camera};
 }
 
 template <typename IArchiveT> void load_scene(IArchiveT& iar, engine::Scene& scene)
@@ -73,6 +77,7 @@ template <typename IArchiveT> void load_scene(IArchiveT& iar, engine::Scene& sce
     engine::serializable_registry_t<engine::GraphicsComponents> graphics{scene.graphics};
     iar >> named{"graphics", graphics};
   }
+  iar >> named{"active_camera", scene.active_camera};
 }
 
 void save<binary_oarchive<file_handle_ostream>, engine::Scene>::operator()(
