@@ -197,8 +197,8 @@ public:
 
         ImGui::EndTable();
       }
-      ImGui::EndChild();
     }
+    ImGui::EndChild();
   }
 
   bool DragAndDropInternalSource(

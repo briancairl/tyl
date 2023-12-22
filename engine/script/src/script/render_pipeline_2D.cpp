@@ -36,11 +36,11 @@ layout (location = 0) in vec3 vPos;
 layout (location = 1) in vec4 vColor;
 
 out vec4 vFragColor;
-uniform mat3 uCameraTransform;
+uniform mat4 uCameraTransform;
 
 void main()
 {
-  gl_Position = vec4(uCameraTransform * vPos, 1);
+  gl_Position = uCameraTransform * vec4(vPos, 1);
   vFragColor = vColor;
 }
 
@@ -242,6 +242,65 @@ template <typename PrimitiveT> void DrawPrimitives(PrimitivesVertexBuffer& dvb, 
   }
 }
 
+static constexpr const char* kSpriteVertexShaderSource =
+  R"VertexShader(
+
+layout (location = 0) in vec3 vPos;
+layout (location = 1) in vec4 vColor;
+
+out vec4 vFragColor;
+uniform mat4 uCameraTransform;
+
+void main()
+{
+  gl_Position = vec4(uCameraTransform * vPos, 1);
+  vFragColor = vColor;
+}
+
+)VertexShader";
+
+static constexpr const char* kSpriteFragmentShaderSource =
+  R"FragmentShader(
+
+layout(location = 0) out vec4 FragColor;
+
+in vec4 vFragColor;
+
+void main()
+{
+  FragColor = vFragColor;
+}
+
+)FragmentShader";
+
+struct SpriteVertexBuffer
+{
+  using Position = VertexAttribute<float, 2>;
+  using UV = VertexAttribute<float, 2>;
+  using Color = VertexAttribute<float, 4>;
+
+  VertexAttributeBuffer<float> position;
+  VertexAttributeBuffer<float> color;
+
+  VertexBuffer vb;
+
+  std::size_t max_vertex_count;
+
+  static SpriteVertexBuffer create(const std::size_t max_vertex_count)
+  {
+    auto [vb, position, color] =
+      VertexBuffer::create(VertexBuffer::BufferMode::kDynamic, Position{max_vertex_count}, Color{max_vertex_count});
+
+    return {
+      .position = std::move(position),
+      .color = std::move(color),
+      .vb = std::move(vb),
+      .max_vertex_count = max_vertex_count};
+  }
+};
+
+// void DrawTileMaps()
+
 }  // namespace
 
 class RenderPipeline2D::Impl
@@ -258,37 +317,41 @@ public:
       return;
     }
 
-    primitives_shader_.bind();
-
     if (scene.graphics.any_of<TopDownCamera2D>(*scene.active_camera))
     {
-      const auto SetVertexFrom2D = [](auto& dst, const auto& src) {
-        dst.template head<2>() = src;
-        dst[2] = 1.f;
-      };
-      const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
-      const auto camera_matrix = ToCameraMatrix(camera);
-      primitives_shader_.setMat3("uCameraTransform", camera_matrix.data());
-      {
-        std::size_t vertex_count = 0;
-        vertex_count = SubmitPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
-        vertex_count = SubmitRectsAsLineList(primitives_vb_, scene.graphics, vertex_count);
-        DrawPrimitives<LineList2D>(primitives_vb_, vertex_count);
-      }
-      {
-        std::size_t vertex_count = 0;
-        vertex_count = SubmitPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
-        DrawPrimitives<LineStrip2D>(primitives_vb_, vertex_count);
-      }
-      {
-        std::size_t vertex_count = 0;
-        vertex_count = SubmitPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
-        DrawPrimitives<Points2D>(primitives_vb_, vertex_count);
-      }
+      RenderPrimitives(scene);
     };
   }
 
 private:
+  void RenderPrimitives(Scene& scene)
+  {
+    primitives_shader_.bind();
+    const auto SetVertexFrom2D = [](auto& dst, const auto& src) {
+      dst.template head<2>() = src;
+      dst[2] = 1.f;
+    };
+    const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
+    const auto camera_matrix = ToCameraMatrix(camera);
+    primitives_shader_.setMat4("uCameraTransform", camera_matrix.data());
+    {
+      std::size_t vertex_count = 0;
+      vertex_count = SubmitPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
+      vertex_count = SubmitRectsAsLineList(primitives_vb_, scene.graphics, vertex_count);
+      DrawPrimitives<LineList2D>(primitives_vb_, vertex_count);
+    }
+    {
+      std::size_t vertex_count = 0;
+      vertex_count = SubmitPrimitives<LineStrip2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
+      DrawPrimitives<LineStrip2D>(primitives_vb_, vertex_count);
+    }
+    {
+      std::size_t vertex_count = 0;
+      vertex_count = SubmitPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
+      DrawPrimitives<Points2D>(primitives_vb_, vertex_count);
+    }
+  }
+
   Shader primitives_shader_;
   PrimitivesVertexBuffer primitives_vb_;
 };

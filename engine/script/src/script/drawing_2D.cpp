@@ -136,8 +136,9 @@ public:
 
     const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
     const auto inverse_camera_matrix = ToInverseCameraMatrix(camera);
-    const Vec3f cursor_position_in_scene = inverse_camera_matrix *
-      Vec3f{resources.viewport_cursor_position_normalized.x(), resources.viewport_cursor_position_normalized.y(), 1.f};
+    const Vec4f cursor_position_in_scene = inverse_camera_matrix *
+      Vec4f{
+        resources.viewport_cursor_position_normalized.x(), resources.viewport_cursor_position_normalized.y(), 0.f, 1.f};
 
     if (std::holds_alternative<std::monostate>(properties_.editing))
     {
