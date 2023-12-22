@@ -253,7 +253,7 @@ uniform mat4 uCameraTransform;
 
 void main()
 {
-  gl_Position = vec4(uCameraTransform * vPos, 1);
+  gl_Position = uCameraTransform * vec4(vPos, 1);
   vFragColor = vColor;
 }
 
@@ -276,11 +276,10 @@ void main()
 struct SpriteVertexBuffer
 {
   using Position = VertexAttribute<float, 2>;
-  using UV = VertexAttribute<float, 2>;
-  using Color = VertexAttribute<float, 4>;
+  using UVCoord = VertexAttribute<float, 2>;
 
   VertexAttributeBuffer<float> position;
-  VertexAttributeBuffer<float> color;
+  VertexAttributeBuffer<float> uv_coord;
 
   VertexBuffer vb;
 
@@ -288,12 +287,12 @@ struct SpriteVertexBuffer
 
   static SpriteVertexBuffer create(const std::size_t max_vertex_count)
   {
-    auto [vb, position, color] =
-      VertexBuffer::create(VertexBuffer::BufferMode::kDynamic, Position{max_vertex_count}, Color{max_vertex_count});
+    auto [vb, position, uv_coord] =
+      VertexBuffer::create(VertexBuffer::BufferMode::kDynamic, Position{max_vertex_count}, UVCoord{max_vertex_count});
 
     return {
       .position = std::move(position),
-      .color = std::move(color),
+      .uv_coord = std::move(uv_coord),
       .vb = std::move(vb),
       .max_vertex_count = max_vertex_count};
   }
@@ -306,8 +305,15 @@ struct SpriteVertexBuffer
 class RenderPipeline2D::Impl
 {
 public:
-  Impl(Shader&& shader, PrimitivesVertexBuffer&& vb) :
-      primitives_shader_{std::move(shader)}, primitives_vb_{std::move(vb)}
+  Impl(
+    Shader&& primitives_shader,
+    PrimitivesVertexBuffer&& primitives_vb,
+    Shader&& sprite_shader,
+    SpriteVertexBuffer&& sprite_vertex_buffer) :
+      primitives_shader_{std::move(primitives_shader)},
+      primitives_vb_{std::move(primitives_vb)},
+      sprite_shader_{std::move(sprite_shader)},
+      sprite_vb_{std::move(sprite_vertex_buffer)}
   {}
 
   void Update(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
@@ -319,21 +325,23 @@ public:
 
     if (scene.graphics.any_of<TopDownCamera2D>(*scene.active_camera))
     {
-      RenderPrimitives(scene);
+      const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
+      const auto camera_matrix = ToCameraMatrix(camera);
+      RenderPrimitives(scene, camera_matrix);
     };
   }
 
 private:
-  void RenderPrimitives(Scene& scene)
+  void RenderPrimitives(Scene& scene, const Mat4f& camera_matrix)
   {
-    primitives_shader_.bind();
     const auto SetVertexFrom2D = [](auto& dst, const auto& src) {
       dst.template head<2>() = src;
-      dst[2] = 1.f;
+      dst[2] = 0.f;
     };
-    const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
-    const auto camera_matrix = ToCameraMatrix(camera);
+
+    primitives_shader_.bind();
     primitives_shader_.setMat4("uCameraTransform", camera_matrix.data());
+
     {
       std::size_t vertex_count = 0;
       vertex_count = SubmitPrimitives<LineList2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
@@ -353,7 +361,12 @@ private:
   }
 
   Shader primitives_shader_;
+
   PrimitivesVertexBuffer primitives_vb_;
+
+  Shader sprite_shader_;
+
+  SpriteVertexBuffer sprite_vb_;
 };
 
 RenderPipeline2D::~RenderPipeline2D() = default;
@@ -361,15 +374,29 @@ RenderPipeline2D::~RenderPipeline2D() = default;
 tyl::expected<RenderPipeline2D, ScriptCreationError>
 RenderPipeline2D::CreateImpl(const RenderPipeline2DOptions& options)
 {
-  if (auto vertex_shader = ShaderSource::vertex(kPrimitivesVertexShaderSource); !vertex_shader)
+  if (auto primitives_vertex_shader = ShaderSource::vertex(kPrimitivesVertexShaderSource); !primitives_vertex_shader)
   {
     return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
   }
-  else if (auto fragment_shader = ShaderSource::fragment(kPrimitivesFragmentShaderSource); !fragment_shader)
+  else if (auto primitives_fragment_shader = ShaderSource::fragment(kPrimitivesFragmentShaderSource);
+           !primitives_fragment_shader)
   {
     return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
   }
-  else if (auto primitives_shader = Shader::create(*vertex_shader, *fragment_shader); !primitives_shader)
+  else if (auto primitives_shader = Shader::create(*primitives_vertex_shader, *primitives_fragment_shader);
+           !primitives_shader)
+  {
+    return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
+  }
+  else if (auto sprite_vertex_shader = ShaderSource::vertex(kSpriteVertexShaderSource); !sprite_vertex_shader)
+  {
+    return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
+  }
+  else if (auto sprite_fragment_shader = ShaderSource::fragment(kSpriteFragmentShaderSource); !sprite_fragment_shader)
+  {
+    return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
+  }
+  else if (auto sprite_shader = Shader::create(*sprite_vertex_shader, *sprite_fragment_shader); !sprite_shader)
   {
     return tyl::unexpected<ScriptCreationError>{ScriptCreationError::kInternalSetupFailure};
   }
@@ -378,7 +405,10 @@ RenderPipeline2D::CreateImpl(const RenderPipeline2DOptions& options)
     return RenderPipeline2D{
       options,
       std::make_unique<Impl>(
-        std::move(primitives_shader).value(), PrimitivesVertexBuffer::create(options.max_vertex_count))};
+        std::move(primitives_shader).value(),
+        PrimitivesVertexBuffer::create(options.max_vertex_count),
+        std::move(sprite_shader).value(),
+        SpriteVertexBuffer::create(options.max_vertex_count))};
   }
 }
 
