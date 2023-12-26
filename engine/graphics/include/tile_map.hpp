@@ -6,12 +6,14 @@
 #pragma once
 
 // C++ Standard Library
+#include <optional>
 #include <vector>
 
 // Tyl
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/math.hpp>
 #include <tyl/serialization/object.hpp>
+#include <tyl/serialization/std/optional.hpp>
 #include <tyl/serialization/std/vector.hpp>
 
 namespace tyl::engine
@@ -22,7 +24,7 @@ struct TileMap
   /// Tile size
   Vec2f tile_size;
   /// Represents an MxN grid of TileMapSections
-  Mat<EntityID, Eigen::Dynamic, Eigen::Dynamic> sections;
+  Mat<std::optional<EntityID>, Eigen::Dynamic, Eigen::Dynamic> sections;
 };
 
 struct TileMapSection

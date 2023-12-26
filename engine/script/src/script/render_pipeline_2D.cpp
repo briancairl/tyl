@@ -337,21 +337,26 @@ void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Registry& regis
     const auto& tile_set = resolve(registry, tile_set_ref);
     const auto& atlas_texture = resolve(registry, atlas_texture_ref);
 
-    static constexpr std::size_t kTextureUnit = 0;
+    static constexpr std::size_t kSpriteTextureUnit = 0;
 
     // Bind texture to an active texture unit
-    atlas_texture.bind(kTextureUnit);
+    atlas_texture.bind(kSpriteTextureUnit);
 
     // Set active texture unit in shader
-    shader.setInt("uAtlasTexture", kTextureUnit);
+    shader.setInt("uAtlasTexture", kSpriteTextureUnit);
 
     for (int s_j = 0; s_j < tile_map.sections.cols(); ++s_j)
     {
       for (int s_i = 0; s_i < tile_map.sections.rows(); ++s_i)
       {
         // Get section of the tilemap we want to draw
-        const auto section_id = tile_map.sections(s_i, s_j);
-        const auto& [section_bbox, section] = tile_map_section_view.get(section_id);
+        const auto section_id_opt = tile_map.sections(s_i, s_j);
+        if (!section_id_opt.has_value())
+        {
+          continue;
+        }
+
+        const auto& [section_bbox, section] = tile_map_section_view.get(*section_id_opt);
 
         // Ignore any sections which are fully out of view
         if (disjoint(section_bbox, viewport_rect))
