@@ -14,7 +14,11 @@
 #include <tyl/engine/math.hpp>
 #include <tyl/engine/scene.hpp>
 #include <tyl/engine/script/render_pipeline_2D.hpp>
+#include <tyl/engine/tags.hpp>
+#include <tyl/engine/tile_map.hpp>
+#include <tyl/engine/tile_set.hpp>
 #include <tyl/graphics/device/shader.hpp>
+#include <tyl/graphics/device/texture.hpp>
 #include <tyl/graphics/device/vertex_buffer.hpp>
 #include <tyl/serialization/binary_archive.hpp>
 #include <tyl/serialization/file_stream.hpp>
@@ -112,7 +116,7 @@ std::size_t AddPrimitives(
     std::is_same<PrimitiveT, LineStrip2D>() or std::is_same<PrimitiveT, LineStrip3D>();
   static constexpr bool IsSingleColor = std::is_same_v<ColorT, Color>;
 
-  auto view = registry.template view<PrimitiveT, ColorT>();
+  auto view = registry.template view<PrimitiveT, ColorT>(entt::exclude_t<tags::Hidden>{});
   {
     auto mapped = dvb.vb.get_mapped_vertex_buffer();
     auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
@@ -197,7 +201,7 @@ std::size_t SubmitRectsAsLineList(PrimitivesVertexBuffer& dvb, const Registry& r
     auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(dvb.position));
     auto* const color_ptr = reinterpret_cast<tyl::Vec4f*>(mapped(dvb.color));
 
-    auto add_vertex =
+    auto AddVertex =
       [position_ptr, color_ptr, &vertex_count](const float x, const float y, const Vec4f& color) mutable {
         position_ptr[vertex_count] << x, y, 0;
         color_ptr[vertex_count] = color;
@@ -218,17 +222,17 @@ std::size_t SubmitRectsAsLineList(PrimitivesVertexBuffer& dvb, const Registry& r
         break;
       }
 
-      add_vertex(rect.min().x(), rect.min().y(), color.rgba);
-      add_vertex(rect.min().x(), rect.max().y(), color.rgba);
+      AddVertex(rect.min().x(), rect.min().y(), color.rgba);
+      AddVertex(rect.min().x(), rect.max().y(), color.rgba);
 
-      add_vertex(rect.min().x(), rect.max().y(), color.rgba);
-      add_vertex(rect.max().x(), rect.max().y(), color.rgba);
+      AddVertex(rect.min().x(), rect.max().y(), color.rgba);
+      AddVertex(rect.max().x(), rect.max().y(), color.rgba);
 
-      add_vertex(rect.max().x(), rect.max().y(), color.rgba);
-      add_vertex(rect.max().x(), rect.min().y(), color.rgba);
+      AddVertex(rect.max().x(), rect.max().y(), color.rgba);
+      AddVertex(rect.max().x(), rect.min().y(), color.rgba);
 
-      add_vertex(rect.max().x(), rect.min().y(), color.rgba);
-      add_vertex(rect.min().x(), rect.min().y(), color.rgba);
+      AddVertex(rect.max().x(), rect.min().y(), color.rgba);
+      AddVertex(rect.min().x(), rect.min().y(), color.rgba);
     }
   }
   return vertex_count;
@@ -246,15 +250,15 @@ static constexpr const char* kSpriteVertexShaderSource =
   R"VertexShader(
 
 layout (location = 0) in vec3 vPos;
-layout (location = 1) in vec4 vColor;
+layout (location = 1) in vec2 vTex;
 
-out vec4 vFragColor;
+out vec2 vTexCoord;
 uniform mat4 uCameraTransform;
 
 void main()
 {
   gl_Position = uCameraTransform * vec4(vPos, 1);
-  vFragColor = vColor;
+  vTexCoord = vTex;
 }
 
 )VertexShader";
@@ -264,18 +268,19 @@ static constexpr const char* kSpriteFragmentShaderSource =
 
 layout(location = 0) out vec4 FragColor;
 
-in vec4 vFragColor;
+in vec2 vTexCoord;
+uniform sampler2D uAtlasTexture;
 
 void main()
 {
-  FragColor = vFragColor;
+  FragColor = texture(uAtlasTexture, vTexCoord);
 }
 
 )FragmentShader";
 
 struct SpriteVertexBuffer
 {
-  using Position = VertexAttribute<float, 2>;
+  using Position = VertexAttribute<float, 3>;
   using UVCoord = VertexAttribute<float, 2>;
 
   VertexAttributeBuffer<float> position;
@@ -298,7 +303,102 @@ struct SpriteVertexBuffer
   }
 };
 
-// void DrawTileMaps()
+void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Registry& registry, const Rect2f& viewport_rect)
+{
+  static constexpr std::size_t kSpriteVertexCount = 6;
+
+  std::size_t vertex_count = 0;
+
+  auto mapped = svb.vb.get_mapped_vertex_buffer();
+  auto* const position_ptr = reinterpret_cast<tyl::Vec3f*>(mapped(svb.position));
+  auto* const uv_coord_ptr = reinterpret_cast<tyl::Vec2f*>(mapped(svb.uv_coord));
+
+  auto AddVertex =
+    [position_ptr, uv_coord_ptr, &vertex_count](const float x, const float y, const float ux, const float uy) mutable {
+      position_ptr[vertex_count] << x, y, 0;
+      uv_coord_ptr[vertex_count] << ux, uy;
+      ++vertex_count;
+    };
+
+  auto tile_map_view = registry.view<Rect2f, TileMap, Reference<TileSet>, Reference<Texture>>();
+  auto tile_map_section_view = registry.view<Rect2f, TileMapSection>();
+
+  for (const auto tile_map_id : tile_map_view)
+  {
+    const auto& [tile_map_bbox, tile_map, tile_set_ref, atlas_texture_ref] = tile_map_view.get(tile_map_id);
+
+    // Ignore any tile-maps which are fully out of view
+    if (disjoint(tile_map_bbox, viewport_rect))
+    {
+      continue;
+    }
+
+    const auto& tile_size = tile_map.tile_size;
+    const auto& tile_set = resolve(registry, tile_set_ref);
+    const auto& atlas_texture = resolve(registry, atlas_texture_ref);
+
+    static constexpr std::size_t kTextureUnit = 0;
+
+    // Bind texture to an active texture unit
+    atlas_texture.bind(kTextureUnit);
+
+    // Set active texture unit in shader
+    shader.setInt("uAtlasTexture", kTextureUnit);
+
+    for (int s_j = 0; s_j < tile_map.sections.cols(); ++s_j)
+    {
+      for (int s_i = 0; s_i < tile_map.sections.rows(); ++s_i)
+      {
+        // Get section of the tilemap we want to draw
+        const auto section_id = tile_map.sections(s_i, s_j);
+        const auto& [section_bbox, section] = tile_map_section_view.get(section_id);
+
+        // Ignore any sections which are fully out of view
+        if (disjoint(section_bbox, viewport_rect))
+        {
+          continue;
+        }
+
+        // Cannot draw any more full sections
+        if (section.tile_indices.size() * kSpriteVertexCount > svb.max_vertex_count)
+        {
+          return;
+        }
+
+        // Draw a tilemap section
+        for (int j = 0; j < section.tile_indices.cols(); ++j)
+        {
+          // Compute tile y-coords
+          const float y_min = section_bbox.min().y() + (j * tile_size.y());
+          const float y_max = y_min + tile_size.y();
+          for (int i = 0; i < section.tile_indices.rows(); ++i)
+          {
+            // Compute tile x-coords
+            const float x_min = section_bbox.min().x() + (i * tile_size.x());
+            const float x_max = x_min + tile_size.x();
+
+            // Get UV extents for tile
+            const auto& uv = tile_set.tiles[section.tile_indices(i, j)];
+            const auto u_min = uv.min().x();
+            const auto u_max = uv.max().x();
+            const auto v_min = uv.min().y();
+            const auto v_max = uv.max().y();
+
+            // Draw tile rect lower triangle
+            AddVertex(x_min, y_min, u_min, v_min);
+            AddVertex(x_max, y_min, u_max, v_min);
+            AddVertex(x_max, y_max, u_max, v_max);
+
+            // Draw tile rect upper triangle
+            AddVertex(x_min, y_min, u_min, v_min);
+            AddVertex(x_min, y_max, u_min, v_max);
+            AddVertex(x_max, y_max, u_max, v_max);
+          }
+        }
+      }
+    }
+  }
+}
 
 }  // namespace
 
@@ -326,13 +426,20 @@ public:
     if (scene.graphics.any_of<TopDownCamera2D>(*scene.active_camera))
     {
       const auto& camera = scene.graphics.get<TopDownCamera2D>(*scene.active_camera);
-      const auto camera_matrix = ToCameraMatrix(camera);
-      RenderPrimitives(scene, camera_matrix);
+      const Mat4f inverse_camera_matrix = ToInverseCameraMatrix(camera);
+
+      const Rect2f viewport_rect{
+        (inverse_camera_matrix * Vec4f{-1, -1, 0, 1}).head<2>(),
+        (inverse_camera_matrix * Vec4f{+1, +1, 0, 1}).head<2>()};
+
+      const Mat4f camera_matrix = inverse_camera_matrix.inverse();
+      RenderPrimitives(scene, camera_matrix, viewport_rect);
+      RenderTileMaps(scene, camera_matrix, viewport_rect);
     };
   }
 
 private:
-  void RenderPrimitives(Scene& scene, const Mat4f& camera_matrix)
+  void RenderPrimitives(Scene& scene, const Mat4f& camera_matrix, const Rect2f& viewport_rect)
   {
     const auto SetVertexFrom2D = [](auto& dst, const auto& src) {
       dst.template head<2>() = src;
@@ -358,6 +465,14 @@ private:
       vertex_count = SubmitPrimitives<Points2D>(primitives_vb_, scene.graphics, SetVertexFrom2D, vertex_count);
       DrawPrimitives<Points2D>(primitives_vb_, vertex_count);
     }
+  }
+
+  void RenderTileMaps(Scene& scene, const Mat4f& camera_matrix, const Rect2f& viewport_rect)
+  {
+    sprite_shader_.bind();
+    sprite_shader_.setMat4("uCameraTransform", camera_matrix.data());
+
+    DrawTileMaps(sprite_vb_, sprite_shader_, scene.graphics, viewport_rect);
   }
 
   Shader primitives_shader_;

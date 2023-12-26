@@ -3,6 +3,7 @@ cc_library(
   hdrs=[
     "include/camera.hpp",
     "include/drawing.hpp",
+    "include/tags.hpp",
     "include/tile_set.hpp",
     "include/tile_map.hpp",
   ],

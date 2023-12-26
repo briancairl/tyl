@@ -19,6 +19,8 @@ namespace tyl::engine
 
 struct TileMap
 {
+  /// Tile size
+  Vec2f tile_size;
   /// Represents an MxN grid of TileMapSections
   Mat<EntityID, Eigen::Dynamic, Eigen::Dynamic> sections;
 };
