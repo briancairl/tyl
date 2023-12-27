@@ -134,13 +134,43 @@ void ImTileSmallPreview(const TileSet& tile_set, const Texture& texture, ImVec2 
       ToImVec2(rect.max()),
       ImColor{e, e, e, e});
     shift.x += (h_pad + shown_tile_size.x);
-    if (--remaining == total_shown)
+    --remaining;
+    if (remaining == 0)
     {
       break;
     }
   }
 
   drawlist->AddRect(pos, pos + size, ImColor{ImGui::GetStyle().Colors[ImGuiCol_Border]});
+}
+
+void ImTileLargePreview(const TileSet& tile_set, const Texture& texture, ImVec2 size, const float tile_scaling = 1.f)
+{
+  const auto avail = ImGui::GetContentRegionAvail();
+  size.x = (size.x == 0) ? avail.x : size.x;
+  size.y = (size.y == 0) ? avail.y : size.y;
+
+  const ImVec2 shown_tile_size = ToImVec2(tile_scaling * tile_set.tile_size);
+
+  float h_pos = ImGui::GetCursorPos().x;
+  for (const auto& rect : tile_set.tiles)
+  {
+    ImGui::Image(
+      reinterpret_cast<void*>(texture.get_id()), shown_tile_size, ToImVec2(rect.min()), ToImVec2(rect.max()));
+    if (shown_tile_size.x + h_pos < size.x)
+    {
+      ImGui::SameLine();
+      h_pos += shown_tile_size.x;
+    }
+    else if (ImGui::GetCursorPos().y > size.y)
+    {
+      break;
+    }
+    else
+    {
+      h_pos = ImGui::GetCursorPos().x;
+    }
+  }
 }
 
 }  // namespace
@@ -154,22 +184,13 @@ public:
       tile_set_naming_pop_up_{"new tile set name", "new tile set name", 400.F},
       tile_set_rename_pop_up_{"tile set name", "rename tile set", 400.F},
       tile_set_delete_confirmation_{"delete selected tile set?", 250.F},
+      tile_set_submit_confirmation_{"finalize selected tile set?", 250.F},
       tile_set_size_submission_pop_up_{"update tile size", 250.F}
   {}
 
   void Browser(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
   {
     TileSetPreview(scene, resources);
-    TileSetCreateMenu();
-    tile_set_naming_pop_up_.update([this](const char* name) {
-      const auto id = local_registry_.create();
-      local_registry_.emplace<std::string>(id, name);
-      local_registry_.emplace<TileSet>(id, Vec2f{16, 16});
-      local_registry_.emplace<AtlasTextureEditingState>(id);
-      local_registry_.emplace<TileSetEditingState>(id);
-      local_registry_.emplace<Reference<Texture>>(id);
-      editing_tile_set_id_ = id;
-    });
   }
 
   void Creator(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
@@ -220,7 +241,10 @@ public:
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
-    ImGui::BeginChild("##TileSetPreview", ImVec2{0, 200}, kChildShowBoarders, kChildFlags);
+
+    ImGui::Separator();
+    ImGui::Text("edittable");
+    ImGui::BeginChild("##TileSetPreview", ImVec2{0, 100}, kChildShowBoarders, kChildFlags);
     if (ImGui::BeginTable("##TileSetPreviewTable", 3, ImGuiTableFlags_Resizable))
     {
       ImGui::TableSetupColumn("name");
@@ -228,93 +252,138 @@ public:
       ImGui::TableSetupColumn("tile count");
       ImGui::TableHeadersRow();
 
-      local_registry_.view<std::string, TileSet>().each([&](EntityID id, auto& label, auto& tile_set) {
-        const auto atlas_texture_ref = local_registry_.get<Reference<Texture>>(id);
-
-        if (ImGui::TableNextColumn())
-        {
-          ImGui::PushID(static_cast<int>(id));
-          ImGui::Text("%s", label.c_str());
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+      local_registry_.view<std::string, TileSet, Reference<Texture>>().each(
+        [&](EntityID id, auto& label, auto& tile_set, const auto& atlas_texture_ref) {
+          if (ImGui::TableNextColumn())
           {
-            editing_tile_set_id_ = id;
-          }
-
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-          {
-            editing_tile_set_id_ = id;
-            tile_set_rename_pop_up_.open(label);
-          }
-
-          if (editing_tile_set_id_ == id and tile_set_rename_pop_up_.is_open())
-          {
-            tile_set_rename_pop_up_.update([&label](const char* name) { label = name; });
-          }
-
-          ImGui::PopID();
-        }
-
-        if (ImGui::TableNextColumn())
-        {
-          ImGui::Text("(%.1f x %.1f)", tile_set.tile_size.x(), tile_set.tile_size.y());
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-          {
-            editing_tile_set_id_ = id;
-          }
-
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-          {
-            editing_tile_set_id_ = id;
-            tile_set_size_submission_pop_up_.open();
-          }
-
-          if (
-            (editing_tile_set_id_ == id) and
-            tile_set_size_submission_pop_up_.is_submitted(
-              [&tile_set, width = tile_set_size_submission_pop_up_.width_internal()] {
-                static constexpr auto kInputFloatFlags = ImGuiInputTextFlags_EnterReturnsTrue;
-                ImGui::SetNextItemWidth(width);
-                return ImGui::InputFloat2("##tile_size", tile_set.tile_size.data(), "%.1f", kInputFloatFlags);
-              }))
-          {
-            TileSetSubmitSelections(scene);
-          }
-        }
-
-        if (editing_tile_set_id_ == id)
-        {
-          ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 1.f, 0.f, 0.25f});
-        }
-
-        if (ImGui::TableNextColumn())
-        {
-          ImGui::SeparatorText(format("tiles: %lu", tile_set.tiles.size()));
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-          {
-            editing_tile_set_id_ = id;
-          }
-          if (atlas_texture_ref == nullptr)
-          {
-            return;
-          }
-          else if (auto* atlas_texture = maybe_resolve(scene.assets, atlas_texture_ref); atlas_texture != nullptr)
-          {
-            ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{0, 50});
+            ImGui::PushID(static_cast<int>(id));
+            ImGui::Text("%s", label.c_str());
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
             {
               editing_tile_set_id_ = id;
             }
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
             {
-              ImGui::Text("%s", label.c_str());
-              ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{100, 25});
-              if (ImGui::SetDragDropPayload("TYL_TILE_SET_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
-              {}
-              ImGui::EndDragDropSource();
+              editing_tile_set_id_ = id;
+              tile_set_rename_pop_up_.open(label);
+            }
+
+            if (editing_tile_set_id_ == id and tile_set_rename_pop_up_.is_open())
+            {
+              tile_set_rename_pop_up_.update([&label](const char* name) { label = name; });
+            }
+
+            ImGui::PopID();
+          }
+
+          if (ImGui::TableNextColumn())
+          {
+            ImGui::Text("(%.1f x %.1f)", tile_set.tile_size.x(), tile_set.tile_size.y());
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            {
+              editing_tile_set_id_ = id;
+            }
+
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+            {
+              editing_tile_set_id_ = id;
+              tile_set_size_submission_pop_up_.open();
+            }
+
+            if (
+              (editing_tile_set_id_ == id) and
+              tile_set_size_submission_pop_up_.is_submitted(
+                [&tile_set, width = tile_set_size_submission_pop_up_.width_internal()] {
+                  static constexpr auto kInputFloatFlags = ImGuiInputTextFlags_EnterReturnsTrue;
+                  ImGui::SetNextItemWidth(width);
+                  return ImGui::InputFloat2("##tile_size", tile_set.tile_size.data(), "%.1f", kInputFloatFlags);
+                }))
+            {
+              TileSetSubmitSelections(scene);
             }
           }
-        }
-      });
+
+          if (editing_tile_set_id_ == id)
+          {
+            ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 1.f, 0.f, 0.25f});
+          }
+
+          if (ImGui::TableNextColumn())
+          {
+            ImGui::Text("%lu", tile_set.tiles.size());
+
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            {
+              editing_tile_set_id_ = id;
+            }
+
+            {
+              auto* atlas_texture = maybe_resolve(scene.assets, atlas_texture_ref);
+
+              if (atlas_texture != nullptr and ImGui::IsItemHovered() and ImGui::BeginTooltip())
+              {
+                ImTileLargePreview(tile_set, *atlas_texture, ImVec2{200, 200});
+                ImGui::EndTooltip();
+              }
+            }
+          }
+        });
+      ImGui::EndTable();
+    }
+    ImGui::EndChild();
+
+    TileSetCreateMenu(scene);
+
+    ImGui::Separator();
+    ImGui::Text("available");
+    ImGui::BeginChild("##TileSetAssetPreview", ImVec2{0, 200}, kChildShowBoarders, kChildFlags);
+    if (ImGui::BeginTable("##TileSetAssetPreviewTable", 3, ImGuiTableFlags_Resizable))
+    {
+      ImGui::TableSetupColumn("name");
+      ImGui::TableSetupColumn("tile size");
+      ImGui::TableSetupColumn("tile count");
+      ImGui::TableHeadersRow();
+
+      scene.assets.view<std::string, TileSet, Reference<Texture>>().each(
+        [&](EntityID id, const auto& label, const auto& tile_set, const auto& atlas_texture_ref) {
+          if (ImGui::TableNextColumn())
+          {
+            ImGui::PushID(static_cast<int>(id));
+            ImGui::Text("%s", label.c_str());
+            ImGui::PopID();
+          }
+
+          if (ImGui::TableNextColumn())
+          {
+            ImGui::Text("(%.1f x %.1f)", tile_set.tile_size.x(), tile_set.tile_size.y());
+          }
+
+          if (ImGui::TableNextColumn())
+          {
+            ImGui::Text("%lu", tile_set.tiles.size());
+
+            {
+              auto* atlas_texture = maybe_resolve(scene.assets, atlas_texture_ref);
+
+              if (atlas_texture != nullptr and ImGui::IsItemHovered() and ImGui::BeginTooltip())
+              {
+                ImTileLargePreview(tile_set, *atlas_texture, ImVec2{200, 200});
+                ImGui::EndTooltip();
+              }
+
+              if (atlas_texture != nullptr and ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+              {
+                ImGui::Text("%s", label.c_str());
+                ImTileSmallPreview(tile_set, *atlas_texture, ImVec2{100, 25});
+                if (ImGui::SetDragDropPayload(
+                      "TYL_TILE_SET_ASSET", std::addressof(id), sizeof(EntityID), /*cond = */ 0))
+                {}
+                ImGui::EndDragDropSource();
+              }
+            }
+          }
+        });
       ImGui::EndTable();
     }
     ImGui::EndChild();
@@ -757,16 +826,48 @@ public:
   }
 
 
-  void TileSetCreateMenu()
+  void TileSetCreateMenu(Scene& scene)
   {
     if (ImGui::Button("new"))
     {
       tile_set_naming_pop_up_.open();
       ImGui::CloseCurrentPopup();
     }
+
+    tile_set_naming_pop_up_.update([this](const char* name) {
+      const auto id = local_registry_.create();
+      local_registry_.emplace<std::string>(id, name);
+      local_registry_.emplace<TileSet>(id, Vec2f{16, 16});
+      local_registry_.emplace<AtlasTextureEditingState>(id);
+      local_registry_.emplace<TileSetEditingState>(id);
+      local_registry_.emplace<Reference<Texture>>(id);
+      editing_tile_set_id_ = id;
+    });
+
     if (!editing_tile_set_id_.has_value())
     {
       return;
+    }
+
+    ImGui::SameLine();
+
+    if (ImGui::Button("submit"))
+    {
+      tile_set_submit_confirmation_.open();
+    }
+
+    if (
+      tile_set_submit_confirmation_.is_open() and tile_set_submit_confirmation_.is_confirmed() and
+      local_registry_.get<Reference<Texture>>(*editing_tile_set_id_))
+    {
+      if (
+        copy<std::string, TileSet, Reference<Texture>>(
+          local_registry_, *editing_tile_set_id_, scene.assets, scene.assets.create()) > 0)
+      {
+        local_registry_.destroy(*editing_tile_set_id_);
+        editing_tile_set_id_.reset();
+        editing_tile_set_selection_id_.reset();
+      }
     }
 
     ImGui::SameLine();
@@ -776,12 +877,7 @@ public:
       tile_set_delete_confirmation_.open();
     }
 
-    if (!tile_set_delete_confirmation_.is_open())
-    {
-      return;
-    }
-
-    if (tile_set_delete_confirmation_.is_confirmed())
+    if (tile_set_delete_confirmation_.is_open() and tile_set_delete_confirmation_.is_confirmed())
     {
       local_registry_.destroy(*editing_tile_set_id_);
       editing_tile_set_id_.reset();
@@ -822,6 +918,7 @@ private:
   InputTextPopUp<100> tile_set_naming_pop_up_;
   InputTextPopUp<100> tile_set_rename_pop_up_;
   ConfirmationPopUp tile_set_delete_confirmation_;
+  ConfirmationPopUp tile_set_submit_confirmation_;
   SubmissionPopUp tile_set_size_submission_pop_up_;
   std::optional<EntityID> editing_tile_set_id_;
   std::optional<EntityID> editing_tile_set_selection_id_;

@@ -81,4 +81,11 @@ const ComponentT* maybe_resolve(const Registry& registry, const Reference<Compon
   return is_valid(registry, reference) ? std::addressof(registry.template get<ComponentT>(*reference.id)) : nullptr;
 }
 
+template <typename... ComponentTs>
+std::size_t copy(const Registry& from_registry, EntityID from_id, Registry& to_registry, EntityID to_id)
+{
+  return 0 +
+    ((to_registry.template emplace<ComponentTs>(to_id, from_registry.template get<ComponentTs>(from_id)), 1) + ...);
+}
+
 }  // namespace tyl
