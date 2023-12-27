@@ -2,6 +2,7 @@ cc_library(
   name="internal",
   hdrs=[
     "include/internal/imgui.hpp",
+    "include/internal/imgui_widgets.hpp",
   ],
   srcs=[
   ],

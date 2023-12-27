@@ -20,7 +20,13 @@ using Registry = ::entt::registry;
 template <typename ComponentT> struct Reference
 {
   std::optional<EntityID> id;
+
+  constexpr bool valid() const { return id.has_value(); }
+
+  constexpr operator bool() const { return id.has_value(); }
+
   constexpr void reset() { this->id.reset(); }
+
   constexpr Reference<ComponentT>& operator=(const EntityID id)
   {
     this->id.emplace(id);

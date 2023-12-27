@@ -303,7 +303,7 @@ struct SpriteVertexBuffer
   }
 };
 
-void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Registry& registry, const Rect2f& viewport_rect)
+void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Scene& scene, const Rect2f& viewport_rect)
 {
   static constexpr std::size_t kSpriteVertexCount = 6;
 
@@ -320,8 +320,8 @@ void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Registry& regis
       ++vertex_count;
     };
 
-  auto tile_map_view = registry.view<Rect2f, TileMap, Reference<TileSet>, Reference<Texture>>();
-  auto tile_map_section_view = registry.view<Rect2f, TileMapSection>();
+  auto tile_map_view = scene.graphics.view<Rect2f, TileMap, Reference<TileSet>, Reference<Texture>>();
+  auto tile_map_section_view = scene.graphics.view<Rect2f, TileMapSection>();
 
   for (const auto tile_map_id : tile_map_view)
   {
@@ -334,8 +334,8 @@ void DrawTileMaps(SpriteVertexBuffer& svb, Shader& shader, const Registry& regis
     }
 
     const auto& tile_size = tile_map.tile_size;
-    const auto& tile_set = resolve(registry, tile_set_ref);
-    const auto& atlas_texture = resolve(registry, atlas_texture_ref);
+    const auto& tile_set = resolve(scene.graphics, tile_set_ref);
+    const auto& atlas_texture = resolve(scene.assets, atlas_texture_ref);
 
     static constexpr std::size_t kSpriteTextureUnit = 0;
 
@@ -477,7 +477,7 @@ private:
     sprite_shader_.bind();
     sprite_shader_.setMat4("uCameraTransform", camera_matrix.data());
 
-    DrawTileMaps(sprite_vb_, sprite_shader_, scene.graphics, viewport_rect);
+    DrawTileMaps(sprite_vb_, sprite_shader_, scene, viewport_rect);
   }
 
   Shader primitives_shader_;
