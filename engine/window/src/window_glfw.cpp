@@ -394,9 +394,9 @@ WindowStatus Window::Begin()
 
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-    ImGui::Begin("Style Settings");
-    ImGui::ShowStyleEditor();
-    ImGui::End();
+    // ImGui::Begin("Style Settings");
+    // ImGui::ShowStyleEditor();
+    // ImGui::End();
 
     return WindowStatus::kRunning;
   }

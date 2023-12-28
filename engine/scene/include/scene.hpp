@@ -9,7 +9,7 @@
 #include <optional>
 
 // Tyl
-#include <tyl/ecs.hpp>
+#include <tyl/engine/ecs.hpp>
 #include <tyl/serialization/archive_fwd.hpp>
 #include <tyl/serialization/object.hpp>
 #include <tyl/serialization/stream_fwd.hpp>
@@ -22,11 +22,9 @@ namespace tyl::engine
  */
 struct Scene
 {
-  /// Registry holding asset data for the scene
-  Registry assets;
   /// Registry holding graphics data for the scene
-  Registry graphics;
-  /// Active camera
+  Registry registry;
+  /// ID of the active camera
   std::optional<EntityID> active_camera;
 };
 

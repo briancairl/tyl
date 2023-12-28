@@ -1,9 +1,9 @@
 cc_library(
   name="common",
   hdrs=[
-    "include/asset.hpp",
     "include/ecs.hpp",
-    "include/math.hpp"
+    "include/math.hpp",
+    "include/shared_state.hpp"
   ],
   srcs=[
   ],

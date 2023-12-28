@@ -1,16 +1,85 @@
 cc_library(
-  name="scene",
+  name="assets_hdr",
   hdrs=[
-    "include/scene.hpp",
-  ],
-  srcs=[
-    "src/scene.cpp",
+    "include/assets.hpp",
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
   deps=[
     "//engine/common",
-    "//engine/graphics",
+    "//core/ecs",
+    "//core/serialization:object",
+    "//core/serialization/archive",
+    "//core/serialization/stream"
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="assets_load_common",
+  hdrs=[
+    "src/assets/load.hpp",
+  ],
+  strip_include_prefix="src",
+  include_prefix="tyl/engine",
+  deps=[
+    ":assets_hdr",
+    "//engine/common",
+    "//core/ecs",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="assets_load_textures",
+  srcs=[
+    "src/assets/load_textures.cpp",
+  ],
+  deps=[
+    ":assets_load_common",
+    "//engine/common",
+    "//core/ecs",
+    "//core/graphics/device",
+    "//core/graphics/host",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="assets_load_sound_data",
+  srcs=[
+    "src/assets/load_sound_data.cpp",
+  ],
+  deps=[
+    ":assets_load_common",
+    "//engine/common",
+    "//core/ecs",
+    "//core/audio/device",
+    "//core/audio/host",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="scene",
+  hdrs=[
+    "include/camera.hpp",
+    "include/drawing.hpp",
+    "include/scene.hpp",
+    "include/tags.hpp",
+    "include/tile_map.hpp",
+    "include/tile_set.hpp",
+  ],
+  srcs=[
+    "src/assets.cpp",
+    "src/scene.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":assets_load_textures",
+    ":assets_load_sound_data",
+    "//engine/common",
     "//core/ecs",
     "//core/serialization:object",
     "//core/serialization/stream:file_stream",

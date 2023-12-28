@@ -2,7 +2,6 @@
 #include <string>
 
 // Tyl
-#include <tyl/engine/asset.hpp>
 #include <tyl/engine/camera.hpp>
 #include <tyl/engine/drawing.hpp>
 #include <tyl/engine/ecs.hpp>
@@ -14,37 +13,15 @@
 #include <tyl/serialization/named.hpp>
 #include <tyl/serialization/std/optional.hpp>
 
-namespace tyl::graphics::device
-{
-class Texture;
-}  // tyl::graphics::device
-
-namespace tyl::audio::device
-{
-class Sound;
-}  // tyl::audio::device
-
 namespace tyl::engine
 {
 
 // clang-format off
-using AssetComponents = Components<
-  AssetLocation<tyl::audio::device::Sound>,
-  AssetLocation<tyl::graphics::device::Texture>
->;
-using GraphicsComponents = Components<
+using SceneComponents = Components<
   std::string,
+  Rect2f,
   TileMap,
   TileMapSection,
-  Color,
-  ColorList,
-  LineList2D,
-  LineList3D,
-  LineStrip2D,
-  LineStrip3D,
-  Points2D,
-  Points3D,
-  Rect2D,
   TopDownCamera2D
 >;
 // clang-format on
@@ -57,12 +34,8 @@ namespace tyl::serialization
 template <typename OArchiveT> void save_scene(OArchiveT& oar, const engine::Scene& scene)
 {
   {
-    engine::serializable_registry_t<const engine::AssetComponents> assets{scene.assets};
-    oar << named{"assets", assets};
-  }
-  {
-    engine::serializable_registry_t<const engine::GraphicsComponents> graphics{scene.graphics};
-    oar << named{"graphics", graphics};
+    engine::serializable_registry_t<const engine::SceneComponents> registry{scene.registry};
+    oar << named{"registry", registry};
   }
   oar << named{"active_camera", scene.active_camera};
 }
@@ -70,12 +43,8 @@ template <typename OArchiveT> void save_scene(OArchiveT& oar, const engine::Scen
 template <typename IArchiveT> void load_scene(IArchiveT& iar, engine::Scene& scene)
 {
   {
-    engine::serializable_registry_t<engine::AssetComponents> assets{scene.assets};
-    iar >> named{"assets", assets};
-  }
-  {
-    engine::serializable_registry_t<engine::GraphicsComponents> graphics{scene.graphics};
-    iar >> named{"graphics", graphics};
+    engine::serializable_registry_t<engine::SceneComponents> registry{scene.registry};
+    iar >> named{"registry", registry};
   }
   iar >> named{"active_camera", scene.active_camera};
 }
