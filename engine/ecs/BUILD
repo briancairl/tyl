@@ -1,0 +1,16 @@
+cc_library(
+  name="ecs",
+  hdrs=[
+    "include/serialization.hpp",
+    "include/types.hpp",
+  ],
+  srcs=[
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/ecs",
+  deps=[
+    "//core/ecs",
+    "//core/serialization",
+  ],
+  visibility=["//visibility:public"]
+)

@@ -1,13 +1,13 @@
 /**
  * @copyright 2023-present Brian Cairl
  *
- * @file execution.hpp
+ * @file resources.hpp
  */
 #pragma once
 
 // Tyl
 #include <tyl/async.hpp>
-#include <tyl/clock.hpp>
+#include <tyl/engine/common/clock.hpp>
 
 namespace tyl::engine
 {
@@ -15,7 +15,7 @@ namespace tyl::engine
 /**
  * @brief Shared execution resources
  */
-struct SharedState
+struct Resources
 {
   /// Current time
   Clock::Time now;

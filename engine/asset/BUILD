@@ -1,0 +1,83 @@
+cc_library(
+  name="core_hdrs",
+  hdrs=[
+    "include/types.hpp",
+    "include/types_fwd.hpp",
+    "include/loading.hpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/asset",
+  deps=[
+    "//engine/common",
+    "//engine/ecs",
+    "//core/serialization"
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="load_type",
+  hdrs=[
+    "src/loading/load_type.hpp",
+  ],
+  strip_include_prefix="src/loading",
+  include_prefix="tyl/engine/asset",
+  deps=[
+    ":core_hdrs",
+    "//engine/common",
+    "//engine/ecs",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="load_textures",
+  srcs=[
+    "src/loading/load_textures.cpp",
+  ],
+  deps=[
+    ":load_type",
+    "//core/graphics/device",
+    "//core/graphics/host",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="load_sound_data",
+  srcs=[
+    "src/loading/load_sound_data.cpp",
+  ],
+  deps=[
+    ":load_type",
+    "//core/audio/device",
+    "//core/audio/host",
+  ],
+  visibility=["//visibility:private"]
+)
+
+cc_library(
+  name="asset",
+  hdrs=[
+    "include/loading.hpp",
+    "include/serialization.hpp",
+  ],
+  srcs=[
+    "src/loading.cpp",
+    "src/serialization.cpp",
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine/asset",
+  deps=[
+    ":load_type",
+    ":load_textures",
+    ":load_sound_data",
+    ":core_hdrs",
+    "//engine/common",
+    "//engine/ecs",
+    "//core/serialization/archive:binary_archive",
+    "//core/serialization/stream:file_stream",
+    "//core/serialization/stream:mem_stream",
+  ],
+  visibility=["//visibility:public"]
+)

@@ -1,14 +1,15 @@
 cc_library(
   name="common",
   hdrs=[
-    "include/ecs.hpp",
+    "include/clock.hpp",
     "include/math.hpp",
-    "include/shared_state.hpp"
+    "include/resources.hpp",
+    "include/resources_fwd.hpp"
   ],
   srcs=[
   ],
   strip_include_prefix="include",
-  include_prefix="tyl/engine",
+  include_prefix="tyl/engine/common",
   deps=[
     "//core/async",
     "//core/common",
