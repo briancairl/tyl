@@ -20,7 +20,13 @@ using Registry = ::entt::registry;
 template <typename ComponentT> struct Reference
 {
   std::optional<EntityID> id;
+
+  constexpr bool valid() const { return id.has_value(); }
+
+  constexpr operator bool() const { return id.has_value(); }
+
   constexpr void reset() { this->id.reset(); }
+
   constexpr Reference<ComponentT>& operator=(const EntityID id)
   {
     this->id.emplace(id);
@@ -73,6 +79,13 @@ template <typename ComponentT>
 const ComponentT* maybe_resolve(const Registry& registry, const Reference<ComponentT>& reference)
 {
   return is_valid(registry, reference) ? std::addressof(registry.template get<ComponentT>(*reference.id)) : nullptr;
+}
+
+template <typename... ComponentTs>
+std::size_t copy(const Registry& from_registry, EntityID from_id, Registry& to_registry, EntityID to_id)
+{
+  return 0 +
+    ((to_registry.template emplace<ComponentTs>(to_id, from_registry.template get<ComponentTs>(from_id)), 1) + ...);
 }
 
 }  // namespace tyl

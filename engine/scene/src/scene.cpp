@@ -1,5 +1,8 @@
+// S++ Standard Library
+#include <string>
+
 // Tyl
-#include <tyl/engine/asset.hpp>
+#include <tyl/engine/camera.hpp>
 #include <tyl/engine/drawing.hpp>
 #include <tyl/engine/ecs.hpp>
 #include <tyl/engine/scene.hpp>
@@ -8,36 +11,18 @@
 #include <tyl/serialization/file_stream.hpp>
 #include <tyl/serialization/mem_stream.hpp>
 #include <tyl/serialization/named.hpp>
-
-namespace tyl::graphics::device
-{
-class Texture;
-}  // tyl::graphics::device
-
-namespace tyl::audio::device
-{
-class Sound;
-}  // tyl::audio::device
+#include <tyl/serialization/std/optional.hpp>
 
 namespace tyl::engine
 {
 
 // clang-format off
-using AssetComponents = Components<
-  AssetLocation<tyl::audio::device::Sound>,
-  AssetLocation<tyl::graphics::device::Texture>
->;
-using GraphicsComponents = Components<
+using SceneComponents = Components<
+  std::string,
+  Rect2f,
   TileMap,
   TileMapSection,
-  Color,
-  ColorList,
-  LineList2D,
-  LineList3D,
-  LineStrip2D,
-  LineStrip3D,
-  Points2D,
-  Points3D
+  TopDownCamera2D
 >;
 // clang-format on
 
@@ -49,25 +34,19 @@ namespace tyl::serialization
 template <typename OArchiveT> void save_scene(OArchiveT& oar, const engine::Scene& scene)
 {
   {
-    engine::serializable_registry_t<const engine::AssetComponents> assets{scene.assets};
-    oar << named{"assets", assets};
+    engine::serializable_registry_t<const engine::SceneComponents> registry{scene.registry};
+    oar << named{"registry", registry};
   }
-  {
-    engine::serializable_registry_t<const engine::GraphicsComponents> graphics{scene.graphics};
-    oar << named{"graphics", graphics};
-  }
+  oar << named{"active_camera", scene.active_camera};
 }
 
 template <typename IArchiveT> void load_scene(IArchiveT& iar, engine::Scene& scene)
 {
   {
-    engine::serializable_registry_t<engine::AssetComponents> assets{scene.assets};
-    iar >> named{"assets", assets};
+    engine::serializable_registry_t<engine::SceneComponents> registry{scene.registry};
+    iar >> named{"registry", registry};
   }
-  {
-    engine::serializable_registry_t<engine::GraphicsComponents> graphics{scene.graphics};
-    iar >> named{"graphics", graphics};
-  }
+  iar >> named{"active_camera", scene.active_camera};
 }
 
 void save<binary_oarchive<file_handle_ostream>, engine::Scene>::operator()(

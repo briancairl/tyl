@@ -43,14 +43,22 @@ public:
 using Rect2i = Rect<int>;
 using Rect2f = Rect<float>;
 
-template <typename T> inline bool operator==(const Rect<T>& lhs, const Rect<T>& rhs)
+template <typename T> bool operator==(const Rect<T>& lhs, const Rect<T>& rhs)
 {
   return std::memcmp(&lhs, &rhs, sizeof(Rect<T>)) == 0;
 }
 
-template <typename T> inline bool operator!=(const Rect<T>& lhs, const Rect<T>& rhs)
+template <typename T> bool operator!=(const Rect<T>& lhs, const Rect<T>& rhs)
 {
   return std::memcmp(&lhs, &rhs, sizeof(Rect<T>)) != 0;
 }
+
+template <typename T> bool disjoint(const Rect<T>& lhs, const Rect<T>& rhs)
+{
+  return (lhs.max().x() < rhs.min().x()) or (lhs.max().y() < rhs.min().y()) or (lhs.min().x() > rhs.max().x()) or
+    (lhs.min().y() > rhs.max().y());
+}
+
+template <typename T> bool overlapping(const Rect<T>& lhs, const Rect<T>& rhs) { return !disjoint(lhs, rhs); }
 
 }  // namespace tyl

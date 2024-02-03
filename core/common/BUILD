@@ -3,7 +3,6 @@ cc_library(
   hdrs=[
     "include/assert.hpp",
     "include/bits.hpp",
-    "include/clock.hpp",
     "include/crtp.hpp",
     "include/dynamic_bitset.hpp",
     "include/format.hpp",

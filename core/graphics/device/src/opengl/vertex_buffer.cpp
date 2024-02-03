@@ -197,8 +197,23 @@ void VertexBuffer::set(const VertexAttributeBufferLayout& layout, const void* co
   glBufferSubData(GL_ARRAY_BUFFER, layout.byte_offset, layout.byte_length, data);
 }
 
-void VertexBuffer::draw(const std::size_t count, const DrawMode mode) const
+void VertexBuffer::draw(const std::size_t count, const DrawMode mode, const float size) const
 {
+  switch (mode)
+  {
+  case DrawMode::kPoints:
+    glPointSize(size);
+    break;
+  case DrawMode::kLines:
+    glLineWidth(size);
+    break;
+  case DrawMode::kLineStrip:
+    glLineWidth(size);
+    break;
+  case DrawMode::kTriangles:
+    glLineWidth(size);
+    break;
+  }
   glBindVertexArray(vao_);
   glDrawArrays(to_gl_draw_mode(mode), 0, count);
   glBindVertexArray(0);

@@ -32,8 +32,7 @@ constexpr float kPreviewDimMax = 500.0;
 
 struct TextureBrowserProperties
 {
-  bool show_previews = true;
-  ImVec2 preview_icon_dimensions = {kPreviewDimMin, kPreviewDimMin};
+  float preview_icon_extent = kPreviewDimMin;
 };
 
 struct TextureBrowserPreviewState
@@ -42,19 +41,11 @@ struct TextureBrowserPreviewState
   ImVec2 dimensions = {};
 };
 
-ImVec2 ComputeIconDimensions(const graphics::device::Shape2D& shape, const ImVec2& max_dimensions)
+ImVec2 ComputeIconDimensions(const graphics::device::Shape2D& shape, const float width)
 {
   const float ratio = static_cast<float>(shape.width) / static_cast<float>(shape.height);
-  const float height = ratio * max_dimensions.x;
-  if (height < max_dimensions.y)
-  {
-    return ImVec2{max_dimensions.x, height};
-  }
-  else
-  {
-    const float down_scaling = max_dimensions.y / height;
-    return ImVec2{down_scaling * max_dimensions.x, down_scaling * height};
-  }
+  const float height = ratio * width;
+  return ImVec2{width, height};
 }
 
 }  // namespace
@@ -72,18 +63,25 @@ public:
 
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
-    ImGui::BeginChild("#TexturePreviews", ImVec2{0, 0}, kChildShowBoarders, kChildFlags);
     AddTextureBrowserPreviewState(scene);
-    ShowTextureListing(scene);
-    lock_window_movement_ = ImGui::IsWindowHovered();
-    ImGui::EndChild();
+    const std::size_t n_selected = ShowTextureListing(scene);
+
+    if ((n_selected > 0) && ImGui::Button("delete"))
+    {
+      scene.assets.view<TextureBrowserPreviewState>().each([&](const EntityID id, const auto& state) {
+        if (state.is_selected)
+        {
+          scene.assets.destroy(id);
+        }
+      });
+    }
   }
 
   void RecomputeIconDimensions(Scene& scene) const
   {
     scene.assets.view<Texture, TextureBrowserPreviewState>().each(
       [&](const Texture& texture, TextureBrowserPreviewState& state) {
-        state.dimensions = ComputeIconDimensions(texture.shape(), properties_.preview_icon_dimensions);
+        state.dimensions = ComputeIconDimensions(texture.shape(), properties_.preview_icon_extent);
       });
   }
 
@@ -102,39 +100,15 @@ public:
     {
       RecomputeIconDimensions(scene);
     }
-
-    if (ImGui::Button("delete"))
-    {
-      scene.assets.view<TextureBrowserPreviewState>().each([&](const EntityID id, const auto& state) {
-        if (state.is_selected)
-        {
-          scene.assets.destroy(id);
-        }
-      });
-    }
-
-    ImGui::SameLine();
-    ImGui::Checkbox("show previews", &properties_.show_previews);
-
-    if (properties_.show_previews)
-    {
-      ImGui::SameLine();
-      if (ImGui::SliderFloat2(
-            "preview dimensions",
-            reinterpret_cast<float*>(&properties_.preview_icon_dimensions),
-            kPreviewDimMin,
-            kPreviewDimMax))
-      {
-        RecomputeIconDimensions(scene);
-      }
-    }
   }
 
-  void ShowTextureListing(Scene& scene) const
+  std::size_t ShowTextureListing(Scene& scene) const
   {
     static constexpr bool kChildShowBoarders = false;
     static constexpr auto kChildFlags = ImGuiWindowFlags_None;
-    if (ImGui::BeginChild("#TexturePreviewsChild", ImVec2{0, 0}, kChildShowBoarders, kChildFlags))
+
+    std::size_t n_selected = 0;
+    if (ImGui::BeginChild("#TexturePreviewsChild", ImVec2{0, 200}, kChildShowBoarders, kChildFlags))
     {
       if (ImGui::BeginTable("##TextureListing", 4, ImGuiTableFlags_Resizable))
       {
@@ -161,7 +135,7 @@ public:
               ImGui::Text("%s", asset_location.path.filename().string().c_str());
               if (
                 is_valid && !DragAndDropInternalSource(scene, id, asset_location.path, state) and
-                properties_.show_previews and ImGui::IsItemHovered() and ImGui::BeginTooltip())
+                ImGui::IsItemHovered() and ImGui::BeginTooltip())
               {
                 const auto& texture = scene.assets.get<Texture>(id);
                 ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions);
@@ -193,12 +167,17 @@ public:
               ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, ImColor{1.f, 1.f, 0.f, 0.25f});
             }
             state.is_selected = is_selected;
+            if (is_selected)
+            {
+              ++n_selected;
+            }
           });
 
         ImGui::EndTable();
       }
-      ImGui::EndChild();
     }
+    ImGui::EndChild();
+    return n_selected;
   }
 
   bool DragAndDropInternalSource(
@@ -218,11 +197,8 @@ public:
       tint = ImVec4{0, 1, 0, 1};
     }
 
-    if (properties_.show_previews)
-    {
-      const auto& texture = scene.assets.get<Texture>(id);
-      ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions, ImVec2{0, 0}, ImVec2{1, 1}, tint);
-    }
+    const auto& texture = scene.assets.get<Texture>(id);
+    ImGui::Image(reinterpret_cast<void*>(texture.get_id()), state.dimensions, ImVec2{0, 0}, ImVec2{1, 1}, tint);
     ImGui::TextColored(tint, "%s", path.filename().string().c_str());
 
     ImGui::EndDragDropSource();
@@ -238,14 +214,11 @@ public:
     }
   }
 
-  constexpr bool LockWindowMovement() const { return lock_window_movement_; }
-
   template <typename OArchive> void Save(OArchive& ar) const { ar << named{"properties", properties_}; }
 
   template <typename IArchive> void Load(IArchive& ar) { ar >> named{"properties", properties_}; }
 
 private:
-  bool lock_window_movement_ = false;
   TextureBrowserProperties properties_;
 };
 
@@ -267,8 +240,7 @@ TextureBrowser::TextureBrowser(const TextureBrowserOptions& options, std::unique
 ScriptStatus TextureBrowser::UpdateImpl(Scene& scene, ScriptSharedState& shared, const ScriptResources& resources)
 {
   static constexpr auto kStaticWindowFlags = ImGuiWindowFlags_HorizontalScrollbar;
-  if (ImGui::Begin(
-        options_.name, nullptr, (impl_->LockWindowMovement() ? ImGuiWindowFlags_NoMove : 0) | kStaticWindowFlags))
+  if (ImGui::Begin(options_.name, nullptr, kStaticWindowFlags))
   {
     impl_->Update(scene, shared, resources);
   }

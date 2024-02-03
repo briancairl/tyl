@@ -1,5 +1,5 @@
 cc_library(
-  name="image",
+  name="host",
   hdrs=["include/image.hpp"],
   srcs=["src/image.cpp"],
   strip_include_prefix="include",

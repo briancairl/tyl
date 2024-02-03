@@ -2,6 +2,7 @@ cc_library(
   name="internal",
   hdrs=[
     "include/internal/imgui.hpp",
+    "include/internal/imgui_widgets.hpp",
   ],
   srcs=[
   ],
@@ -80,6 +81,23 @@ cc_library(
 )
 
 cc_library(
+  name="drawing_2D",
+  hdrs=[
+    "include/script/drawing_2D.hpp"
+  ],
+  srcs=[
+    "src/script/drawing_2D.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
   name="perf_monitor",
   hdrs=[
     "include/script/perf_monitor.hpp"
@@ -103,6 +121,24 @@ cc_library(
   ],
   srcs=[
     "src/script/render_pipeline_2D.cpp"
+  ],
+  strip_include_prefix="include",
+  include_prefix="tyl/engine",
+  deps=[
+    ":script",
+    "@imgui-file-dialogue",
+    "//engine/graphics",
+  ],
+  visibility=["//visibility:public"]
+)
+
+cc_library(
+  name="scene_management",
+  hdrs=[
+    "include/script/scene_management.hpp"
+  ],
+  srcs=[
+    "src/script/scene_management.cpp"
   ],
   strip_include_prefix="include",
   include_prefix="tyl/engine",
